@@ -110,7 +110,23 @@ h3 {
   font-weight: 700;
 }
 
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.2em;
+}
+
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
   font: inherit;
   font-weight: 600;
   border: 0;
@@ -652,10 +668,12 @@ select:focus {
 
 .crown {
   position: absolute;
-  top: -12px;
+  top: -13px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.9rem;
+  width: 20px;
+  height: 20px;
+  color: #f5c43a;
 }
 
 .host-controls {
@@ -810,6 +828,13 @@ select:focus {
   color: rgba(255, 255, 255, 0.08);
   pointer-events: none;
   animation: spin-ccw 14s linear infinite;
+}
+
+.direction .icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+  stroke-width: 1.5;
 }
 
 @keyframes spin-ccw {
@@ -1115,6 +1140,18 @@ select:focus {
   padding: 0 5px;
   font-weight: 700;
   text-shadow: none;
+}
+
+.badge.offline {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+}
+
+.badge.offline .icon {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.5;
 }
 
 .badge.dealer {
@@ -1443,11 +1480,10 @@ select:focus {
 }
 
 .side .chat-toggle {
-  display: inline-block;
+  display: inline-flex;
 }
 
 .chat-toggle .chevron {
-  display: inline-block;
   transition: transform 0.2s;
 }
 
@@ -1635,6 +1671,27 @@ select:focus {
   border-width: 2px;
 }
 
+.ready-tag .icon {
+  stroke-width: 3;
+}
+
+.toast-suit {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.12em;
+  fill: currentColor;
+  stroke: none;
+}
+
+.toast-suit.red {
+  color: var(--red-600);
+}
+
+#roundTitle .trophy {
+  color: #f5c43a;
+  vertical-align: -0.12em;
+}
+
 .results .ready-tag {
   font-size: 0.7rem;
   font-weight: 700;
@@ -1671,12 +1728,11 @@ select:focus {
   font-size: 10px;
 }
 
-.results .mini-hand .card.joker::before {
-  content: '🃏';
-  font-size: 16px;
-  display: grid;
-  place-items: center;
-  height: 100%;
+.results .mini-hand .card.joker .pips {
+  display: block;
+  inset: 22% 12%;
+  width: 76%;
+  height: 56%;
 }
 
 .results tr.winner td {
@@ -1799,7 +1855,7 @@ select:focus {
   }
 
   .side-toggle {
-    display: inline-block;
+    display: inline-flex;
   }
 
   .side {

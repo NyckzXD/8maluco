@@ -269,7 +269,7 @@ class Room {
     this.game = createGame(
       this.members.map((m) => ({ id: m.id, name: m.name })),
     );
-    this.system("A partida começou! Boa sorte 🍀");
+    this.system("A partida começou! Boa sorte!");
     this.apply(startRound(this.game));
     return { ok: true };
   }
@@ -355,7 +355,7 @@ class Room {
         this.system(`${this.nameOf(e.playerId)} saiu da mesa`);
     const over = events.find((e) => e.type === "gameOver");
     if (over)
-      this.system(`🏆 ${this.nameOf(over.winnerId)} é o grande vencedor!`);
+      this.system(`${this.nameOf(over.winnerId)} é o grande vencedor!`);
 
     if (end && g.phase === "roundOver") {
       this.clearTimer();
@@ -400,7 +400,7 @@ class Room {
     this.timer = setTimeout(
       () => {
         if (this.game === g && `${g.round}:${g.turn}` === turnKey) {
-          this.system(`⏰ O tempo de ${m.name} acabou, jogada automática`);
+          this.system(`O tempo de ${m.name} acabou, jogada automática`);
           this.autoplay(current.id, false);
         }
       },

@@ -104,6 +104,21 @@ document.body.insertAdjacentHTML(
       <path fill="#d0102a" d="M34 77l4-4 4 4-4 4zM46 77l4-4 4 4-4 4zM58 77l4-4 4 4-4 4z"/>
       <circle fill="#f5c43a" cx="6" cy="30" r="5"/><circle fill="#f5c43a" cx="50" cy="8" r="5"/><circle fill="#f5c43a" cx="94" cy="30" r="5"/>
     </g></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></symbol>
+    <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+    <symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.52M2 8.82a15 15 0 0 1 4.18-2.64M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path fill="currentColor" stroke="#1d1d28" stroke-width="1.5" stroke-linejoin="round" d="M2.5 18 4 7l5 4.5L12 4l3 7.5L20 7l1.5 11z"/></symbol>
   </defs></svg>`,
 );
 
@@ -111,6 +126,21 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 function svg(tag, attrs = {}) {
   const node = document.createElementNS(SVG_NS, tag);
   for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+}
+
+// Ícones de interface (sprite acima): icon('bot') -> <svg class="icon"><use href="#i-bot"/></svg>.
+function icon(name, className = '') {
+  const node = svg('svg', { class: `icon ${className}`.trim(), 'aria-hidden': 'true' });
+  node.append(svg('use', { href: `#i-${name}` }));
+  return node;
+}
+
+// Nome com um ícone de robô na frente quando é bot.
+function nameWithBot(className, name, isBot) {
+  const node = el('div', className);
+  if (isBot) node.append(icon('bot'), ' ');
+  node.append(name);
   return node;
 }
 
@@ -290,7 +320,7 @@ updateHomeAvatar();
 function askName() {
   const name = nameInput.value.trim();
   if (!name) {
-    flash('Escolha um apelido primeiro 🙂');
+    flash('Escolha um apelido primeiro');
     $('#roomsModal').classList.add('hidden');
     nameInput.focus();
     return null;
@@ -403,7 +433,7 @@ $('#copyLink').addEventListener('click', async () => {
   const link = `${location.origin}${location.pathname}?sala=${roomCode}`;
   try {
     await navigator.clipboard.writeText(link);
-    flash('Link copiado! Mande para a galera 🎉');
+    flash('Link copiado! Mande para a galera');
   } catch {
     prompt('Copie o link da sala:', link);
   }
@@ -419,11 +449,11 @@ function renderLobby(s) {
   for (const m of s.members) {
     const li = el('li');
     const av = avatar(m);
-    if (m.id === s.hostId) av.append(el('span', 'crown', '👑'));
+    if (m.id === s.hostId) av.append(icon('crown', 'crown'));
     const text = el('div');
     text.style.minWidth = '0';
     const sub = m.isBot ? 'bot' : !m.connected ? 'desconectado' : m.id === s.me ? 'você' : m.id === s.hostId ? 'anfitrião' : '';
-    text.append(el('div', 'name', `${m.isBot ? '🤖 ' : ''}${m.name}`), el('div', 'sub', sub));
+    text.append(nameWithBot('name', m.name, m.isBot), el('div', 'sub', sub));
     li.append(av, text);
     if (isHost && m.id !== s.me) {
       const kick = el('button', 'kick', '×');
@@ -474,10 +504,15 @@ function renderSeats(g, s, hit) {
     const av = avatar(m, p.name);
     if (p.id === g.turnId) av.prepend(el('span', 'ring'));
     if (p.id === g.dealerId) av.append(el('span', 'badge dealer', 'D'));
-    if (m && !m.isBot && !m.connected) av.append(el('span', 'badge', '📴'));
-    const name = el('div', 'seat-name', `${m?.isBot ? '🤖 ' : ''}${p.name}`);
+    if (m && !m.isBot && !m.connected) {
+      const off = el('span', 'badge offline');
+      off.title = 'Desconectado';
+      off.append(icon('wifi-off'));
+      av.append(off);
+    }
+    const name = nameWithBot('seat-name', p.name, m?.isBot);
     const info = el('div', 'seat-info');
-    if (p.eliminated) info.textContent = 'fora 💀';
+    if (p.eliminated) info.textContent = 'fora';
     else {
       const cards = el('span');
       cards.append(el('i', 'mini-card'), document.createTextNode(p.cardCount));
@@ -686,11 +721,11 @@ function renderHand(prev, g, s, myTurn) {
   hand.classList.toggle('my-turn', myTurn);
   const me = g.players.find((p) => p.id === s.me);
   if (!me) {
-    hand.replaceChildren(el('p', 'spectator', '👀 Você está assistindo. Entra na próxima partida!'));
+    hand.replaceChildren(el('p', 'spectator', 'Você está assistindo. Entra na próxima partida!'));
     return;
   }
   if (me.eliminated) {
-    hand.replaceChildren(el('p', 'spectator', '💀 Você está fora. Assista até o fim!'));
+    hand.replaceChildren(el('p', 'spectator', 'Você está fora. Assista até o fim!'));
     return;
   }
   const sameRound = prev?.game?.round === g.round;
@@ -782,9 +817,9 @@ function renderRoundModal(g, s) {
   }
   modal.classList.remove('hidden');
   const over = g.phase === 'gameOver';
-  $('#roundTitle').textContent = over
-    ? `🏆 ${nameOf(g.winnerId)} venceu o jogo!`
-    : `🎉 ${nameOf(lr.winnerId)} bateu a rodada ${lr.round}!`;
+  $('#roundTitle').replaceChildren(
+    ...(over ? [icon('trophy', 'trophy'), ` ${nameOf(g.winnerId)} venceu o jogo!`] : [`${nameOf(lr.winnerId)} bateu a rodada ${lr.round}!`]),
+  );
 
   const rows = $('#roundRows');
   rows.replaceChildren();
@@ -793,14 +828,18 @@ function renderRoundModal(g, s) {
     const tr = el('tr', r.playerId === lr.winnerId ? 'winner' : out ? 'eliminated' : '');
     const who = el('td');
     const whoBox = el('div', 'who');
-    whoBox.append(avatar(memberOf(r.playerId), nameOf(r.playerId)), el('span', null, nameOf(r.playerId) + (out ? ' 💀' : '')));
+    whoBox.append(avatar(memberOf(r.playerId), nameOf(r.playerId)), el('span', null, nameOf(r.playerId) + (out ? ' (fora)' : '')));
     who.append(whoBox);
     const handTd = el('td');
     const mini = el('div', 'mini-hand');
     if (r.hand.length) mini.append(...sortHand(r.hand).map(renderCard));
-    else mini.append(el('span', 'muted', 'bateu! 🎉'));
+    else mini.append(el('span', 'muted', 'bateu!'));
     handTd.append(mini);
-    if (s.ready.includes(r.playerId)) whoBox.append(el('span', 'ready-tag', '✓ pronto'));
+    if (s.ready.includes(r.playerId)) {
+      const tag = el('span', 'ready-tag');
+      tag.append(icon('check'), ' pronto');
+      whoBox.append(tag);
+    }
     tr.append(who, handTd, el('td', 'pts', `+${r.points}`), el('td', 'pts', r.total));
     rows.append(tr);
   }
@@ -815,7 +854,7 @@ function renderRoundModal(g, s) {
   const imReady = s.ready.includes(s.me);
   $('#readyActions').classList.toggle('hidden', over || !playing);
   $('#readyBtn').disabled = imReady;
-  $('#readyBtn').textContent = imReady ? '✓ Pronto!' : 'Estou pronto!';
+  $('#readyBtn').replaceChildren(...(imReady ? [icon('check'), 'Pronto!'] : ['Estou pronto!']));
   if (!over) {
     const waiting = s.waitingOn.filter((id) => id !== s.me).map(nameOf);
     $('#roundFooter').textContent = !waiting.length
@@ -830,8 +869,9 @@ $('#readyBtn').addEventListener('click', () => emit('game:ready'));
 // Mensagens curtas na mesa e no log para cada coisa que aconteceu.
 function announce(events, g, s) {
   const toasts = $('#toasts');
-  const toast = (text) => {
-    const t = el('div', 'toast', text);
+  const toast = (...parts) => {
+    const t = el('div', 'toast');
+    t.append(...parts);
     toasts.append(t);
     setTimeout(() => t.remove(), 3100);
     while (toasts.children.length > 3) toasts.firstChild.remove();
@@ -846,21 +886,21 @@ function announce(events, g, s) {
         break;
       case 'play':
         sounds.card();
-        if (e.card.rank === 'JOKER') toast('🃏 Joker! Todo mundo compra 1');
+        if (e.card.rank === 'JOKER') toast('Joker! Todo mundo compra 1');
         break;
       case 'skip':
-        toast(`⏭ ${who === 'Você' ? 'Você foi pulado' : `${who} foi pulado`}!`);
+        toast(`${who === 'Você' ? 'Você foi pulado' : `${who} foi pulado`}!`);
         logLine(`${who} foi pulado`);
         break;
       case 'penalty': {
         const qty = `${e.count} carta${e.count > 1 ? 's' : ''}`;
-        if (!(jokerPlayed && e.reason === 'JOKER')) toast(`${e.reason === '7' ? '7️⃣' : '9️⃣'} ${who} compra ${qty}`);
+        if (!(jokerPlayed && e.reason === 'JOKER')) toast(`${who} compra ${qty}`);
         if (e.playerId === s.me) sounds.bad();
         break;
       }
       case 'suit': {
         const suit = SUIT_INFO[e.suit];
-        toast(`🎨 ${who} pediu ${suit.symbol} ${suit.name}`);
+        toast(`${who} pediu `, suitIcon(e.suit, `toast-suit ${suit.color}`), ` ${suit.name}`);
         logLine(`${who} pediu ${suit.name}`);
         break;
       }
@@ -932,11 +972,11 @@ setInterval(() => {
 
 // ---------- painéis e modais ----------
 
-$('#muteBtn').textContent = muted ? '🔇' : '🔊';
+$('#muteBtn').replaceChildren(icon(muted ? 'mute' : 'volume'));
 $('#muteBtn').addEventListener('click', () => {
   muted = !muted;
   store.set('om_muted', muted ? '1' : '0');
-  $('#muteBtn').textContent = muted ? '🔇' : '🔊';
+  $('#muteBtn').replaceChildren(icon(muted ? 'mute' : 'volume'));
 });
 
 $('#sideToggle').addEventListener('click', (e) => {

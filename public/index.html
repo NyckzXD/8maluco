@@ -32,8 +32,8 @@
                 </div>
 
                 <div class="play-actions">
-                  <button id="createBtn" class="btn btn-primary btn-big">Criar sala</button>
-                  <button id="roomsBtn" class="btn btn-big btn-rooms">Salas</button>
+                  <button id="createBtn" class="btn btn-primary btn-big"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar sala</button>
+                  <button id="roomsBtn" class="btn btn-big btn-rooms"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Salas</button>
                   <div class="join-row">
                     <input id="codeInput" maxlength="5" placeholder="CÓDIGO" aria-label="Código da sala" autocomplete="off" />
                     <button id="joinBtn" class="btn">Entrar</button>
@@ -77,7 +77,7 @@
                 </div>
               </div>
               <div id="howtoDots" class="howto-dots"></div>
-              <button id="rulesBtn" class="btn btn-small btn-ghost">📖 Regras completas</button>
+              <button id="rulesBtn" class="btn btn-small btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Regras completas</button>
             </div>
           </div>
 
@@ -94,7 +94,7 @@
       <div class="lobby-layout">
         <div class="panel lobby-main">
           <div class="lobby-head">
-            <button class="btn btn-ghost btn-small leave-btn">← Sair</button>
+            <button class="btn btn-ghost btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
             <div class="room-code">
               <span>Sala</span>
               <strong id="lobbyCode">-----</strong>
@@ -106,7 +106,7 @@
           <ul id="memberList" class="member-grid"></ul>
 
           <div id="hostControls" class="host-controls">
-            <button id="addBotBtn" class="btn">🤖 Adicionar bot</button>
+            <button id="addBotBtn" class="btn"><svg class="icon" aria-hidden="true"><use href="#i-bot"/></svg>Adicionar bot</button>
             <div class="settings">
               <label class="check"><input type="checkbox" id="setPublic" /> Sala pública</label>
               <label class="select">
@@ -122,7 +122,7 @@
             <button id="startBtn" class="btn btn-primary btn-big">Começar partida</button>
           </div>
           <p id="waitHost" class="muted center">Esperando o anfitrião começar a partida…</p>
-          <button class="btn btn-ghost rules-link">📖 Como jogar</button>
+          <button class="btn btn-ghost rules-link"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Como jogar</button>
         </div>
         <aside class="panel chat-panel" data-chat></aside>
       </div>
@@ -133,11 +133,11 @@
       <div class="game-layout">
         <div class="game-main">
           <header class="game-top">
-            <button class="btn btn-ghost btn-small leave-btn">← Sair</button>
+            <button class="btn btn-ghost btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
             <div id="roundLabel" class="round-label">Rodada 1</div>
             <div class="top-right">
-              <button id="muteBtn" class="btn btn-ghost btn-small" title="Som">🔊</button>
-              <button id="sideToggle" class="btn btn-ghost btn-small side-toggle" title="Placar e chat">💬<span id="unread" class="dot hidden"></span></button>
+              <button id="muteBtn" class="btn btn-ghost btn-small" title="Som" aria-label="Som"><svg class="icon" aria-hidden="true"><use href="#i-volume"/></svg></button>
+              <button id="sideToggle" class="btn btn-ghost btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden"></span></button>
             </div>
           </header>
 
@@ -145,7 +145,7 @@
             <div class="felt"></div>
             <div id="seats"></div>
             <div class="table-center">
-              <div class="direction" title="O jogo gira para a direita (anti-horário)">↺</div>
+              <div class="direction" title="O jogo gira para a direita (anti-horário)"><svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"/></svg></div>
               <button id="drawPile" class="pile draw-pile" title="Comprar carta">
                 <div class="card back"></div>
                 <span id="drawCount" class="pile-count">0</span>
@@ -216,7 +216,7 @@
       <div class="modal-box wide rooms-box">
         <div class="panel-head">
           <h2>Salas públicas</h2>
-          <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar">↻</button>
+          <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar" aria-label="Atualizar"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
         </div>
         <ul id="roomList" class="room-list"></ul>
         <button class="btn btn-ghost" data-close>Fechar</button>
@@ -254,7 +254,7 @@
       <div class="panel-head">
         <h3>Chat</h3>
         <button type="button" class="btn btn-ghost btn-small chat-toggle" title="Recolher chat" aria-expanded="true">
-          <span class="chat-unread dot hidden"></span><span class="chevron">▾</span>
+          <span class="chat-unread dot hidden"></span><svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
         </button>
       </div>
       <ul class="chat-log"></ul>
