@@ -394,19 +394,25 @@ function playOrigin(play, s) {
 }
 
 // Uma carta voando de um ponto da tela a outro (centros, com escala e giro). Sem `card`, voa de costas.
-// `flip` vira de costas para frente no caminho; `hide` fica escondida até a carta chegar.
-function fly({ card, from, to, flip = false, hide, delay = 0 }) {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+// `flip` vira de costas para frente no caminho; `hide` fica escondida até a carta chegar; `onLand` roda na chegada.
+const EASE_OUT = 'cubic-bezier(0.25, 0.8, 0.25, 1)';
+const EASE_IN_OUT = 'cubic-bezier(0.45, 0, 0.2, 1)';
+
+function fly({ card, from, to, flip = false, hide, delay = 0, easing = EASE_OUT, onLand }) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    onLand?.();
+    return false;
+  }
   hide?.classList.add('incoming');
-  setTimeout(() => launch({ card, from, to, flip, hide }), delay);
+  setTimeout(() => launch({ card, from, to, flip, hide, easing, onLand }), delay);
   return true;
 }
 
-function launch({ card, from, to, flip, hide }) {
+function launch({ card, from, to, flip, hide, easing, onLand }) {
   const size = $('#discardPile').getBoundingClientRect();
   const flyer = el('div', 'flyer');
   const inner = el('div', 'flyer-inner');
-  inner.append(card ? renderCard(card) : el('div', 'card back'), el('div', 'card back'));
+  inner.append(card ? renderCard(card) : el('div', 'card back'), el('div', 'card back reverse'));
   flyer.append(inner);
   Object.assign(flyer.style, {
     left: `${to.x - size.width / 2}px`,
@@ -422,7 +428,7 @@ function launch({ card, from, to, flip, hide }) {
       { transform: `translate(${from.x - to.x}px, ${from.y - to.y}px) scale(${from.scale}) rotate(${from.rot ?? 0}deg)` },
       { transform: `translate(0, 0) scale(${to.scale}) rotate(${to.rot ?? 0}deg)` },
     ],
-    { ...timing, easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)' }
+    { ...timing, easing }
   );
   // Surge ao sair de um avatar e some ao chegar em outro.
   if (from.fade || to.fade) {
@@ -430,7 +436,7 @@ function launch({ card, from, to, flip, hide }) {
       [
         { opacity: from.fade ? 0 : 1 },
         { opacity: 1, offset: 0.15 },
-        { opacity: 1, offset: 0.7 },
+        { opacity: 1, offset: 0.85 },
         { opacity: to.fade ? 0 : 1 },
       ],
       timing
@@ -450,7 +456,17 @@ function launch({ card, from, to, flip, hide }) {
     .finally(() => {
       flyer.remove();
       hide?.classList.remove('incoming');
+      onLand?.();
     });
+}
+
+// "+N" subindo do assento de quem comprou.
+function showGain(playerId, count) {
+  const seat = $(`#seats .seat[data-id="${playerId}"]`);
+  if (!seat) return;
+  const chip = el('div', 'gain', `+${count}`);
+  seat.append(chip);
+  chip.addEventListener('animationend', () => chip.remove());
 }
 
 // Cartas compradas saem do baralho: de costas até o avatar dos outros, virando de frente até a sua mão.
@@ -459,14 +475,15 @@ function animateDraws(events, g, s) {
   if (!pileCard) return;
   const pile = centerOf(pileCard);
   const fresh = $$('#hand .card.fresh');
-  // Se alguém jogou carta nesta mesma atualização (7, 9, Joker), espera ela chegar no monte.
-  let delay = events.some((e) => e.type === 'play') ? FLIGHT_MS * 0.8 : 0;
+  let delay = 0;
   const toHand = (node) => {
     const card = g.hand.find((c) => c.id === node.dataset.id);
     if (card && fly({ card, from: pile, to: centerOf(node), flip: true, hide: node, delay })) node.classList.remove('fresh');
     delay += DRAW_GAP_MS;
   };
   for (const e of events) {
+    // Compra por causa de uma carta jogada (7, 9, Joker): espera ela chegar no monte.
+    if (e.type === 'play') delay = Math.max(delay, FLIGHT_MS * 0.8);
     if (e.type !== 'draw' && e.type !== 'penalty') continue;
     if (e.playerId === s.me) {
       fresh.splice(0, e.count).forEach(toHand);
@@ -474,8 +491,11 @@ function animateDraws(events, g, s) {
     }
     const avatar = $(`#seats .seat[data-id="${e.playerId}"] .avatar`);
     if (!avatar) continue;
+    // De costas, num movimento contínuo do baralho até o avatar, para dar para ver quem comprou.
+    const to = centerOf(avatar, { scale: 0.5, fade: true });
     for (let k = 0; k < e.count; k++) {
-      fly({ from: pile, to: centerOf(avatar, { scale: 0.45, fade: true }), delay });
+      const last = k === e.count - 1;
+      fly({ from: pile, to, delay, easing: EASE_IN_OUT, onLand: last ? () => showGain(e.playerId, e.count) : null });
       delay += DRAW_GAP_MS;
     }
   }

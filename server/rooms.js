@@ -1,21 +1,49 @@
 // Salas estilo "Gartic": código curto, lista de salas públicas, anfitrião, bots e chat.
-import { randomUUID } from 'node:crypto';
-import { createGame, startRound, playCard, drawCard, passTurn, removePlayer, viewFor } from '../shared/engine.js';
-import { chooseMove } from '../shared/bot.js';
+import { randomUUID } from "node:crypto";
+import {
+  createGame,
+  startRound,
+  playCard,
+  drawCard,
+  passTurn,
+  removePlayer,
+  viewFor,
+} from "../shared/engine.js";
+import { chooseMove } from "../shared/bot.js";
 
 export const MAX_PLAYERS = 8;
 const ROUND_BREAK_MS = 9000;
-const BOT_DELAY_MS = [5000, 6500]; // bots esperam pelo menos 5s para dar tempo de acompanhar
+const BOT_DELAY_MS = [3000, 5000]; // bots esperam pelo menos 3s para dar tempo de acompanhar
 const AWAY_DELAY_MS = 1500; // jogador desconectado: joga no automático rapidinho
 const LOBBY_GRACE_MS = 30_000; // quanto tempo um desconectado segura o lugar no lobby
 const EMPTY_ROOM_MS = 5 * 60_000;
 
-const BOT_NAMES = ['Robô Zeca', 'Robô Cida', 'Robô Juca', 'Robô Lurdes', 'Robô Tonho', 'Robô Neide', 'Robô Biu', 'Robô Fia'];
-const COLORS = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#38d9a9', '#4dabf7', '#9775fa', '#f783ac', '#a9e34b', '#66d9e8'];
+const BOT_NAMES = [
+  "Robô Zeca",
+  "Robô Cida",
+  "Robô Juca",
+  "Robô Lurdes",
+  "Robô Tonho",
+  "Robô Neide",
+  "Robô Biu",
+  "Robô Fia",
+];
+const COLORS = [
+  "#ff6b6b",
+  "#ffa94d",
+  "#ffd43b",
+  "#69db7c",
+  "#38d9a9",
+  "#4dabf7",
+  "#9775fa",
+  "#f783ac",
+  "#a9e34b",
+  "#66d9e8",
+];
 
 const clean = (text, max) =>
-  String(text ?? '')
-    .replace(/[\u0000-\u001f]/g, '')
+  String(text ?? "")
+    .replace(/[\u0000-\u001f]/g, "")
     .trim()
     .slice(0, max);
 
@@ -28,7 +56,11 @@ export class RoomManager {
   create({ isPublic = true } = {}) {
     let code;
     do {
-      code = Array.from({ length: 5 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
+      code = Array.from(
+        { length: 5 },
+        () =>
+          "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)],
+      ).join("");
     } while (this.rooms.has(code));
     const room = new Room(this, code, isPublic);
     this.rooms.set(code, room);
@@ -48,13 +80,16 @@ export class RoomManager {
 
   listPublic() {
     return [...this.rooms.values()]
-      .filter((r) => r.settings.isPublic && r.members.some((m) => !m.isBot && m.connected))
+      .filter(
+        (r) =>
+          r.settings.isPublic && r.members.some((m) => !m.isBot && m.connected),
+      )
       .map((r) => ({
         code: r.code,
-        host: r.members.find((m) => m.id === r.hostId)?.name ?? '?',
+        host: r.members.find((m) => m.id === r.hostId)?.name ?? "?",
         players: r.members.length,
         max: MAX_PLAYERS,
-        playing: !!r.game && r.game.phase !== 'gameOver',
+        playing: !!r.game && r.game.phase !== "gameOver",
       }))
       .sort((a, b) => a.playing - b.playing || b.players - a.players);
   }
@@ -80,16 +115,24 @@ class Room {
 
   join(socket, { token, name }) {
     token = clean(token, 64);
-    name = clean(name, 16) || 'Jogador';
-    if (!token) return { ok: false, error: 'Sessão inválida' };
+    name = clean(name, 16) || "Jogador";
+    if (!token) return { ok: false, error: "Sessão inválida" };
 
     let m = this.members.find((x) => !x.isBot && x.token === token);
     if (m) {
       m.name = name;
-      if (m.socketId && m.socketId !== socket.id) this.io.sockets.sockets.get(m.socketId)?.leave(this.code);
+      if (m.socketId && m.socketId !== socket.id)
+        this.io.sockets.sockets.get(m.socketId)?.leave(this.code);
     } else {
-      if (this.members.length >= MAX_PLAYERS) return { ok: false, error: 'A sala está cheia' };
-      m = { id: randomUUID().slice(0, 8), token, name, color: this.freeColor(), isBot: false };
+      if (this.members.length >= MAX_PLAYERS)
+        return { ok: false, error: "A sala está cheia" };
+      m = {
+        id: randomUUID().slice(0, 8),
+        token,
+        name,
+        color: this.freeColor(),
+        isBot: false,
+      };
       this.members.push(m);
       this.system(`${name} entrou na sala`);
     }
@@ -102,7 +145,7 @@ class Room {
     socket.join(this.code);
     socket.data.code = this.code;
     socket.data.memberId = m.id;
-    socket.emit('chat:history', this.chat);
+    socket.emit("chat:history", this.chat);
     this.schedule(false);
     this.broadcast();
     return { ok: true, code: this.code };
@@ -117,8 +160,10 @@ class Room {
     if (this.game?.players.some((p) => p.id === memberId)) {
       this.apply(removePlayer(this.game, memberId));
     }
-    if (this.hostId === memberId) this.hostId = this.members.find((x) => !x.isBot)?.id ?? null;
-    if (!this.members.some((x) => !x.isBot)) return this.manager.delete(this.code);
+    if (this.hostId === memberId)
+      this.hostId = this.members.find((x) => !x.isBot)?.id ?? null;
+    if (!this.members.some((x) => !x.isBot))
+      return this.manager.delete(this.code);
     this.broadcast();
   }
 
@@ -128,42 +173,62 @@ class Room {
     if (!m || m.socketId !== socketId) return;
     m.connected = false;
     m.socketId = null;
-    const seated = this.game && this.game.phase !== 'gameOver' && this.game.players.some((p) => p.id === memberId);
+    const seated =
+      this.game &&
+      this.game.phase !== "gameOver" &&
+      this.game.players.some((p) => p.id === memberId);
     if (!seated) {
       m.graceTimer = setTimeout(() => this.leave(memberId), LOBBY_GRACE_MS);
     }
     if (!this.members.some((x) => !x.isBot && x.connected)) {
-      this.emptyTimer = setTimeout(() => this.manager.delete(this.code), EMPTY_ROOM_MS);
+      this.emptyTimer = setTimeout(
+        () => this.manager.delete(this.code),
+        EMPTY_ROOM_MS,
+      );
     }
     this.schedule(false);
     this.broadcast();
   }
 
   addBot(byId) {
-    if (byId !== this.hostId) return { ok: false, error: 'Só o anfitrião pode adicionar bots' };
-    if (this.game && this.game.phase !== 'gameOver') return { ok: false, error: 'Espere a partida acabar' };
-    if (this.members.length >= MAX_PLAYERS) return { ok: false, error: 'A sala está cheia' };
+    if (byId !== this.hostId)
+      return { ok: false, error: "Só o anfitrião pode adicionar bots" };
+    if (this.game && this.game.phase !== "gameOver")
+      return { ok: false, error: "Espere a partida acabar" };
+    if (this.members.length >= MAX_PLAYERS)
+      return { ok: false, error: "A sala está cheia" };
     const used = new Set(this.members.map((m) => m.name));
-    const name = BOT_NAMES.find((n) => !used.has(n)) ?? `Robô ${this.members.length + 1}`;
-    this.members.push({ id: randomUUID().slice(0, 8), name, color: this.freeColor(), isBot: true, connected: true });
+    const name =
+      BOT_NAMES.find((n) => !used.has(n)) ?? `Robô ${this.members.length + 1}`;
+    this.members.push({
+      id: randomUUID().slice(0, 8),
+      name,
+      color: this.freeColor(),
+      isBot: true,
+      connected: true,
+    });
     this.broadcast();
     return { ok: true };
   }
 
   kick(byId, memberId) {
-    if (byId !== this.hostId) return { ok: false, error: 'Só o anfitrião pode remover jogadores' };
-    if (memberId === byId) return { ok: false, error: 'Use o botão de sair' };
+    if (byId !== this.hostId)
+      return { ok: false, error: "Só o anfitrião pode remover jogadores" };
+    if (memberId === byId) return { ok: false, error: "Use o botão de sair" };
     const m = this.member(memberId);
-    if (!m) return { ok: false, error: 'Jogador não encontrado' };
-    if (m.socketId) this.io.to(m.socketId).emit('room:kicked');
+    if (!m) return { ok: false, error: "Jogador não encontrado" };
+    if (m.socketId) this.io.to(m.socketId).emit("room:kicked");
     this.leave(memberId);
     return { ok: true };
   }
 
   updateSettings(byId, patch) {
-    if (byId !== this.hostId) return { ok: false, error: 'Só o anfitrião muda as configurações' };
-    if (typeof patch.isPublic === 'boolean') this.settings.isPublic = patch.isPublic;
-    if ([15, 30, 45, 60].includes(patch.turnSeconds)) this.settings.turnSeconds = patch.turnSeconds;
+    if (byId !== this.hostId)
+      return { ok: false, error: "Só o anfitrião muda as configurações" };
+    if (typeof patch.isPublic === "boolean")
+      this.settings.isPublic = patch.isPublic;
+    if ([15, 30, 45, 60].includes(patch.turnSeconds))
+      this.settings.turnSeconds = patch.turnSeconds;
     this.broadcast();
     return { ok: true };
   }
@@ -186,38 +251,55 @@ class Room {
     msg.at = Date.now();
     this.chat.push(msg);
     if (this.chat.length > 60) this.chat.shift();
-    this.io.to(this.code).emit('chat', msg);
+    this.io.to(this.code).emit("chat", msg);
   }
 
   // ---------- partida ----------
 
   start(byId) {
-    if (byId !== this.hostId) return { ok: false, error: 'Só o anfitrião pode começar' };
-    if (this.game && this.game.phase !== 'gameOver') return { ok: false, error: 'A partida já começou' };
-    if (this.members.length < 2) return { ok: false, error: 'Precisa de pelo menos 2 jogadores (adicione um bot!)' };
-    this.game = createGame(this.members.map((m) => ({ id: m.id, name: m.name })));
-    this.system('A partida começou! Boa sorte 🍀');
+    if (byId !== this.hostId)
+      return { ok: false, error: "Só o anfitrião pode começar" };
+    if (this.game && this.game.phase !== "gameOver")
+      return { ok: false, error: "A partida já começou" };
+    if (this.members.length < 2)
+      return {
+        ok: false,
+        error: "Precisa de pelo menos 2 jogadores (adicione um bot!)",
+      };
+    this.game = createGame(
+      this.members.map((m) => ({ id: m.id, name: m.name })),
+    );
+    this.system("A partida começou! Boa sorte 🍀");
     this.apply(startRound(this.game));
     return { ok: true };
   }
 
   backToLobby(byId) {
-    if (byId !== this.hostId) return { ok: false, error: 'Só o anfitrião pode fazer isso' };
-    if (this.game && this.game.phase !== 'gameOver') return { ok: false, error: 'A partida ainda está rolando' };
+    if (byId !== this.hostId)
+      return { ok: false, error: "Só o anfitrião pode fazer isso" };
+    if (this.game && this.game.phase !== "gameOver")
+      return { ok: false, error: "A partida ainda está rolando" };
     this.game = null;
     this.clearTimer();
-    for (const m of this.members.filter((x) => !x.isBot && !x.connected)) this.leave(m.id);
+    for (const m of this.members.filter((x) => !x.isBot && !x.connected))
+      this.leave(m.id);
     this.broadcast();
     return { ok: true };
   }
 
   act(memberId, action) {
-    if (!this.game) return { ok: false, error: 'Nenhuma partida em andamento' };
+    if (!this.game) return { ok: false, error: "Nenhuma partida em andamento" };
     let result;
-    if (action.type === 'play') result = playCard(this.game, memberId, clean(action.cardId, 16), action.suit);
-    else if (action.type === 'draw') result = drawCard(this.game, memberId);
-    else if (action.type === 'pass') result = passTurn(this.game, memberId);
-    else return { ok: false, error: 'Ação desconhecida' };
+    if (action.type === "play")
+      result = playCard(
+        this.game,
+        memberId,
+        clean(action.cardId, 16),
+        action.suit,
+      );
+    else if (action.type === "draw") result = drawCard(this.game, memberId);
+    else if (action.type === "pass") result = passTurn(this.game, memberId);
+    else return { ok: false, error: "Ação desconhecida" };
     if (!result.ok) return result;
     this.apply(result);
     return { ok: true };
@@ -227,19 +309,30 @@ class Room {
   apply(result, { newTurn } = {}) {
     const events = result.events ?? [];
     const g = this.game;
-    newTurn ??= events.some((e) => ['play', 'pass', 'roundStart', 'left'].includes(e.type));
+    newTurn ??= events.some((e) =>
+      ["play", "pass", "roundStart", "left"].includes(e.type),
+    );
 
-    const end = events.find((e) => e.type === 'roundEnd');
-    if (end) this.system(`${this.nameOf(end.winnerId)} bateu e venceu a rodada ${end.round}!`);
-    for (const e of events) if (e.type === 'left' && g.phase !== 'gameOver') this.system(`${this.nameOf(e.playerId)} saiu da mesa`);
-    const over = events.find((e) => e.type === 'gameOver');
-    if (over) this.system(`🏆 ${this.nameOf(over.winnerId)} é o grande vencedor!`);
+    const end = events.find((e) => e.type === "roundEnd");
+    if (end)
+      this.system(
+        `${this.nameOf(end.winnerId)} bateu e venceu a rodada ${end.round}!`,
+      );
+    for (const e of events)
+      if (e.type === "left" && g.phase !== "gameOver")
+        this.system(`${this.nameOf(e.playerId)} saiu da mesa`);
+    const over = events.find((e) => e.type === "gameOver");
+    if (over)
+      this.system(`🏆 ${this.nameOf(over.winnerId)} é o grande vencedor!`);
 
     this.nextRoundAt = null;
-    if (g.phase === 'roundOver') {
+    if (g.phase === "roundOver") {
       this.clearTimer();
       this.nextRoundAt = Date.now() + ROUND_BREAK_MS;
-      this.timer = setTimeout(() => this.apply(startRound(this.game)), ROUND_BREAK_MS);
+      this.timer = setTimeout(
+        () => this.apply(startRound(this.game)),
+        ROUND_BREAK_MS,
+      );
     }
     this.schedule(newTurn);
     this.broadcast(events);
@@ -248,8 +341,8 @@ class Room {
   // Cuida do relógio da vez: bots jogam sozinhos, humanos têm um tempo limite.
   schedule(newTurn) {
     const g = this.game;
-    if (!g || g.phase !== 'playing') {
-      if (!g || g.phase === 'gameOver') this.clearTimer();
+    if (!g || g.phase !== "playing") {
+      if (!g || g.phase === "gameOver") this.clearTimer();
       this.deadline = null;
       return;
     }
@@ -258,19 +351,28 @@ class Room {
     clearTimeout(this.timer);
     if (!m || m.isBot || !m.connected) {
       const [min, max] = BOT_DELAY_MS;
-      const delay = m?.isBot ? min + Math.random() * (max - min) : AWAY_DELAY_MS;
+      const delay = m?.isBot
+        ? min + Math.random() * (max - min)
+        : AWAY_DELAY_MS;
       this.deadline = null;
-      this.timer = setTimeout(() => this.autoplay(current.id, !!m?.isBot), delay);
+      this.timer = setTimeout(
+        () => this.autoplay(current.id, !!m?.isBot),
+        delay,
+      );
       return;
     }
-    if (newTurn || !this.deadline) this.deadline = Date.now() + this.settings.turnSeconds * 1000;
+    if (newTurn || !this.deadline)
+      this.deadline = Date.now() + this.settings.turnSeconds * 1000;
     const turnKey = `${g.round}:${g.turn}`;
-    this.timer = setTimeout(() => {
-      if (this.game === g && `${g.round}:${g.turn}` === turnKey) {
-        this.system(`⏰ O tempo de ${m.name} acabou, jogada automática`);
-        this.autoplay(current.id, false);
-      }
-    }, Math.max(0, this.deadline - Date.now()));
+    this.timer = setTimeout(
+      () => {
+        if (this.game === g && `${g.round}:${g.turn}` === turnKey) {
+          this.system(`⏰ O tempo de ${m.name} acabou, jogada automática`);
+          this.autoplay(current.id, false);
+        }
+      },
+      Math.max(0, this.deadline - Date.now()),
+    );
   }
 
   // Joga pelo jogador. Bot faz um passo por vez (pra dar tempo de ver); humano ausente resolve a vez toda.
@@ -278,12 +380,13 @@ class Room {
     const g = this.game;
     const events = [];
     for (let i = 0; i < 3; i++) {
-      if (!g || g.phase !== 'playing' || g.players[g.turn].id !== playerId) break;
+      if (!g || g.phase !== "playing" || g.players[g.turn].id !== playerId)
+        break;
       const move = chooseMove(g, playerId);
       const r =
-        move.type === 'play'
+        move.type === "play"
           ? playCard(g, playerId, move.cardId, move.suit)
-          : move.type === 'draw'
+          : move.type === "draw"
             ? drawCard(g, playerId)
             : passTurn(g, playerId);
       if (!r.ok) break;
@@ -311,7 +414,7 @@ class Room {
   broadcast(events = []) {
     for (const m of this.members) {
       if (m.isBot || !m.connected || !m.socketId) continue;
-      this.io.to(m.socketId).emit('state', this.viewFor(m.id, events));
+      this.io.to(m.socketId).emit("state", this.viewFor(m.id, events));
     }
   }
 
@@ -342,11 +445,18 @@ class Room {
   }
 
   nameOf(id) {
-    return this.member(id)?.name ?? this.game?.players.find((p) => p.id === id)?.name ?? '?';
+    return (
+      this.member(id)?.name ??
+      this.game?.players.find((p) => p.id === id)?.name ??
+      "?"
+    );
   }
 
   freeColor() {
     const used = new Set(this.members.map((m) => m.color));
-    return COLORS.find((c) => !used.has(c)) ?? COLORS[this.members.length % COLORS.length];
+    return (
+      COLORS.find((c) => !used.has(c)) ??
+      COLORS[this.members.length % COLORS.length]
+    );
   }
 }

@@ -666,7 +666,7 @@ select:focus {
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
 }
 
-.flyer-inner .card.back {
+.flyer-inner .card.reverse {
   transform: rotateY(180deg);
 }
 
@@ -678,6 +678,46 @@ select:focus {
   border: 3px solid #fff;
   animation: ping 1s ease-out forwards;
   pointer-events: none;
+}
+
+/* quantas cartas o jogador comprou */
+.gain {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: 16px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 1px 9px;
+  border-radius: 99px;
+  border: 2px solid #fff;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  animation: gain 1.4s ease-out forwards;
+}
+
+@keyframes gain {
+  from {
+    transform: translateY(8px) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0) scale(1.1);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1);
+  }
+  75% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
 }
 
 @keyframes ping {
