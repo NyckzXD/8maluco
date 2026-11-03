@@ -31,6 +31,11 @@
   --card-w: 72px;
   --card-h: 104px;
   --shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+
+  /* fontes: Russo One para destaque, Barlow Condensed para números e Barlow Semi Condensed para o texto */
+  --font-display: 'Russo One', 'Barlow Condensed', system-ui, sans-serif;
+  --font-hud: 'Barlow Condensed', 'Barlow Semi Condensed', system-ui, sans-serif;
+  --font-body: 'Barlow Semi Condensed', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 * {
@@ -44,7 +49,9 @@ body {
 }
 
 body {
-  font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
+  /* a Russo One só tem peso 400: sem isso o navegador cria um negrito falso */
+  font-synthesis: none;
   color: var(--ink);
   background: radial-gradient(circle at 15% 0%, rgba(237, 28, 36, 0.22) 0, transparent 45%),
     radial-gradient(circle at 90% 100%, rgba(237, 28, 36, 0.12) 0, transparent 40%),
@@ -92,6 +99,17 @@ body {
   margin: 0 0 10px;
 }
 
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+h3 {
+  font-family: var(--font-hud);
+  font-weight: 700;
+}
+
 .btn {
   font: inherit;
   font-weight: 600;
@@ -125,6 +143,7 @@ body {
 }
 
 .btn-primary {
+  font-family: var(--font-display);
   background: var(--primary);
   color: var(--primary-ink);
   font-weight: 700;
@@ -136,6 +155,7 @@ body {
 }
 
 .btn-big {
+  font-family: var(--font-display);
   font-size: 1.15rem;
   padding: 14px 22px;
 }
@@ -280,6 +300,7 @@ select:focus {
 }
 
 .join-row input {
+  font-family: var(--font-hud);
   flex: 1;
   text-transform: uppercase;
   letter-spacing: 4px;
@@ -376,6 +397,7 @@ select:focus {
 }
 
 .room-code strong {
+  font-family: var(--font-hud);
   font-size: 1.8rem;
   letter-spacing: 6px;
   color: var(--red-text);
@@ -535,7 +557,8 @@ select:focus {
 }
 
 .round-label {
-  font-weight: 600;
+  font-family: var(--font-hud);
+  font-weight: 700;
   font-size: 1.1rem;
 }
 
@@ -630,6 +653,7 @@ select:focus {
 }
 
 .pile-count {
+  font-family: var(--font-hud);
   position: absolute;
   bottom: -10px;
   right: -10px;
@@ -725,8 +749,10 @@ select:focus {
   margin-left: 16px;
   background: var(--accent);
   color: #fff;
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-family: var(--font-hud);
+  font-weight: 800;
+  font-style: italic;
+  font-size: 0.95rem;
   padding: 1px 9px;
   border-radius: 99px;
   border: 2px solid var(--silver-300);
@@ -779,6 +805,7 @@ select:focus {
 }
 
 .active-suit b {
+  font-family: var(--font-hud);
   font-size: 1.3rem;
   vertical-align: -2px;
 }
@@ -885,6 +912,7 @@ select:focus {
 }
 
 .badge {
+  font-family: var(--font-hud);
   position: absolute;
   bottom: -4px;
   right: -8px;
@@ -968,6 +996,7 @@ select:focus {
 }
 
 .turn-banner {
+  font-family: var(--font-display);
   position: absolute;
   top: -40px;
   left: 50%;
@@ -1181,6 +1210,7 @@ select:focus {
 }
 
 .card.back::before {
+  font-family: var(--font-display);
   content: '8';
   color: #fff;
   font-size: calc(var(--card-w) * 0.5);
@@ -1264,6 +1294,11 @@ select:focus {
   font-size: 0.8rem;
   border-width: 2px;
   grid-row: span 2;
+}
+
+.score-list b {
+  font-family: var(--font-hud);
+  font-size: 1.1rem;
 }
 
 .score-list .nm {
@@ -1461,7 +1496,9 @@ select:focus {
 }
 
 .results .pts {
+  font-family: var(--font-hud);
   font-weight: 700;
+  font-size: 1.1rem;
 }
 
 .rules {
