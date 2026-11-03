@@ -1,0 +1,11 @@
+{
+  "name": "8 Maluco",
+  "short_name": "8 Maluco",
+  "description": "Jogo de cartas 8 Maluco multiplayer online",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#2b1055",
+  "theme_color": "#2b1055",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
