@@ -33,22 +33,51 @@
 
                 <div class="play-actions">
                   <button id="createBtn" class="btn btn-primary btn-big">Criar sala</button>
-                  <label class="check"><input type="checkbox" id="createPublic" checked /> Sala pública</label>
+                  <button id="roomsBtn" class="btn btn-big btn-rooms">Salas</button>
                   <div class="join-row">
                     <input id="codeInput" maxlength="5" placeholder="CÓDIGO" aria-label="Código da sala" autocomplete="off" />
                     <button id="joinBtn" class="btn">Entrar</button>
                   </div>
-                  <button id="rulesBtn" class="btn btn-ghost">📖 Como jogar</button>
                 </div>
               </div>
             </div>
 
-            <div class="home-section rooms-section">
-              <div class="panel-head">
-                <h2 class="section-title">Salas públicas</h2>
-                <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar">↻</button>
+            <div class="home-section howto-section">
+              <h2 class="section-title">Como jogar</h2>
+              <div id="howto" class="howto">
+                <div class="howto-slide">
+                  <div class="howto-card">9</div>
+                  <h3>1. Receba as cartas</h3>
+                  <p>Cada jogador começa a rodada com 9 cartas na mão</p>
+                </div>
+                <div class="howto-slide">
+                  <div class="howto-card red">♥</div>
+                  <h3>2. Siga o monte</h3>
+                  <p>Jogue uma carta da mesma pinta ou do mesmo número da carta do monte</p>
+                </div>
+                <div class="howto-slide">
+                  <div class="howto-card">+1</div>
+                  <h3>3. Sem carta? Compre</h3>
+                  <p>Compre uma carta do baralho. Se ela servir, pode jogar; se não, a vez passa</p>
+                </div>
+                <div class="howto-slide">
+                  <div class="howto-card red">8</div>
+                  <h3>4. Cartas especiais</h3>
+                  <p>Ás pula, 7 e 9 fazem comprar, o 8 troca a pinta e o Joker faz todo mundo comprar</p>
+                </div>
+                <div class="howto-slide">
+                  <div class="howto-card">0</div>
+                  <h3>5. Esvazie a mão</h3>
+                  <p>Quem termina as cartas fecha a rodada; os outros somam os pontos do que sobrou</p>
+                </div>
+                <div class="howto-slide">
+                  <div class="howto-card red">100</div>
+                  <h3>6. Fuja dos 100</h3>
+                  <p>Quem chega a 100 pontos está fora. Ganha o último que restar!</p>
+                </div>
               </div>
-              <ul id="roomList" class="room-list"></ul>
+              <div id="howtoDots" class="howto-dots"></div>
+              <button id="rulesBtn" class="btn btn-small btn-ghost">📖 Regras completas</button>
             </div>
           </div>
 
@@ -180,6 +209,17 @@
           <button id="againBtn" class="btn btn-primary btn-big">Voltar para a sala</button>
           <p id="againWait" class="muted">Esperando o anfitrião…</p>
         </div>
+      </div>
+    </div>
+
+    <div id="roomsModal" class="modal hidden">
+      <div class="modal-box wide rooms-box">
+        <div class="panel-head">
+          <h2>Salas públicas</h2>
+          <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar">↻</button>
+        </div>
+        <ul id="roomList" class="room-list"></ul>
+        <button class="btn btn-ghost" data-close>Fechar</button>
       </div>
     </div>
 

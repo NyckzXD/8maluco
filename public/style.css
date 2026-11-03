@@ -326,16 +326,9 @@ select:focus {
   letter-spacing: 0.5px;
 }
 
-.rooms-section .panel-head {
-  justify-content: center;
-  position: relative;
-  /* espaço para o botão de atualizar não encostar no título */
-  padding: 0 44px;
-}
-
-.rooms-section #refreshRooms {
-  position: absolute;
-  right: 0;
+/* o conteúdo acompanha a altura do "Como jogar" e fica centralizado */
+.play-section {
+  grid-template-rows: auto 1fr;
 }
 
 .play-grid {
@@ -375,9 +368,111 @@ select:focus {
   min-width: 0;
 }
 
-.play-actions .check {
-  justify-self: center;
+.btn-rooms {
+  background: var(--silver);
+  color: var(--black);
+  box-shadow: 0 4px 0 #7d7c7d;
+}
+
+.btn-rooms:active {
+  box-shadow: 0 2px 0 #7d7c7d;
+}
+
+/* ---------- como jogar ---------- */
+
+.howto-section {
+  justify-items: center;
+  text-align: center;
+}
+
+.howto {
+  display: grid;
+  width: 100%;
+}
+
+/* todos os passos ocupam a mesma célula, então a altura é a do maior */
+.howto-slide {
+  grid-area: 1 / 1;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(16px);
+  transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+}
+
+.howto-slide.active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.howto-card {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 128px;
+  margin: 4px 0 10px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--black);
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  transform: rotate(-6deg);
+  box-shadow: 0 6px 0 var(--silver), 0 10px 22px rgba(0, 0, 0, 0.5);
+}
+
+.howto-card.red {
+  color: var(--racing-red);
+  box-shadow: 0 6px 0 var(--red-700), 0 10px 22px rgba(0, 0, 0, 0.5);
+}
+
+.howto-slide h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.howto-slide p {
+  margin: 0;
   color: var(--silver);
+  max-width: 280px;
+}
+
+.howto-dots {
+  display: flex;
+  gap: 10px;
+}
+
+.howto-dots button {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: var(--line);
+  cursor: pointer;
+  transition: width 0.2s, background 0.2s;
+}
+
+.howto-dots button[aria-current='true'] {
+  width: 26px;
+  background: var(--racing-red);
+}
+
+.rooms-box .room-list {
+  text-align: left;
+  max-height: 50dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .howto-slide {
+    transition: none;
+    transform: none;
+  }
 }
 
 .join-row {

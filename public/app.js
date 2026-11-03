@@ -291,6 +291,7 @@ function askName() {
   const name = nameInput.value.trim();
   if (!name) {
     flash('Escolha um apelido primeiro 🙂');
+    $('#roomsModal').classList.add('hidden');
     nameInput.focus();
     return null;
   }
@@ -300,6 +301,7 @@ function askName() {
 
 function onJoined(res) {
   if (!res.ok) return false;
+  $('#roomsModal').classList.add('hidden');
   roomCode = res.code;
   setUrl(res.code);
   return true;
@@ -316,14 +318,14 @@ async function joinRoom(code) {
 $('#createBtn').addEventListener('click', async () => {
   const name = askName();
   if (!name) return;
-  onJoined(await emit('room:create', { token, name, isPublic: $('#createPublic').checked }));
+  onJoined(await emit('room:create', { token, name }));
 });
 
 $('#joinBtn').addEventListener('click', () => joinRoom(codeInput.value));
 codeInput.addEventListener('keydown', (e) => e.key === 'Enter' && joinRoom(codeInput.value));
 
 async function refreshRooms() {
-  if ($('#home').classList.contains('hidden')) return;
+  if ($('#roomsModal').classList.contains('hidden')) return;
   const res = await emit('room:list');
   const list = $('#roomList');
   list.replaceChildren();
@@ -346,6 +348,33 @@ async function refreshRooms() {
 
 $('#refreshRooms').addEventListener('click', refreshRooms);
 setInterval(refreshRooms, 5000);
+
+$('#roomsBtn').addEventListener('click', () => {
+  $('#roomsModal').classList.remove('hidden');
+  refreshRooms();
+});
+
+// Passo a passo do "Como jogar": troca sozinho e pelas bolinhas.
+const howtoSlides = $$('#howto .howto-slide');
+let howtoIndex = 0;
+let howtoTimer;
+
+function showHowto(i) {
+  howtoIndex = (i + howtoSlides.length) % howtoSlides.length;
+  howtoSlides.forEach((s, n) => s.classList.toggle('active', n === howtoIndex));
+  $$('#howtoDots button').forEach((d, n) => d.setAttribute('aria-current', n === howtoIndex));
+  clearTimeout(howtoTimer);
+  howtoTimer = setTimeout(() => showHowto(howtoIndex + 1), 5000);
+}
+
+howtoSlides.forEach((_, n) => {
+  const dot = el('button');
+  dot.type = 'button';
+  dot.title = `Passo ${n + 1}`;
+  dot.addEventListener('click', () => showHowto(n));
+  $('#howtoDots').append(dot);
+});
+showHowto(0);
 
 function leaveRoom() {
   socket.emit('room:leave');
