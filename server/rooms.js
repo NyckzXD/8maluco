@@ -12,7 +12,7 @@ import {
 import { chooseMove } from "../shared/bot.js";
 
 export const MAX_PLAYERS = 8;
-const ROUND_BREAK_MS = 9000;
+const ROUND_BREAK_MS = 9000; // só usado quando não sobrou nenhum humano conectado para clicar em "pronto"
 const BOT_DELAY_MS = [3000, 5000]; // bots esperam pelo menos 3s para dar tempo de acompanhar
 const AWAY_DELAY_MS = 1500; // jogador desconectado: joga no automático rapidinho
 const LOBBY_GRACE_MS = 30_000; // quanto tempo um desconectado segura o lugar no lobby
@@ -107,7 +107,7 @@ class Room {
     this.game = null;
     this.timer = null;
     this.deadline = null;
-    this.nextRoundAt = null;
+    this.ready = new Set(); // quem já clicou em "pronto" no intervalo entre rodadas
     this.emptyTimer = null;
   }
 
@@ -164,7 +164,7 @@ class Room {
       this.hostId = this.members.find((x) => !x.isBot)?.id ?? null;
     if (!this.members.some((x) => !x.isBot))
       return this.manager.delete(this.code);
-    this.broadcast();
+    if (!this.checkReady()) this.broadcast();
   }
 
   disconnect(memberId, socketId) {
@@ -187,7 +187,7 @@ class Room {
       );
     }
     this.schedule(false);
-    this.broadcast();
+    if (!this.checkReady()) this.broadcast();
   }
 
   addBot(byId) {
@@ -305,6 +305,38 @@ class Room {
     return { ok: true };
   }
 
+  setReady(memberId) {
+    const g = this.game;
+    if (!g || g.phase !== "roundOver")
+      return { ok: false, error: "A rodada ainda não acabou" };
+    if (!g.players.some((p) => p.id === memberId && !p.eliminated))
+      return { ok: false, error: "Você não está na próxima rodada" };
+    this.ready.add(memberId);
+    if (!this.checkReady()) this.broadcast();
+    return { ok: true };
+  }
+
+  // Humanos conectados que ainda vão jogar e não clicaram em "pronto". Bots e desconectados não seguram a mesa.
+  waitingOn() {
+    const g = this.game;
+    if (!g || g.phase !== "roundOver") return [];
+    return g.players
+      .filter((p) => !p.eliminated && !this.ready.has(p.id))
+      .map((p) => this.member(p.id))
+      .filter((m) => m && !m.isBot && m.connected)
+      .map((m) => m.id);
+  }
+
+  // Começa a próxima rodada se todo mundo estiver pronto. Retorna true se começou (e já avisou todos).
+  checkReady() {
+    const g = this.game;
+    if (!g || g.phase !== "roundOver" || this.waitingOn().length) return false;
+    if (!this.ready.size) return false; // ninguém para clicar: quem cuida é o timer de apply()
+    this.ready.clear();
+    this.apply(startRound(g));
+    return true;
+  }
+
   // Aplica o resultado de uma jogada: avisa todo mundo e agenda o próximo passo.
   apply(result, { newTurn } = {}) {
     const events = result.events ?? [];
@@ -325,14 +357,15 @@ class Room {
     if (over)
       this.system(`🏆 ${this.nameOf(over.winnerId)} é o grande vencedor!`);
 
-    this.nextRoundAt = null;
-    if (g.phase === "roundOver") {
+    if (end && g.phase === "roundOver") {
       this.clearTimer();
-      this.nextRoundAt = Date.now() + ROUND_BREAK_MS;
-      this.timer = setTimeout(
-        () => this.apply(startRound(this.game)),
-        ROUND_BREAK_MS,
-      );
+      this.ready.clear();
+      // Sem nenhum humano conectado na mesa não há quem clique em "pronto": segue sozinho.
+      if (!this.waitingOn().length)
+        this.timer = setTimeout(() => {
+          if (this.game === g && g.phase === "roundOver")
+            this.apply(startRound(g));
+        }, ROUND_BREAK_MS);
     }
     this.schedule(newTurn);
     this.broadcast(events);
@@ -400,7 +433,6 @@ class Room {
     clearTimeout(this.timer);
     this.timer = null;
     this.deadline = null;
-    this.nextRoundAt = null;
   }
 
   dispose() {
@@ -434,7 +466,8 @@ class Room {
       })),
       game: this.game ? viewFor(this.game, memberId) : null,
       deadline: this.deadline,
-      nextRoundAt: this.nextRoundAt,
+      ready: [...this.ready],
+      waitingOn: this.waitingOn(),
       serverNow: Date.now(),
       events,
     };

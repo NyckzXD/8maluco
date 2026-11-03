@@ -68,6 +68,7 @@ io.on('connection', (socket) => {
   socket.on('game:play', inRoom((room, me, d) => room.act(me, { type: 'play', cardId: d.cardId, suit: d.suit })));
   socket.on('game:draw', inRoom((room, me) => room.act(me, { type: 'draw' })));
   socket.on('game:pass', inRoom((room, me) => room.act(me, { type: 'pass' })));
+  socket.on('game:ready', inRoom((room, me) => room.setReady(me)));
 
   socket.on('disconnect', () => {
     const room = current();

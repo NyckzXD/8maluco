@@ -89,24 +89,89 @@ function setUrl(code) {
 
 // ---------- cartas ----------
 
+// Naipes desenhados num quadrado 100×100, usados por <use> nas cartas (não dependem da fonte nem viram emoji).
+document.body.insertAdjacentHTML(
+  'afterbegin',
+  `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="suit-H" viewBox="0 0 100 100"><path fill="currentColor" d="M50 94C22 68 3 52 3 30 3 14 15 4 29 4c10 0 17 6 21 15 4-9 11-15 21-15 14 0 26 10 26 26 0 22-19 38-47 64z"/></symbol>
+    <symbol id="suit-D" viewBox="0 0 100 100"><path fill="currentColor" d="M50 1 86 50 50 99 14 50z"/></symbol>
+    <symbol id="suit-S" viewBox="0 0 100 100"><path fill="currentColor" d="M50 2C40 24 5 40 5 63c0 13 10 22 22 22 9 0 16-4 20-11-1 11-5 18-14 24h34c-9-6-13-13-14-24 4 7 11 11 20 11 12 0 22-9 22-22C95 40 60 24 50 2z"/></symbol>
+    <symbol id="suit-C" viewBox="0 0 100 100"><g fill="currentColor"><circle cx="50" cy="27" r="21"/><circle cx="26" cy="60" r="21"/><circle cx="74" cy="60" r="21"/><path d="M42 40h16v20H42z"/><path d="M47 62c-1 15-5 26-15 36h36c-10-10-14-21-15-36z"/></g></symbol>
+    <symbol id="jester" viewBox="0 0 100 100"><g stroke="#1d1d28" stroke-width="2.5" stroke-linejoin="round">
+      <path fill="#d0102a" d="M24 72C18 54 10 42 6 30c14 2 26 14 30 30z"/><path fill="#d0102a" d="M76 72c6-18 14-30 18-42-14 2-26 14-30 30z"/>
+      <path fill="#2aa7d8" d="M28 72C30 44 40 22 50 8c10 14 20 36 22 64z"/>
+      <rect fill="#f5c43a" x="20" y="70" width="60" height="14" rx="4"/>
+      <path fill="#d0102a" d="M34 77l4-4 4 4-4 4zM46 77l4-4 4 4-4 4zM58 77l4-4 4 4-4 4z"/>
+      <circle fill="#f5c43a" cx="6" cy="30" r="5"/><circle fill="#f5c43a" cx="50" cy="8" r="5"/><circle fill="#f5c43a" cx="94" cy="30" r="5"/>
+    </g></symbol>
+  </defs></svg>`,
+);
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svg(tag, attrs = {}) {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+}
+
+function suitIcon(suit, className) {
+  const icon = svg('svg', { class: className, viewBox: '0 0 100 100' });
+  icon.append(svg('use', { href: `#suit-${suit}` }));
+  return icon;
+}
+
+// Disposição clássica dos pips: [coluna, altura de 0 (topo) a 1 (base)]. Os da metade de baixo ficam de ponta-cabeça.
+const L = 23.5, C = 36, R = 48.5;
+const PIPS = {
+  2: [[C, 0], [C, 1]],
+  3: [[C, 0], [C, 0.5], [C, 1]],
+  4: [[L, 0], [R, 0], [L, 1], [R, 1]],
+  5: [[L, 0], [R, 0], [C, 0.5], [L, 1], [R, 1]],
+  6: [[L, 0], [R, 0], [L, 0.5], [R, 0.5], [L, 1], [R, 1]],
+  7: [[L, 0], [R, 0], [C, 0.25], [L, 0.5], [R, 0.5], [L, 1], [R, 1]],
+  8: [[L, 0], [R, 0], [C, 0.25], [L, 0.5], [R, 0.5], [C, 0.75], [L, 1], [R, 1]],
+  9: [[L, 0], [R, 0], [L, 1 / 3], [R, 1 / 3], [C, 0.5], [L, 2 / 3], [R, 2 / 3], [L, 1], [R, 1]],
+  10: [[L, 0], [R, 0], [C, 1 / 6], [L, 1 / 3], [R, 1 / 3], [L, 2 / 3], [R, 2 / 3], [C, 5 / 6], [L, 1], [R, 1]],
+};
+
+// Pips no mesmo sistema de coordenadas da carta (72×104), então escalam junto com --card-w.
+function renderPips(card) {
+  const box = svg('svg', { class: 'pips', viewBox: '0 0 72 104' });
+  const pip = (x, y, size, flip) => {
+    const use = svg('use', { href: `#suit-${card.suit}`, x: x - size / 2, y: y - size / 2, width: size, height: size });
+    if (flip) use.setAttribute('transform', `rotate(180 ${x} ${y})`);
+    box.append(use);
+  };
+  if (card.rank === 'A') pip(C, 52, 26, false);
+  else for (const [x, t] of PIPS[card.rank]) pip(x, 21 + t * 62, 14, t > 0.5);
+  return box;
+}
+
 function renderCard(card) {
   const node = el('div', 'card');
   node.dataset.id = card.id;
   if (card.rank === 'JOKER') {
     node.classList.add('joker', 'special');
-    node.append(el('span', 'label', 'JOKER'), el('span', 'pip', '★'), el('span', 'label bottom', 'JOKER'));
+    const hat = svg('svg', { class: 'pips', viewBox: '0 0 100 100' });
+    hat.append(svg('use', { href: '#jester' }));
+    node.append(el('span', 'label', 'JOKER'), hat, el('span', 'label bottom', 'JOKER'));
     return node;
   }
   const suit = SUIT_INFO[card.suit];
   if (suit.color === 'red') node.classList.add('red');
   if (['A', '7', '8', '9'].includes(card.rank)) node.classList.add('special');
   for (const pos of ['tl', 'br']) {
-    const corner = el('span', `corner ${pos}`, card.rank);
-    corner.append(el('small', null, suit.symbol));
+    const corner = el('span', `corner ${pos}`);
+    corner.append(el('b', null, card.rank), suitIcon(card.suit));
     node.append(corner);
   }
-  if (['J', 'Q', 'K'].includes(card.rank)) node.append(el('span', 'face', card.rank));
-  else node.append(el('span', 'pip', suit.symbol));
+  if (['J', 'Q', 'K'].includes(card.rank)) {
+    const art = el('img', 'face');
+    art.src = `/cards/${card.rank}${card.suit}.webp`;
+    art.alt = '';
+    art.draggable = false;
+    node.append(art);
+  } else node.append(renderPips(card));
   return node;
 }
 
@@ -677,6 +742,7 @@ function renderRoundModal(g, s) {
     if (r.hand.length) mini.append(...sortHand(r.hand).map(renderCard));
     else mini.append(el('span', 'muted', 'bateu! 🎉'));
     handTd.append(mini);
+    if (s.ready.includes(r.playerId)) whoBox.append(el('span', 'ready-tag', '✓ pronto'));
     tr.append(who, handTd, el('td', 'pts', `+${r.points}`), el('td', 'pts', r.total));
     rows.append(tr);
   }
@@ -685,9 +751,23 @@ function renderRoundModal(g, s) {
   $('#againBtn').classList.toggle('hidden', s.hostId !== s.me);
   $('#againWait').classList.toggle('hidden', s.hostId === s.me);
   if (over) $('#roundFooter').textContent = 'Fim de jogo! Todos os outros chegaram a 100 pontos.';
+
+  // Entre rodadas: a próxima só começa quando todo mundo que ainda está na mesa clicar em "pronto".
+  const playing = g.players.some((p) => p.id === s.me && !p.eliminated);
+  const imReady = s.ready.includes(s.me);
+  $('#readyActions').classList.toggle('hidden', over || !playing);
+  $('#readyBtn').disabled = imReady;
+  $('#readyBtn').textContent = imReady ? '✓ Pronto!' : 'Estou pronto!';
+  if (!over) {
+    const waiting = s.waitingOn.filter((id) => id !== s.me).map(nameOf);
+    $('#roundFooter').textContent = !waiting.length
+      ? imReady || !playing ? 'Começando a próxima rodada…' : 'Só falta você!'
+      : `Esperando ${waiting.join(', ')} ficar${waiting.length > 1 ? 'em' : ''} pronto${waiting.length > 1 ? 's' : ''}…`;
+  }
 }
 
 $('#againBtn').addEventListener('click', () => emit('room:lobby'));
+$('#readyBtn').addEventListener('click', () => emit('game:ready'));
 
 // Mensagens curtas na mesa e no log para cada coisa que aconteceu.
 function announce(events, g, s) {
@@ -782,7 +862,7 @@ function render(prev, s) {
   }
 }
 
-// Relógio da vez e contagem para a próxima rodada.
+// Relógio da vez.
 setInterval(() => {
   const g = state?.game;
   if (!g) return;
@@ -795,10 +875,6 @@ setInterval(() => {
   bar.classList.toggle('low', p < 0.2);
   $('i', bar).style.transform = `scaleX(${p})`;
   $('#seats .seat.turn .ring')?.style.setProperty('--p', p);
-  if (g.phase === 'roundOver' && state.nextRoundAt) {
-    const secs = Math.max(0, Math.ceil((state.nextRoundAt - now) / 1000));
-    $('#roundFooter').textContent = `Próxima rodada em ${secs}s…`;
-  }
 }, 200);
 
 // ---------- painéis e modais ----------
