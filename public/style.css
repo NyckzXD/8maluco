@@ -241,19 +241,36 @@ select:focus {
 /* ---------- tela inicial ---------- */
 
 .home-wrap {
-  max-width: 480px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 32px 16px;
+  min-height: 100dvh;
   display: grid;
-  gap: 16px;
-  justify-items: stretch;
+  align-content: center;
+}
+
+.home-card {
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface) 70%);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.08), 0 24px 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.home-head {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
 }
 
 .logo {
   margin: 0;
   text-align: center;
   color: #fff;
-  font-size: clamp(2.6rem, 10vw, 3.8rem);
+  font-size: clamp(2.6rem, 8vw, 4.2rem);
   letter-spacing: 1px;
   text-shadow: 0 4px 0 var(--red-700);
 }
@@ -273,25 +290,94 @@ select:focus {
 }
 
 .tagline {
-  margin: -6px 0 6px;
+  margin: 0;
   text-align: center;
   color: var(--silver);
+  font-family: var(--font-hud);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-.home-panel {
+.home-body {
   display: grid;
-  gap: 14px;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 18px;
 }
 
-.home-actions {
-  display: flex;
+.home-section {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 22px;
+  border-radius: var(--radius);
+  background: var(--black);
+  border: 1px solid var(--line);
+  min-width: 0;
+}
+
+.home-section h2.section-title {
+  margin: 0;
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--red-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rooms-section .panel-head {
+  justify-content: center;
+  position: relative;
+  /* espaço para o botão de atualizar não encostar no título */
+  padding: 0 44px;
+}
+
+.rooms-section #refreshRooms {
+  position: absolute;
+  right: 0;
+}
+
+.play-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 28px;
 }
 
-.home-actions .btn {
-  flex: 1;
+.profile {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: 200px;
+}
+
+.profile input {
+  width: 100%;
+  font-weight: 600;
+  text-align: center;
+}
+
+.avatar-xl {
+  width: 150px;
+  height: 150px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 4.2rem;
+  border-width: 6px;
+  background: radial-gradient(circle at 35% 30%, var(--red-400), var(--racing-red) 45%, var(--red-700));
+  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.18), 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.play-actions {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.play-actions .check {
+  justify-self: center;
+  color: var(--silver);
 }
 
 .join-row {
@@ -308,13 +394,24 @@ select:focus {
   text-align: center;
 }
 
+.home-foot {
+  margin: 0 -28px -28px;
+  padding: 16px 28px;
+  background: var(--black);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .room-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
+  align-content: start;
   gap: 8px;
-  max-height: 260px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -1564,6 +1661,33 @@ select:focus {
     --card-h: 84px;
   }
 
+  .home-wrap {
+    padding: 16px;
+    align-content: start;
+  }
+
+  .home-card {
+    padding: 20px 16px;
+    gap: 18px;
+  }
+
+  .home-body {
+    grid-template-columns: 1fr;
+  }
+
+  .home-section {
+    padding: 18px 14px;
+  }
+
+  .home-section h2.section-title {
+    font-size: 1.25rem;
+  }
+
+  .home-foot {
+    margin: 0 -16px -20px;
+    padding: 14px 16px;
+  }
+
   .lobby-layout {
     grid-template-columns: 1fr;
     min-height: auto;
@@ -1629,5 +1753,22 @@ select:focus {
 
   .results .hide-sm {
     display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .play-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .profile {
+    width: 100%;
+  }
+
+  .avatar-xl {
+    width: 112px;
+    height: 112px;
+    font-size: 3.2rem;
   }
 }

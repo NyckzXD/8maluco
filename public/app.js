@@ -280,6 +280,13 @@ const nameInput = $('#nameInput');
 const codeInput = $('#codeInput');
 nameInput.value = store.get('om_name') ?? '';
 
+// Por enquanto o avatar da tela inicial mostra só a inicial do apelido.
+function updateHomeAvatar() {
+  $('#homeAvatar').textContent = nameInput.value.trim().charAt(0).toUpperCase() || '?';
+}
+nameInput.addEventListener('input', updateHomeAvatar);
+updateHomeAvatar();
+
 function askName() {
   const name = nameInput.value.trim();
   if (!name) {

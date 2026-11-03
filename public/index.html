@@ -16,35 +16,47 @@
     <!-- ===== Tela inicial ===== -->
     <section id="home" class="screen">
       <div class="home-wrap">
-        <h1 class="logo"><span class="logo-8">8</span> Maluco</h1>
-        <p class="tagline">O jogo de cartas mais maluco da mesa, agora online!</p>
+        <div class="home-card">
+          <header class="home-head">
+            <h1 class="logo"><span class="logo-8">8</span> Maluco</h1>
+            <p class="tagline">O jogo de cartas mais maluco da mesa, agora online!</p>
+          </header>
 
-        <div class="panel home-panel">
-          <label class="field">
-            <span>Seu apelido</span>
-            <input id="nameInput" maxlength="16" placeholder="Ex.: Tio Zé" autocomplete="nickname" />
-          </label>
+          <div class="home-body">
+            <div class="home-section play-section">
+              <h2 class="section-title">Jogue agora</h2>
+              <div class="play-grid">
+                <div class="profile">
+                  <div id="homeAvatar" class="avatar avatar-xl">?</div>
+                  <input id="nameInput" maxlength="16" placeholder="Seu apelido" aria-label="Seu apelido" autocomplete="nickname" />
+                </div>
 
-          <div class="home-actions">
-            <button id="createBtn" class="btn btn-primary btn-big">Criar sala</button>
-            <label class="check"><input type="checkbox" id="createPublic" checked /> Sala pública</label>
+                <div class="play-actions">
+                  <button id="createBtn" class="btn btn-primary btn-big">Criar sala</button>
+                  <label class="check"><input type="checkbox" id="createPublic" checked /> Sala pública</label>
+                  <div class="join-row">
+                    <input id="codeInput" maxlength="5" placeholder="CÓDIGO" aria-label="Código da sala" autocomplete="off" />
+                    <button id="joinBtn" class="btn">Entrar</button>
+                  </div>
+                  <button id="rulesBtn" class="btn btn-ghost">📖 Como jogar</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-section rooms-section">
+              <div class="panel-head">
+                <h2 class="section-title">Salas públicas</h2>
+                <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar">↻</button>
+              </div>
+              <ul id="roomList" class="room-list"></ul>
+            </div>
           </div>
 
-          <div class="join-row">
-            <input id="codeInput" maxlength="5" placeholder="CÓDIGO" autocomplete="off" />
-            <button id="joinBtn" class="btn">Entrar</button>
-          </div>
+          <footer class="home-foot">
+            8 Maluco é um jogo de cartas para 2 a 8 pessoas: livre-se de todas as cartas da mão seguindo a pinta ou o
+            número da carta do monte. Quem chegar a 100 pontos está fora — ganha o último que restar!
+          </footer>
         </div>
-
-        <div class="panel rooms-panel">
-          <div class="panel-head">
-            <h2>Salas públicas</h2>
-            <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar">↻</button>
-          </div>
-          <ul id="roomList" class="room-list"></ul>
-        </div>
-
-        <button id="rulesBtn" class="btn btn-ghost">📖 Como jogar</button>
       </div>
     </section>
 
