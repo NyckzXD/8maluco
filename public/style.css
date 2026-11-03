@@ -742,15 +742,21 @@ select:focus {
 
 /* ---------- mesa ---------- */
 
+/* A 1ª coluna é um "espelho" vazio do painel lateral (placar/chat), para que
+   a mesa fique centralizada na tela. Ela cresce de 0 a 300px conforme a tela
+   alarga, então em telas médias a mesa não perde espaço. */
 .game-layout {
+  --side-w: 300px;
+  --mirror-w: clamp(0px, 100vw - 1000px, var(--side-w));
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: var(--mirror-w) minmax(0, 1fr) var(--side-w);
   height: 100dvh;
   gap: 12px;
   padding: 12px;
 }
 
 .game-main {
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1852,6 +1858,10 @@ select:focus {
     grid-template-columns: 1fr;
     padding: 8px;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .game-main {
+    grid-column: auto;
   }
 
   .side-toggle {
