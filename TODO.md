@@ -1,7 +1,7 @@
 # Alterações futuras
 
 - [x] **Mudar a fonte do projeto**: Russo One (destaque), Barlow Condensed (números) e Barlow Semi Condensed (texto), com tokens `--font-*` em `public/style.css`.
-- [ ] **Tela inicial com card grande**: destacar um card grande na tela inicial (`#home`).
+- [x] **Tela inicial com card grande**: card grande na tela inicial (`#home`) com "Jogue agora" (avatar + apelido + ações) e salas públicas lado a lado.
 - [ ] **Ícones nos botões iniciais**: colocar ícones nos botões da tela inicial (Criar sala, Entrar, Atualizar, Como jogar).
 - [ ] **Centralizar a mesa de jogo no desktop**: ajustar `.game-layout` / `.table` para a mesa ficar centralizada em telas grandes.
 
