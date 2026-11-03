@@ -1165,6 +1165,43 @@ select:focus {
   flex: 1;
 }
 
+.side .chat-panel .panel-head {
+  cursor: pointer;
+  user-select: none;
+}
+
+.side .chat-panel .panel-head h3 {
+  margin: 0;
+}
+
+.chat-toggle {
+  display: none;
+  position: relative;
+}
+
+.side .chat-toggle {
+  display: inline-block;
+}
+
+.chat-toggle .chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.side .chat-panel.collapsed {
+  flex: 0 0 auto;
+  padding-block: 10px;
+}
+
+.side .chat-panel.collapsed .chat-log,
+.side .chat-panel.collapsed .chat-form {
+  display: none;
+}
+
+.side .chat-panel.collapsed .chevron {
+  transform: rotate(-90deg);
+}
+
 .score-list {
   list-style: none;
   margin: 0;

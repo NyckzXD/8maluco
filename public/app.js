@@ -229,6 +229,25 @@ for (const panel of $$('[data-chat]')) {
   });
 }
 
+// Chat da mesa recolhível, para dar mais espaço e foco ao jogo.
+const gameChat = $('.side .chat-panel');
+const chatToggle = $('.chat-toggle', gameChat);
+function setChatCollapsed(collapsed) {
+  gameChat.classList.toggle('collapsed', collapsed);
+  chatToggle.setAttribute('aria-expanded', String(!collapsed));
+  chatToggle.title = collapsed ? 'Abrir chat' : 'Recolher chat';
+  store.set('om_chat_collapsed', collapsed ? '1' : '0');
+  if (!collapsed) {
+    $('.chat-unread', gameChat).classList.add('hidden');
+    const log = $('.chat-log', gameChat);
+    log.scrollTop = log.scrollHeight;
+  }
+}
+setChatCollapsed(store.get('om_chat_collapsed') === '1');
+$('.panel-head', gameChat).addEventListener('click', () => {
+  setChatCollapsed(!gameChat.classList.contains('collapsed'));
+});
+
 function addChat(msg) {
   for (const log of $$('.chat-log')) {
     const li = el('li', msg.system ? 'system' : msg.log ? 'log' : '');
@@ -245,6 +264,9 @@ function addChat(msg) {
   }
   if (!msg.log && !$('.side').classList.contains('open') && !$('#game').classList.contains('hidden')) {
     $('#unread').classList.remove('hidden');
+  }
+  if (!msg.log && gameChat.classList.contains('collapsed')) {
+    $('.chat-unread', gameChat).classList.remove('hidden');
   }
 }
 
@@ -787,7 +809,6 @@ function announce(events, g, s) {
         logLine(`— Rodada ${e.round}: ${nameOf(e.dealerId)} deu as cartas —`);
         break;
       case 'play':
-        logLine(`${who} jogou ${cardName(e.card)}`);
         sounds.card();
         if (e.card.rank === 'JOKER') toast('🃏 Joker! Todo mundo compra 1');
         break;
@@ -798,7 +819,6 @@ function announce(events, g, s) {
       case 'penalty': {
         const qty = `${e.count} carta${e.count > 1 ? 's' : ''}`;
         if (!(jokerPlayed && e.reason === 'JOKER')) toast(`${e.reason === '7' ? '7️⃣' : '9️⃣'} ${who} compra ${qty}`);
-        logLine(`${who} comprou ${qty} (${e.reason === 'JOKER' ? 'Joker' : e.reason})`);
         if (e.playerId === s.me) sounds.bad();
         break;
       }
@@ -808,9 +828,6 @@ function announce(events, g, s) {
         logLine(`${who} pediu ${suit.name}`);
         break;
       }
-      case 'draw':
-        logLine(`${who} comprou uma carta`);
-        break;
       case 'pass':
         logLine(`${who} passou a vez`);
         break;
