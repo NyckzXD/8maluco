@@ -1644,6 +1644,59 @@ select:focus {
   outline: none;
 }
 
+/* Janela de pintas com a mão recolhida logo abaixo. */
+#suitModal {
+  align-content: center;
+  gap: 18px;
+  overflow: hidden;
+}
+
+#suitModal .modal-box {
+  max-height: calc(100dvh - var(--card-h) - 70px);
+}
+
+#suitModal {
+  transition: background 0.25s;
+}
+
+#suitModal .modal-box {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+#suitModal.closing {
+  background: transparent;
+}
+
+#suitModal.closing .modal-box {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.suit-hand {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 560px);
+  justify-self: center;
+  pointer-events: none;
+}
+
+.suit-hand:empty {
+  display: none;
+}
+
+.suit-hand .card {
+  flex: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+}
+
+.suit-hand .card + .card {
+  margin-left: var(--overlap, -30px);
+}
+
+.hand .card.lifted {
+  visibility: hidden;
+}
+
 .results {
   width: 100%;
   border-collapse: collapse;
