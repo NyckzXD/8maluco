@@ -132,25 +132,40 @@ h3 {
   vertical-align: -0.2em;
 }
 
+/* botões no estilo "button-6" da Design and Code (css-buttons): a face fica
+   levantada sobre um bloco de cor deslocado e sobe mais no hover.
+   Cada variante só troca as variáveis abaixo. */
 .btn {
+  --btn-face: var(--surface-3);
+  --btn-ink: var(--ink);
+  --btn-layer: var(--silver);
+  --btn-border: #000;
+  --btn-rest: 4px;
+  --btn-lift: var(--btn-rest);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.45em;
   font: inherit;
   font-weight: 600;
-  border: 0;
-  border-radius: 12px;
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
   padding: 10px 16px;
-  background: var(--surface-3);
-  color: var(--ink);
+  background: var(--btn-face);
+  color: var(--btn-ink);
   cursor: pointer;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
-  transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
+  transform: translate(calc(var(--btn-lift) * -1), calc(var(--btn-lift) * -1));
+  box-shadow: var(--btn-lift) var(--btn-lift) 0 var(--btn-layer);
+  transition:
+    transform 0.3s cubic-bezier(0.7, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.7, 0, 0.2, 1),
+    filter 0.15s;
 }
 
-.btn:hover {
-  filter: brightness(1.12);
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    --btn-lift: calc(var(--btn-rest) * 2);
+  }
 }
 
 .btn:focus-visible {
@@ -158,9 +173,10 @@ h3 {
   outline-offset: 2px;
 }
 
-.btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+/* ao clicar a face desce e encosta no bloco */
+.btn:active:not(:disabled) {
+  --btn-lift: 0px;
+  transition-duration: 0.08s;
 }
 
 .btn:disabled {
@@ -169,15 +185,11 @@ h3 {
 }
 
 .btn-primary {
+  --btn-face: var(--primary);
+  --btn-ink: var(--primary-ink);
+  --btn-layer: var(--silver-300);
   font-family: var(--font-display);
-  background: var(--primary);
-  color: var(--primary-ink);
   font-weight: 700;
-  box-shadow: 0 4px 0 var(--primary-edge);
-}
-
-.btn-primary:active {
-  box-shadow: 0 2px 0 var(--primary-edge);
 }
 
 .btn-big {
@@ -187,19 +199,21 @@ h3 {
 }
 
 .btn-small {
+  --btn-rest: 3px;
   padding: 6px 12px;
   font-size: 0.9rem;
 }
 
 .btn-ghost {
-  background: rgba(194, 193, 194, 0.1);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(194, 193, 194, 0.22);
+  --btn-face: rgba(194, 193, 194, 0.1);
+  --btn-ink: #fff;
+  --btn-border: rgba(194, 193, 194, 0.22);
+  --btn-layer: rgba(194, 193, 194, 0.35);
 }
 
 .panel .btn-ghost {
-  background: var(--surface-2);
-  color: var(--ink);
+  --btn-face: var(--surface-2);
+  --btn-ink: var(--ink);
 }
 
 input,
@@ -395,13 +409,9 @@ select:focus {
 }
 
 .btn-rooms {
-  background: var(--silver);
-  color: var(--black);
-  box-shadow: 0 4px 0 #7d7c7d;
-}
-
-.btn-rooms:active {
-  box-shadow: 0 2px 0 #7d7c7d;
+  --btn-face: var(--silver);
+  --btn-ink: var(--black);
+  --btn-layer: var(--primary);
 }
 
 /* ---------- como jogar ---------- */
