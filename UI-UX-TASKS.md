@@ -20,7 +20,7 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
   - Onde: `onCardClick()` em `public/app.js`
   - Pronto quando: o primeiro toque seleciona (a carta sobe) e o segundo toque, ou um botão "Jogar", confirma. Tocar em outra carta troca a seleção. Opcional: arrastar até o monte.
 
-- [ ] **3. Histórico das jogadas**
+- [x] **3. Histórico das jogadas**
   O evento `play` só toca um som. O log mostra pulos e pintas, mas não quem jogou qual carta.
   - Onde: `announce()` em `public/app.js`
   - Pronto quando: o log mostra "Robô Cida jogou 9 de Paus" para toda jogada e compra. Opcional: mostrar a última jogada (avatar + carta) perto do monte.
@@ -62,7 +62,7 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
   - Onde: `#toasts`, `#turnBanner` e `flash()` em `public/app.js`
   - Pronto quando: toasts e banner usam `aria-live="polite"` e os erros usam `role="alert"`.
 
-- [ ] **11. Respeitar o reduced-motion em todas as animações**
+- [x] **11. Respeitar o reduced-motion em todas as animações**
   Ficam rodando sem parar, mesmo com reduced-motion: a seta de direção (`spin-ccw`), o avatar da vez (`bob`), o baralho (`glow`) e os efeitos `pulse`, `shake`, `gain` e `fresh`.
   - Onde: `public/style.css` (hoje só o carrossel tem `@media (prefers-reduced-motion)`)
   - Pronto quando: um bloco global de `prefers-reduced-motion: reduce` desliga as animações infinitas e encurta as outras.
@@ -72,7 +72,7 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
   - Onde: `.table`, `.felt` e `seatPosition()` em `public/app.js`
   - Pronto quando: a mesa encolhe na vertical no celular e o espaço que sobra vai para a mão (task 1).
 
-- [ ] **13. Aviso de erro longe da mão**
+- [x] **13. Aviso de erro longe da mão**
   "Essa carta não combina…" aparece em cima da mão (`.flash` com `bottom: 24px`), onde o jogador está olhando e tocando.
   - Onde: `.flash` em `public/style.css`
   - Pronto quando: durante a partida, o aviso aparece acima do banner da vez ou no topo, sem cobrir as cartas.
@@ -99,7 +99,7 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
   - Onde: `.btn-rooms` e `.join-row` em `public/style.css`
   - Pronto quando: há um só botão principal (Criar sala). "Salas" vira secundário, como os ghost, e o "Entrar" tem a mesma altura do campo.
 
-- [ ] **18. Estado desabilitado claro**
+- [x] **18. Estado desabilitado claro**
   "Precisa de 2 jogadores" vira um vermelho lamacento com 50% de opacidade e parece quebrado.
   - Onde: `.btn:disabled` em `public/style.css` e `renderLobby()` em `public/app.js`
   - Pronto quando: o botão desabilitado fica neutro (cinza) e mantém o texto "Começar partida", com "Precisa de pelo menos 2 jogadores" como texto de ajuda embaixo.

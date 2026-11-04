@@ -62,7 +62,8 @@ function speak(text, { urgent = false } = {}) {
 // Aviso rápido no rodapé. Por padrão é um erro (lido na hora); `info` é lido sem interromper.
 function flash(text, { info = false } = {}) {
   const el = document.createElement('div');
-  el.className = 'flash';
+  // na partida o aviso vai para o topo, longe da mão
+  el.className = $('#game').classList.contains('hidden') ? 'flash' : 'flash in-game';
   el.setAttribute('aria-hidden', 'true');
   el.textContent = text;
   document.body.append(el);
@@ -414,7 +415,9 @@ $('.panel-head', gameChat).addEventListener('click', () => {
 
 function addChat(msg) {
   for (const log of $$('.chat-log')) {
-    const li = el('li', msg.system ? 'system' : msg.log ? 'log' : '');
+    const li = el('li', msg.system ? 'system' : msg.log ? (msg.who ? 'log play' : 'log') : '');
+    // jogadas e compras: só o nome de quem agiu fica em vermelho
+    if (msg.who) li.append(el('b', 'log-who', msg.who), ' ');
     if (msg.from) {
       const who = el('b', null, `${msg.from}: `);
       who.style.color = msg.color;
@@ -437,6 +440,13 @@ function addChat(msg) {
 function logLine(text) {
   addChat({ log: true, text });
 }
+
+// Linha do histórico de jogadas: "<nome> jogou 9 de Paus".
+function logPlay(who, text) {
+  addChat({ log: true, who, text });
+}
+
+const cardsLabel = (n) => `${n} carta${n > 1 ? 's' : ''}`;
 
 // ---------- tela inicial ----------
 
@@ -726,7 +736,7 @@ function renderLobby(s) {
   $('#setTurn').value = String(s.settings.turnSeconds);
   $('#addBotBtn').disabled = s.members.length >= s.maxPlayers;
   $('#startBtn').disabled = s.members.length < 2;
-  $('#startBtn').textContent = s.members.length < 2 ? 'Precisa de 2 jogadores' : 'Começar partida';
+  $('#startHint').classList.toggle('hidden', s.members.length >= 2);
 }
 
 // ---------- mesa ----------
@@ -1372,14 +1382,19 @@ function announce(events, g, s) {
       case 'play':
         sounds.card();
         if (e.card.rank === 'JOKER') toast('Joker! Todo mundo compra 1');
+        logPlay(who, `jogou ${e.card.rank === 'JOKER' ? 'o Joker' : cardName(e.card)}`);
+        break;
+      case 'draw':
+        logPlay(who, `comprou ${cardsLabel(e.count)}`);
         break;
       case 'skip':
         toast(`${who === 'Você' ? 'Você foi pulado' : `${who} foi pulado`}!`);
         logLine(`${who} foi pulado`);
         break;
       case 'penalty': {
-        const qty = `${e.count} carta${e.count > 1 ? 's' : ''}`;
+        const qty = cardsLabel(e.count);
         if (!(jokerPlayed && e.reason === 'JOKER')) toast(`${who} compra ${qty}`);
+        if (e.count) logPlay(who, `comprou ${qty}`);
         if (e.playerId === s.me) sounds.bad();
         break;
       }

@@ -38,9 +38,11 @@
   --shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
 
   /* fontes: Russo One para destaque, Barlow Condensed para números e Barlow Semi Condensed para o texto */
-  --font-display: 'Russo One', 'Barlow Condensed', system-ui, sans-serif;
-  --font-hud: 'Barlow Condensed', 'Barlow Semi Condensed', system-ui, sans-serif;
-  --font-body: 'Barlow Semi Condensed', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: "Russo One", "Barlow Condensed", system-ui, sans-serif;
+  --font-hud:
+    "Barlow Condensed", "Barlow Semi Condensed", system-ui, sans-serif;
+  --font-body:
+    "Barlow Semi Condensed", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 * {
@@ -59,7 +61,13 @@ body {
   font-synthesis: none;
   color: var(--ink);
   /* centro quase preto, bordas em vermelho escuro */
-  background: radial-gradient(ellipse 70% 65% at 50% 48%, #0b0808 0, #0b0808 35%, #1e0405 70%, #3d0709 100%);
+  background: radial-gradient(
+    ellipse 70% 65% at 50% 48%,
+    #0b0808 0,
+    #0b0808 35%,
+    #1e0405 70%,
+    #3d0709 100%
+  );
   background-color: var(--bg);
   background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
@@ -68,13 +76,15 @@ body {
 
 /* cena de fundo: pintas 3D, cartas e rede de linhas nas bordas (public/bg-scene.svg) */
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background: url(bg-scene.svg) 0 0 / 100% 100% no-repeat;
-  transition: opacity 0.4s, filter 0.4s;
+  transition:
+    opacity 0.4s,
+    filter 0.4s;
 }
 
 /* Na mesa a cena fica apagada e desfocada, para não competir com as cartas. A home mantém a cena inteira. */
@@ -182,7 +192,10 @@ h3 {
   background: var(--btn-face);
   color: var(--btn-ink);
   cursor: pointer;
-  transform: translate(calc(var(--btn-rest) - var(--btn-lift)), calc(var(--btn-rest) - var(--btn-lift)));
+  transform: translate(
+    calc(var(--btn-rest) - var(--btn-lift)),
+    calc(var(--btn-rest) - var(--btn-lift))
+  );
   box-shadow: var(--btn-lift) var(--btn-lift) 0 var(--btn-layer);
   transition:
     transform 0.3s cubic-bezier(0.7, 0, 0.2, 1),
@@ -207,16 +220,28 @@ h3 {
   transition-duration: 0.08s;
 }
 
+/* desabilitado: neutro (cinza), sem a cor da variante */
 .btn:disabled {
-  opacity: 0.5;
+  --btn-face: var(--surface-2);
+  --btn-ink: var(--muted);
+  --btn-layer: var(--surface-3);
+  --btn-border: var(--line);
   cursor: not-allowed;
+}
+
+/* texto de ajuda logo abaixo de um botão desabilitado */
+.start-hint {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 /* só o botão principal tem o bloco prata, que é o que mais chama atenção */
 .btn-primary {
   --btn-face: var(--primary);
   --btn-ink: var(--primary-ink);
-  --btn-layer: var(--silver-300);
+  --btn-layer: var(--red-700);
   font-family: var(--font-display);
   font-weight: 700;
 }
@@ -236,7 +261,7 @@ h3 {
 
 /* área de toque de pelo menos 44×44px, mesmo com o botão pequeno */
 .btn-small::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 50%;
   top: 50%;
@@ -327,7 +352,9 @@ select:focus {
   border-radius: var(--r-lg);
   background: linear-gradient(180deg, var(--surface-2), var(--surface) 70%);
   border: 1px solid var(--line);
-  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.08), 0 24px 60px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 0 0 6px rgba(237, 28, 36, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
 
@@ -392,7 +419,7 @@ select:focus {
   margin: 0;
   font-size: 1.5rem;
   text-align: center;
-  color: var(--red-text);
+  color: var(--red-600);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -429,8 +456,15 @@ select:focus {
   font-weight: 400;
   font-size: 4.2rem;
   border-width: 6px;
-  background: radial-gradient(circle at 35% 30%, var(--red-400), var(--racing-red) 45%, var(--red-700));
-  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.18), 0 10px 24px rgba(0, 0, 0, 0.5);
+  background: radial-gradient(
+    circle at 35% 30%,
+    var(--red-400),
+    var(--racing-red) 45%,
+    var(--red-700)
+  );
+  box-shadow:
+    0 0 0 6px rgba(237, 28, 36, 0.18),
+    0 10px 24px rgba(0, 0, 0, 0.5);
 }
 
 .play-actions {
@@ -461,7 +495,10 @@ select:focus {
   opacity: 0;
   visibility: hidden;
   transform: translateX(16px);
-  transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+  transition:
+    opacity 0.3s,
+    transform 0.3s,
+    visibility 0.3s;
 }
 
 .howto-slide.active {
@@ -482,12 +519,16 @@ select:focus {
   font-family: var(--font-display);
   font-size: 2.6rem;
   transform: rotate(-6deg);
-  box-shadow: 0 6px 0 var(--silver), 0 10px 22px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 6px 0 var(--silver),
+    0 10px 22px rgba(0, 0, 0, 0.5);
 }
 
 .howto-card.red {
   color: var(--racing-red);
-  box-shadow: 0 6px 0 var(--red-700), 0 10px 22px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 6px 0 var(--red-700),
+    0 10px 22px rgba(0, 0, 0, 0.5);
 }
 
 .howto-slide h3 {
@@ -521,15 +562,17 @@ select:focus {
 }
 
 .howto-dots button::before {
-  content: '';
+  content: "";
   width: 10px;
   height: 10px;
   border-radius: var(--r-pill);
   background: var(--line);
-  transition: width 0.2s, background 0.2s;
+  transition:
+    width 0.2s,
+    background 0.2s;
 }
 
-.howto-dots button[aria-current='true']::before {
+.howto-dots button[aria-current="true"]::before {
   width: 26px;
   background: var(--racing-red);
 }
@@ -819,6 +862,16 @@ select:focus {
   font-size: 0.85rem;
 }
 
+/* histórico de jogadas: texto branco, só o nome de quem jogou em vermelho */
+.chat-log .log.play {
+  color: var(--ink);
+}
+
+.chat-log .log-who {
+  color: var(--red-text);
+  font-weight: 700;
+}
+
 .chat-form {
   display: flex;
   gap: 6px;
@@ -897,10 +950,19 @@ select:focus {
   position: absolute;
   inset: 8% 6%;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, #2e2b2a 0, var(--felt) 55%, var(--felt-dark) 100%);
+  background: radial-gradient(
+    ellipse at center,
+    #2e2b2a 0,
+    var(--felt) 55%,
+    var(--felt-dark) 100%
+  );
   border: 12px solid var(--black);
-  box-shadow: 0 0 0 2px var(--red-600), inset 0 0 0 2px rgba(194, 193, 194, 0.18), inset 0 0 40px rgba(0, 0, 0, 0.6),
-    0 12px 30px rgba(0, 0, 0, 0.6), 0 0 60px rgba(237, 28, 36, 0.15);
+  box-shadow:
+    0 0 0 2px var(--red-600),
+    inset 0 0 0 2px rgba(194, 193, 194, 0.18),
+    inset 0 0 40px rgba(0, 0, 0, 0.6),
+    0 12px 30px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(237, 28, 36, 0.15);
 }
 
 .table-center {
@@ -953,7 +1015,10 @@ select:focus {
 }
 
 .draw-pile .card {
-  box-shadow: 2px 2px 0 var(--silver-300), 4px 4px 0 var(--silver), 6px 6px 10px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    2px 2px 0 var(--silver-300),
+    4px 4px 0 var(--silver),
+    6px 6px 10px rgba(0, 0, 0, 0.5);
 }
 
 .draw-pile.can-draw .card {
@@ -1044,7 +1109,7 @@ select:focus {
 }
 
 .seat.played .avatar::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: -3px;
   border-radius: 50%;
@@ -1145,7 +1210,9 @@ select:focus {
 
 @keyframes glow {
   50% {
-    box-shadow: 0 0 0 4px var(--primary), 0 0 22px var(--primary);
+    box-shadow:
+      0 0 0 4px var(--primary),
+      0 0 22px var(--primary);
   }
 }
 
@@ -1199,7 +1266,9 @@ select:focus {
 
 .seat.turn .avatar,
 .me-info.turn .avatar {
-  box-shadow: 0 0 0 4px var(--primary), 0 0 20px var(--primary);
+  box-shadow:
+    0 0 0 4px var(--primary),
+    0 0 20px var(--primary);
   animation: bob 1s ease-in-out infinite;
 }
 
@@ -1218,7 +1287,10 @@ select:focus {
   position: absolute;
   inset: -6px;
   border-radius: 50%;
-  background: conic-gradient(var(--primary) calc(var(--p, 1) * 360deg), transparent 0);
+  background: conic-gradient(
+    var(--primary) calc(var(--p, 1) * 360deg),
+    transparent 0
+  );
   -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%);
   mask: radial-gradient(circle, transparent 58%, #000 60%);
 }
@@ -1292,7 +1364,9 @@ select:focus {
   padding: 6px 14px;
   font-weight: 600;
   box-shadow: var(--shadow);
-  animation: toast-in 0.25s ease-out, toast-out 0.4s ease-in 2.6s forwards;
+  animation:
+    toast-in 0.25s ease-out,
+    toast-out 0.4s ease-in 2.6s forwards;
   text-align: center;
 }
 
@@ -1402,7 +1476,11 @@ select:focus {
 
 .hand .card {
   flex: none;
-  transition: transform 0.15s, margin 0.2s, filter 0.2s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    margin 0.2s,
+    filter 0.2s,
+    box-shadow 0.15s;
   touch-action: manipulation;
 }
 
@@ -1413,7 +1491,9 @@ select:focus {
 .hand.my-turn .card.playable {
   cursor: pointer;
   transform: translateY(-14px);
-  box-shadow: 0 0 0 3px var(--primary), 0 8px 18px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 0 0 3px var(--primary),
+    0 8px 18px rgba(0, 0, 0, 0.5);
 }
 
 @media (hover: hover) {
@@ -1426,7 +1506,10 @@ select:focus {
 /* No toque, a 1ª batida seleciona e a 2ª joga (ou toque no monte). */
 .hand.my-turn .card.playable.selected {
   transform: translateY(-30px);
-  box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--primary), 0 14px 26px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 6px var(--primary),
+    0 14px 26px rgba(0, 0, 0, 0.6);
   z-index: 3;
 }
 
@@ -1435,7 +1518,7 @@ select:focus {
 }
 
 .discard-pile.drop-target::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: -8px;
   border: 2px dashed var(--silver-300);
@@ -1518,7 +1601,10 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font: 400 calc(var(--card-w) * 0.19) / 1 Georgia, 'Times New Roman', serif;
+  font:
+    400 calc(var(--card-w) * 0.19) / 1 Georgia,
+    "Times New Roman",
+    serif;
   letter-spacing: -0.06em;
 }
 
@@ -1557,7 +1643,7 @@ select:focus {
 }
 
 .card.special::after {
-  content: '★';
+  content: "★";
   position: absolute;
   top: 3px;
   right: 5px;
@@ -1577,7 +1663,10 @@ select:focus {
   top: 5%;
   left: 7%;
   width: 1ch;
-  font: 400 calc(var(--card-w) * 0.13) / 1.05 Georgia, 'Times New Roman', serif;
+  font:
+    400 calc(var(--card-w) * 0.13) / 1.05 Georgia,
+    "Times New Roman",
+    serif;
   text-align: center;
   word-break: break-all;
 }
@@ -1591,7 +1680,11 @@ select:focus {
 }
 
 .card.back {
-  background: repeating-linear-gradient(45deg, var(--black) 0 8px, var(--surface-3) 8px 16px);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--black) 0 8px,
+    var(--surface-3) 8px 16px
+  );
   border: 4px solid var(--silver-300);
   display: grid;
   place-items: center;
@@ -1599,7 +1692,7 @@ select:focus {
 
 .card.back::before {
   font-family: var(--font-display);
-  content: '8';
+  content: "8";
   color: #fff;
   font-size: calc(var(--card-w) * 0.5);
   background: var(--racing-red);
@@ -1712,7 +1805,12 @@ select:focus {
 .score-list .bar i {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--silver), var(--red-300) 60%, var(--racing-red));
+  background: linear-gradient(
+    90deg,
+    var(--silver),
+    var(--red-300) 60%,
+    var(--racing-red)
+  );
   background-size: var(--full, 100%) 100%;
 }
 
@@ -1824,7 +1922,9 @@ select:focus {
 }
 
 #suitModal .modal-box {
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 
 #suitModal.closing {
@@ -2013,7 +2113,8 @@ select:focus {
   position: fixed;
   bottom: 24px;
   left: 50%;
-  transform: translateX(-50%);
+  /* `translate` em vez de `transform`, para não brigar com as animações toast-in/out */
+  translate: -50% 0;
   background: var(--surface-3);
   border: 1px solid var(--line);
   border-left: 4px solid var(--primary);
@@ -2022,9 +2123,18 @@ select:focus {
   border-radius: var(--r-md);
   z-index: 40;
   box-shadow: var(--shadow);
-  animation: toast-in 0.2s, toast-out 0.4s ease-in 2.6s forwards;
+  animation:
+    toast-in 0.2s,
+    toast-out 0.4s ease-in 2.6s forwards;
+  width: max-content;
   max-width: 90vw;
   text-align: center;
+}
+
+/* durante a partida: logo abaixo da barra do topo, sem cobrir as cartas */
+.flash.in-game {
+  bottom: auto;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
 }
 
 /* ---------- celular ---------- */
@@ -2108,7 +2218,9 @@ select:focus {
     z-index: 15;
     transform: translateX(100%);
     visibility: hidden;
-    transition: transform 0.25s, visibility 0s 0.25s;
+    transition:
+      transform 0.25s,
+      visibility 0s 0.25s;
   }
 
   .side.open {
@@ -2239,7 +2351,9 @@ select:focus {
   background: var(--primary);
   color: #fff;
   border: 3px solid var(--silver-300);
-  box-shadow: 0 3px 0 var(--primary-edge), 0 6px 14px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 3px 0 var(--primary-edge),
+    0 6px 14px rgba(0, 0, 0, 0.4);
   transition: transform 0.15s;
 }
 
@@ -2273,7 +2387,13 @@ select:focus {
   gap: 16px;
   padding: 20px 14px;
   border-radius: var(--r-lg);
-  background: radial-gradient(circle at 50% 35%, rgba(237, 28, 36, 0.22), transparent 65%), var(--black);
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(237, 28, 36, 0.22),
+      transparent 65%
+    ),
+    var(--black);
   border: 1px solid var(--line);
 }
 
@@ -2281,7 +2401,9 @@ select:focus {
   width: 172px;
   height: 172px;
   border-width: 6px;
-  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.18), 0 12px 28px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 0 0 6px rgba(237, 28, 36, 0.18),
+    0 12px 28px rgba(0, 0, 0, 0.55);
   animation: pop 0.25s;
 }
 
@@ -2320,7 +2442,9 @@ select:focus {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .avatar-tab .icon {
@@ -2337,7 +2461,7 @@ select:focus {
   outline-offset: 2px;
 }
 
-.avatar-tab[aria-selected='true'] {
+.avatar-tab[aria-selected="true"] {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
@@ -2379,7 +2503,10 @@ select:focus {
   border: 3px solid var(--surface-3);
   background: var(--surface-2);
   cursor: pointer;
-  transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+  transition:
+    transform 0.12s,
+    border-color 0.12s,
+    box-shadow 0.12s;
 }
 
 .style-opt:hover {
@@ -2393,7 +2520,7 @@ select:focus {
   outline-offset: 3px;
 }
 
-.style-opt[aria-pressed='true'] {
+.style-opt[aria-pressed="true"] {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.35);
 }
@@ -2433,9 +2560,11 @@ select:focus {
   transform: scale(1.08);
 }
 
-.swatch[aria-pressed='true'] {
+.swatch[aria-pressed="true"] {
   border-color: #fff;
-  box-shadow: 0 0 0 3px var(--primary), inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+  box-shadow:
+    0 0 0 3px var(--primary),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.18);
 }
 
 .avatar-actions {
@@ -2510,5 +2639,27 @@ select:focus {
   .edit-badge .icon {
     width: 16px;
     height: 16px;
+  }
+}
+
+/* ---------- movimento reduzido ----------
+   Desliga as animações infinitas (seta, bob, glow, alvo do descarte) e encurta
+   as outras para quase zero. Onde a animação carrega um significado, fica um
+   estado parado no lugar dela. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* o monte sem jogada fica aceso, sem piscar */
+  .draw-pile.can-draw .card {
+    box-shadow:
+      0 0 0 4px var(--primary),
+      0 0 22px var(--primary);
   }
 }
