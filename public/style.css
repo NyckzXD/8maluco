@@ -1319,16 +1319,30 @@ select:focus {
 
 .hand {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   min-width: 0;
   width: 100%;
   padding: 22px 8px 8px;
   min-height: calc(var(--card-h) + 30px);
 }
 
+/* Fileiras da mão (montadas em layoutHand): a de trás fica meio coberta pela da frente,
+   deixando à mostra o canto com número e pinta. */
+.hand-row {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.hand-row + .hand-row {
+  margin-top: calc(var(--card-h) * -0.52);
+}
+
 .hand .card {
   flex: none;
-  transition: transform 0.15s, margin 0.2s, filter 0.2s;
+  transition: transform 0.15s, margin 0.2s, filter 0.2s, box-shadow 0.15s;
+  touch-action: manipulation;
 }
 
 .hand .card + .card {
@@ -1341,9 +1355,44 @@ select:focus {
   box-shadow: 0 0 0 3px var(--primary), 0 8px 18px rgba(0, 0, 0, 0.5);
 }
 
-.hand.my-turn .card.playable:hover {
-  transform: translateY(-24px);
-  z-index: 2;
+@media (hover: hover) {
+  .hand.my-turn .card.playable:hover {
+    transform: translateY(-24px);
+    z-index: 2;
+  }
+}
+
+/* No toque, a 1ª batida seleciona e a 2ª joga (ou toque no monte). */
+.hand.my-turn .card.playable.selected {
+  transform: translateY(-30px);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--primary), 0 14px 26px rgba(0, 0, 0, 0.6);
+  z-index: 3;
+}
+
+.discard-pile.drop-target {
+  cursor: pointer;
+}
+
+.discard-pile.drop-target::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 2px dashed var(--silver-300);
+  border-radius: 14px;
+  pointer-events: none;
+  animation: target-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes target-pulse {
+  to {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discard-pile.drop-target::after {
+    animation: none;
+  }
 }
 
 .hand.my-turn .card:not(.playable) {
@@ -1943,6 +1992,17 @@ select:focus {
 
   .game-main {
     grid-column: auto;
+  }
+
+  /* No celular a mão ganha cartas maiores (a mesa encolhe para dar espaço). */
+  .hand {
+    --card-w: 74px;
+    --card-h: 107px;
+    padding-inline: 0;
+  }
+
+  .table {
+    min-height: 220px;
   }
 
   .side-toggle {

@@ -270,6 +270,7 @@ function beep(freqs, dur = 0.08, type = 'triangle', gain = 0.06) {
 
 const sounds = {
   card: () => beep([520], 0.05, 'square', 0.03),
+  select: () => beep([740], 0.04, 'triangle', 0.03),
   turn: () => beep([660, 880], 0.12),
   bad: () => beep([220, 160], 0.12, 'sawtooth', 0.03),
   win: () => beep([523, 659, 784, 1046], 0.14),
@@ -698,7 +699,7 @@ function playOrigin(play, s) {
   if (play.playerId === s.me) {
     const card = $(`#hand [data-id="${play.card.id}"]`);
     const node = card ?? $('#meInfo .avatar');
-    return node && { ...centerOf(node, { scale: card ? 1 : 0.5 }), flip: false };
+    return node && { ...centerOf(node, { scale: card ? pileScale(card) : 0.5 }), flip: false };
   }
   const seat = $(`#seats .seat[data-id="${play.playerId}"]`);
   if (!seat) return null;
@@ -791,7 +792,8 @@ function animateDraws(events, g, s) {
   let delay = 0;
   const toHand = (node) => {
     const card = g.hand.find((c) => c.id === node.dataset.id);
-    if (card && fly({ card, from: pile, to: centerOf(node), flip: true, hide: node, delay })) node.classList.remove('fresh');
+    if (card && fly({ card, from: pile, to: centerOf(node, { scale: pileScale(node) }), flip: true, hide: node, delay }))
+      node.classList.remove('fresh');
     delay += DRAW_GAP_MS;
   };
   for (const e of events) {
@@ -820,7 +822,8 @@ function renderCenter(prev, g, myTurn, origin) {
   $('#drawCount').textContent = g.drawCount;
   const canDraw = myTurn && !g.hasDrawn;
   drawPile.disabled = !canDraw;
-  drawPile.classList.toggle('can-draw', canDraw);
+  // Comprar sempre é permitido na sua vez, mas o baralho só chama atenção quando não há jogada.
+  drawPile.classList.toggle('can-draw', canDraw && !g.playable.length);
 
   const discard = $('#discardPile');
   const prevTop = prev?.game?.top?.id;
@@ -848,7 +851,12 @@ function renderCenter(prev, g, myTurn, origin) {
   const suit = SUIT_INFO[g.activeSuit];
   badge.replaceChildren();
   if (!suit) {
-    badge.append(document.createTextNode(g.top ? 'Joker: qualquer carta vale' : 'Abra o monte com qualquer carta'));
+    const text = g.top
+      ? 'Joker: qualquer carta vale'
+      : myTurn
+        ? 'Abra o monte com qualquer carta'
+        : `${nameOf(g.turnId)} vai abrir o monte`;
+    badge.append(document.createTextNode(text));
   } else {
     const sym = el('b', suit.color === 'red' ? 'red' : '', suit.symbol);
     const label = g.activeRank === '8' ? 'Pediu' : g.activeRank === 'JOKER' ? 'Continua' : 'Pinta';
@@ -857,14 +865,42 @@ function renderCenter(prev, g, myTurn, origin) {
   badge.classList.toggle('changed', g.activeRank === '8' || g.activeRank === 'JOKER');
 }
 
+// Quanto de cada carta precisa aparecer para dar para tocar nela (área mínima de toque).
+const HAND_MIN_VISIBLE = 44;
+const HAND_MAX_ROWS = 3;
+
+// Distribui a mão em fileiras: uma só enquanto cada carta mostrar pelo menos HAND_MIN_VISIBLE px;
+// senão, mais fileiras. As de trás ficam meio cobertas, mostrando o canto com número e pinta.
 function layoutHand() {
   const hand = $('#hand');
-  const cards = hand.children.length;
-  if (cards < 2 || !hand.firstElementChild?.classList.contains('card')) return;
-  const cardW = hand.firstElementChild.offsetWidth;
+  const cards = $$('.card', hand);
+  if (!cards.length) return;
+  const n = cards.length;
+  const cardW = cards[0].offsetWidth;
   const avail = hand.clientWidth - 16;
-  const overlap = Math.min(6, (avail - cards * cardW) / (cards - 1));
-  hand.style.setProperty('--overlap', `${Math.max(overlap, -cardW * 0.72)}px`);
+  const overlapFor = (count) => (count < 2 ? 0 : Math.min(6, (avail - count * cardW) / (count - 1)));
+  let rows = 1;
+  while (rows < HAND_MAX_ROWS && cardW + overlapFor(Math.ceil(n / rows)) < HAND_MIN_VISIBLE) rows++;
+
+  // As fileiras da frente (de baixo) levam as cartas que sobram, já que aparecem inteiras.
+  const base = Math.floor(n / rows);
+  const extra = n % rows;
+  const rowEls = [];
+  let i = 0;
+  for (let r = 0; r < rows; r++) {
+    const size = base + (r >= rows - extra ? 1 : 0);
+    const row = el('div', 'hand-row');
+    row.append(...cards.slice(i, i + size));
+    rowEls.push(row);
+    i += size;
+  }
+  hand.replaceChildren(...rowEls);
+  hand.style.setProperty('--overlap', `${Math.max(overlapFor(base + (extra ? 1 : 0)), -cardW * 0.72)}px`);
+}
+
+// Escala de uma carta em relação ao monte (o voo usa o tamanho do monte; a mão pode ter cartas maiores).
+function pileScale(node) {
+  return node.offsetWidth / $('#discardPile').offsetWidth;
 }
 addEventListener('resize', () => {
   layoutHand();
@@ -887,10 +923,14 @@ function renderHand(prev, g, s, myTurn) {
   const sameRound = prev?.game?.round === g.round;
   const before = new Set(sameRound ? prev.game.hand.map((c) => c.id) : []);
   const playable = new Set(g.playable);
+  // A seleção só vale enquanto for a sua vez e a carta ainda puder ser jogada.
+  if (!myTurn || !playable.has(selectedId)) selectedId = null;
+  $('#discardPile').classList.toggle('drop-target', !!selectedId);
   hand.replaceChildren(
     ...sortHand(g.hand).map((card) => {
       const node = renderCard(card);
       if (playable.has(card.id)) node.classList.add('playable');
+      if (card.id === selectedId) node.classList.add('selected');
       if (sameRound && !before.has(card.id)) node.classList.add('fresh');
       if (liftedIds.has(card.id)) node.classList.add('lifted');
       node.addEventListener('click', () => onCardClick(card));
@@ -900,14 +940,42 @@ function renderHand(prev, g, s, myTurn) {
   layoutHand();
 }
 
+// No toque (celular/tablet), a 1ª batida numa carta só seleciona; a 2ª, ou tocar no monte, joga.
+// Com mouse, um clique já joga.
+let selectedId = null;
+const confirmByTap = () => matchMedia('(pointer: coarse)').matches;
+
+function isMyTurn(s) {
+  return s?.game?.phase === 'playing' && s.game.turnId === s.me;
+}
+
+function setSelected(id) {
+  selectedId = id;
+  for (const node of $$('#hand .card')) node.classList.toggle('selected', node.dataset.id === id);
+  $('#discardPile').classList.toggle('drop-target', !!id);
+  if (state?.game) renderBanner(state.game, isMyTurn(state));
+}
+
 function onCardClick(card) {
   const g = state?.game;
-  if (!g || g.turnId !== state.me || g.phase !== 'playing') return flash('Calma, ainda não é a sua vez');
+  if (!g || !isMyTurn(state)) return flash('Calma, ainda não é a sua vez');
   if (!g.playable.includes(card.id)) {
     sounds.bad();
     $(`#hand [data-id="${card.id}"]`)?.classList.add('hit');
     return flash('Essa carta não combina com a pinta nem com o número');
   }
+  if (confirmByTap() && selectedId !== card.id) {
+    setSelected(card.id);
+    sounds.select();
+    navigator.vibrate?.(15);
+    return;
+  }
+  playCard(card);
+}
+
+function playCard(card) {
+  const g = state.game;
+  setSelected(null);
   if (card.rank === '8' && g.hand.length > 1) {
     pendingEight = card.id;
     openSuitModal(g, card);
@@ -916,7 +984,21 @@ function onCardClick(card) {
   emit('game:play', { cardId: card.id });
 }
 
-$('#drawPile').addEventListener('click', () => emit('game:draw'));
+// Tocar no monte joga a carta selecionada.
+$('#discardPile').addEventListener('click', () => {
+  const card = selectedId && state?.game?.hand.find((c) => c.id === selectedId);
+  if (card) playCard(card);
+});
+
+// Tocar fora da mão (e do monte) desfaz a seleção.
+document.addEventListener('click', (e) => {
+  if (selectedId && !e.target.closest('#hand .card, #discardPile')) setSelected(null);
+});
+
+$('#drawPile').addEventListener('click', () => {
+  setSelected(null);
+  emit('game:draw');
+});
 $('#passBtn').addEventListener('click', () => emit('game:pass'));
 
 // ---------- escolha da pinta com o 8 ----------
@@ -1047,16 +1129,22 @@ function renderMe(g, s, myTurn) {
   if (me) info.append(avatar(memberOf(me.id), me.name), el('span', null, `Você · ${me.score} pts`));
   else info.append(el('span', null, 'Assistindo'));
 
-  $('#turnBanner').textContent = myTurn
-    ? g.hasDrawn
-      ? 'Jogue a carta comprada ou passe a vez'
-      : g.playable.length
-        ? g.top
-          ? 'Sua vez! Escolha uma carta'
-          : 'Você abre o monte! Jogue qualquer carta'
-        : 'Sua vez! Sem jogada, compre do baralho'
-    : '';
+  renderBanner(g, myTurn);
   $('#passBtn').classList.toggle('hidden', !(myTurn && g.hasDrawn));
+}
+
+function renderBanner(g, myTurn) {
+  $('#turnBanner').textContent = !myTurn
+    ? ''
+    : selectedId
+      ? 'Toque de novo para jogar'
+      : g.hasDrawn
+        ? 'Jogue a carta comprada ou passe a vez'
+        : g.playable.length
+          ? g.top
+            ? 'Sua vez! Escolha uma carta'
+            : 'Você abre o monte! Jogue qualquer carta'
+          : 'Sua vez! Sem jogada, compre do baralho';
 }
 
 function renderRoundModal(g, s) {
