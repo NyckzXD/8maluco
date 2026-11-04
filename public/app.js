@@ -1,4 +1,16 @@
 import { SUIT_INFO } from '/shared/engine.js';
+import {
+  avatarSVG,
+  randomAvatar,
+  sanitizeAvatar,
+  BACKGROUNDS,
+  SKINS,
+  OUTFITS,
+  OUTFIT_COLORS,
+  HAIRS,
+  HAIR_COLORS,
+  FACES,
+} from '/shared/avatar.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -64,7 +76,20 @@ function el(tag, className, text) {
   return node;
 }
 
+// Desenho do avatar (SVG montado a partir de índices, então pode ir direto no innerHTML).
+function avatarArt(config, opts) {
+  const art = el('span', 'avatar-art');
+  art.innerHTML = avatarSVG(config, opts);
+  return art;
+}
+
+// Avatar de um membro da sala; quem não tem avatar (ou já saiu) aparece com a inicial do nome.
 function avatar(member, name) {
+  if (member?.avatar) {
+    const a = el('div', 'avatar has-art');
+    a.append(avatarArt(member.avatar, { title: name ?? member.name }));
+    return a;
+  }
   const a = el('div', 'avatar', (name ?? member?.name ?? '?').trim().charAt(0).toUpperCase());
   a.style.background = member?.color ?? '#999';
   return a;
@@ -118,6 +143,13 @@ document.body.insertAdjacentHTML(
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
     <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.52M2 8.82a15 15 0 0 1 4.18-2.64M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></symbol>
     <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5zM15 5l4 4"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M16 8h.01M8 8h.01M8 16h.01M16 16h.01M12 12h.01" stroke-width="3"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+    <symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></symbol>
+    <symbol id="i-shirt" viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></symbol>
+    <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></symbol>
     <symbol id="i-crown" viewBox="0 0 24 24"><path fill="currentColor" stroke="#1d1d28" stroke-width="1.5" stroke-linejoin="round" d="M2.5 18 4 7l5 4.5L12 4l3 7.5L20 7l1.5 11z"/></symbol>
   </defs></svg>`,
 );
@@ -310,12 +342,135 @@ const nameInput = $('#nameInput');
 const codeInput = $('#codeInput');
 nameInput.value = store.get('om_name') ?? '';
 
-// Por enquanto o avatar da tela inicial mostra só a inicial do apelido.
-function updateHomeAvatar() {
-  $('#homeAvatar').textContent = nameInput.value.trim().charAt(0).toUpperCase() || '?';
+// ---------- avatar ----------
+// Fica salvo neste navegador e vai junto ao entrar numa sala. Na primeira visita, sorteia um.
+
+function loadAvatar() {
+  try {
+    return sanitizeAvatar(JSON.parse(store.get('om_avatar')));
+  } catch {
+    return null;
+  }
 }
-nameInput.addEventListener('input', updateHomeAvatar);
+
+let myAvatar = loadAvatar();
+if (!myAvatar) {
+  myAvatar = randomAvatar();
+  store.set('om_avatar', JSON.stringify(myAvatar));
+}
+
+function updateHomeAvatar() {
+  const home = $('#homeAvatar');
+  $('.avatar-art', home)?.remove();
+  home.prepend(avatarArt(myAvatar, { title: 'Seu avatar' }));
+}
 updateHomeAvatar();
+
+// Abas do editor: cada uma mexe em um estilo (miniaturas) e/ou em uma cor (bolinhas).
+// `view` recorta a miniatura para dar destaque à parte que está sendo escolhida.
+const AVATAR_TABS = [
+  { label: 'Fundo', icon: 'image', colors: { key: 'bg', list: BACKGROUNDS } },
+  { label: 'Pele', icon: 'droplet', colors: { key: 'skin', list: SKINS } },
+  { label: 'Roupa', icon: 'shirt', styles: { key: 'outfit', list: OUTFITS, view: '4 36 92 64' }, colors: { key: 'outfitColor', list: OUTFIT_COLORS } },
+  { label: 'Cabelo', icon: 'scissors', styles: { key: 'hair', list: HAIRS, view: '12 2 76 76' }, colors: { key: 'hairColor', list: HAIR_COLORS } },
+  { label: 'Rosto', icon: 'smile', styles: { key: 'face', list: FACES, view: '27 28 46 46' } },
+];
+
+let avatarDraft = null;
+let avatarTab = 0;
+
+function renderAvatarEditor() {
+  $('#avatarPreview').replaceChildren(avatarArt(avatarDraft, { title: 'Prévia do avatar' }));
+
+  const tabs = $('#avatarTabs');
+  tabs.replaceChildren(
+    ...AVATAR_TABS.map((t, i) => {
+      const b = el('button', 'avatar-tab');
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(i === avatarTab));
+      b.append(icon(t.icon), el('span', null, t.label));
+      b.addEventListener('click', () => {
+        avatarTab = i;
+        renderAvatarEditor();
+        $('#avatarOptions').scrollTop = 0;
+      });
+      return b;
+    }),
+  );
+
+  const tab = AVATAR_TABS[avatarTab];
+  const box = $('#avatarOptions');
+  const scroll = box.scrollTop;
+  box.replaceChildren();
+  const set = (key, value) => {
+    avatarDraft = { ...avatarDraft, [key]: value };
+    renderAvatarEditor();
+  };
+
+  // A cor vem primeiro (é uma fileira curta), assim ela aparece sem precisar rolar.
+  if (tab.colors) {
+    const { key, list } = tab.colors;
+    if (tab.styles) box.append(el('h3', 'opt-label', 'Cor'));
+    const row = el('div', `swatches${tab.styles ? '' : ' big'}`);
+    list.forEach(({ name, hex }, i) => {
+      const b = el('button', 'swatch');
+      b.type = 'button';
+      b.title = name;
+      b.setAttribute('aria-label', name);
+      b.setAttribute('aria-pressed', String(avatarDraft[key] === i));
+      b.style.setProperty('--c', hex);
+      b.addEventListener('click', () => set(key, i));
+      row.append(b);
+    });
+    box.append(row);
+  }
+
+  if (tab.styles) {
+    const { key, list, view } = tab.styles;
+    if (tab.colors) box.append(el('h3', 'opt-label', 'Estilo'));
+    const grid = el('div', 'style-grid');
+    list.forEach((name, i) => {
+      const b = el('button', 'style-opt');
+      b.type = 'button';
+      b.title = name;
+      b.setAttribute('aria-label', name);
+      b.setAttribute('aria-pressed', String(avatarDraft[key] === i));
+      b.append(avatarArt({ ...avatarDraft, [key]: i }, { view, title: name }));
+      b.addEventListener('click', () => set(key, i));
+      grid.append(b);
+    });
+    box.append(grid);
+  }
+  box.scrollTop = scroll;
+}
+
+function openAvatarEditor() {
+  avatarDraft = { ...myAvatar };
+  $('#avatarModal').classList.remove('hidden');
+  renderAvatarEditor();
+  $('#avatarOptions').scrollTop = 0;
+}
+
+$('#homeAvatar').addEventListener('click', openAvatarEditor);
+$('#avatarRandom').addEventListener('click', () => {
+  avatarDraft = randomAvatar();
+  renderAvatarEditor();
+});
+$('#avatarSave').addEventListener('click', () => {
+  myAvatar = sanitizeAvatar(avatarDraft) ?? myAvatar;
+  store.set('om_avatar', JSON.stringify(myAvatar));
+  updateHomeAvatar();
+  $('#avatarModal').classList.add('hidden');
+  flash('Avatar salvo!');
+});
+// Clicar fora da janela ou apertar Esc fecha sem salvar.
+$('#avatarModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') $('#avatarModal').classList.add('hidden');
+});
 
 function askName() {
   const name = nameInput.value.trim();
@@ -342,13 +497,13 @@ async function joinRoom(code) {
   if (!name) return;
   code = code.trim().toUpperCase();
   if (!code) return flash('Digite o código da sala');
-  onJoined(await emit('room:join', { code, token, name }));
+  onJoined(await emit('room:join', { code, token, name, avatar: myAvatar }));
 }
 
 $('#createBtn').addEventListener('click', async () => {
   const name = askName();
   if (!name) return;
-  onJoined(await emit('room:create', { token, name }));
+  onJoined(await emit('room:create', { token, name, avatar: myAvatar }));
 });
 
 $('#joinBtn').addEventListener('click', () => joinRoom(codeInput.value));
@@ -1119,7 +1274,7 @@ socket.on('room:kicked', () => {
 socket.on('connect', async () => {
   $('#netStatus').classList.add('hidden');
   if (roomCode) {
-    const res = await emit('room:join', { code: roomCode, token, name: store.get('om_name') ?? 'Jogador' });
+    const res = await emit('room:join', { code: roomCode, token, name: store.get('om_name') ?? 'Jogador', avatar: myAvatar });
     if (!res.ok) leaveRoom();
   } else {
     refreshRooms();

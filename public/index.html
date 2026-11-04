@@ -27,7 +27,9 @@
               <h2 class="section-title">Jogue agora</h2>
               <div class="play-grid">
                 <div class="profile">
-                  <div id="homeAvatar" class="avatar avatar-xl">?</div>
+                  <button id="homeAvatar" type="button" class="avatar avatar-xl avatar-edit" title="Editar avatar" aria-label="Editar avatar">
+                    <span class="edit-badge" aria-hidden="true"><svg class="icon"><use href="#i-pencil"/></svg></span>
+                  </button>
                   <input id="nameInput" maxlength="16" placeholder="Seu apelido" aria-label="Seu apelido" autocomplete="nickname" />
                 </div>
 
@@ -221,6 +223,26 @@
         </div>
         <ul id="roomList" class="room-list"></ul>
         <button class="btn btn-ghost" data-close>Fechar</button>
+      </div>
+    </div>
+
+    <div id="avatarModal" class="modal hidden">
+      <div class="modal-box avatar-box" role="dialog" aria-modal="true" aria-labelledby="avatarTitle">
+        <h2 id="avatarTitle">Crie seu avatar</h2>
+        <div class="avatar-editor">
+          <div class="avatar-stage">
+            <div id="avatarPreview" class="avatar avatar-xxl"></div>
+            <button id="avatarRandom" type="button" class="btn btn-small btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-dice"/></svg>Aleatório</button>
+          </div>
+          <div class="avatar-panel">
+            <div id="avatarTabs" class="avatar-tabs" role="tablist" aria-label="Partes do avatar"></div>
+            <div id="avatarOptions" class="avatar-options" role="tabpanel"></div>
+          </div>
+        </div>
+        <div class="avatar-actions">
+          <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+          <button id="avatarSave" type="button" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Salvar avatar</button>
+        </div>
       </div>
     </div>
 
