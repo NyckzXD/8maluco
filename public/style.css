@@ -161,12 +161,13 @@ h3 {
    Em repouso a face fica no lugar dela (alinhada com o conteúdo) e só o bloco
    aparece para baixo e para a direita; no hover a face sobe e no clique encosta no bloco.
    --btn-lift é a distância entre a face e o bloco; o bloco fica sempre em +--btn-rest.
-   Cada variante só troca as variáveis abaixo. */
+   Cada variante só troca as variáveis abaixo.
+   O padrão é o estilo "ghost" (face prata translúcida): todo botão escuro usa ele. */
 .btn {
-  --btn-face: var(--surface-3);
-  --btn-ink: var(--ink);
-  --btn-layer: #5e5b5a;
-  --btn-border: #000;
+  --btn-face: rgba(194, 193, 194, 0.1);
+  --btn-ink: #fff;
+  --btn-layer: rgba(194, 193, 194, 0.2);
+  --btn-border: rgba(194, 193, 194, 0.22);
   --btn-rest: 4px;
   --btn-lift: var(--btn-rest);
   display: inline-flex;
@@ -244,17 +245,7 @@ h3 {
   transform: translate(-50%, -50%);
 }
 
-.btn-ghost {
-  --btn-face: rgba(194, 193, 194, 0.1);
-  --btn-ink: #fff;
-  --btn-border: rgba(194, 193, 194, 0.22);
-  --btn-layer: rgba(194, 193, 194, 0.2);
-}
-
-.panel .btn-ghost {
-  --btn-face: var(--surface-2);
-  --btn-ink: var(--ink);
-}
+/* .btn-ghost ficou igual ao padrão; a classe continua no HTML só como marcação de botão secundário */
 
 input,
 select {
