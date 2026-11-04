@@ -27,7 +27,12 @@
   --felt: #1f1d1c;
   --felt-dark: #0f0e0d;
   --red: var(--racing-red);
-  --radius: 18px;
+  /* raios de canto: só estes (círculos usam 50%) */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+  --r-card: 9px;
   --card-w: 72px;
   --card-h: 104px;
   --shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
@@ -69,10 +74,29 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background: url(bg-scene.svg) 0 0 / 100% 100% no-repeat;
+  transition: opacity 0.4s, filter 0.4s;
+}
+
+/* Na mesa a cena fica apagada e desfocada, para não competir com as cartas. A home mantém a cena inteira. */
+body:has(> #game:not(.hidden))::before {
+  opacity: 0.3;
+  filter: blur(3px);
 }
 
 .hidden {
   display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .muted {
@@ -92,7 +116,7 @@ body::before {
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   padding: 18px;
 }
@@ -134,11 +158,14 @@ h3 {
 
 /* botões no estilo "button-6" da Design and Code (css-buttons): a face fica
    levantada sobre um bloco de cor deslocado e sobe mais no hover.
+   Em repouso a face fica no lugar dela (alinhada com o conteúdo) e só o bloco
+   aparece para baixo e para a direita; no hover a face sobe e no clique encosta no bloco.
+   --btn-lift é a distância entre a face e o bloco; o bloco fica sempre em +--btn-rest.
    Cada variante só troca as variáveis abaixo. */
 .btn {
   --btn-face: var(--surface-3);
   --btn-ink: var(--ink);
-  --btn-layer: var(--silver-300);
+  --btn-layer: #5e5b5a;
   --btn-border: #000;
   --btn-rest: 4px;
   --btn-lift: var(--btn-rest);
@@ -149,12 +176,12 @@ h3 {
   font: inherit;
   font-weight: 600;
   border: 1px solid var(--btn-border);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 10px 16px;
   background: var(--btn-face);
   color: var(--btn-ink);
   cursor: pointer;
-  transform: translate(calc(var(--btn-lift) * -1), calc(var(--btn-lift) * -1));
+  transform: translate(calc(var(--btn-rest) - var(--btn-lift)), calc(var(--btn-rest) - var(--btn-lift)));
   box-shadow: var(--btn-lift) var(--btn-lift) 0 var(--btn-layer);
   transition:
     transform 0.3s cubic-bezier(0.7, 0, 0.2, 1),
@@ -184,9 +211,11 @@ h3 {
   cursor: not-allowed;
 }
 
+/* só o botão principal tem o bloco prata, que é o que mais chama atenção */
 .btn-primary {
   --btn-face: var(--primary);
   --btn-ink: var(--primary-ink);
+  --btn-layer: var(--silver-300);
   font-family: var(--font-display);
   font-weight: 700;
 }
@@ -199,14 +228,27 @@ h3 {
 
 .btn-small {
   --btn-rest: 3px;
+  position: relative;
   padding: 6px 12px;
   font-size: 0.9rem;
+}
+
+/* área de toque de pelo menos 44×44px, mesmo com o botão pequeno */
+.btn-small::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }
 
 .btn-ghost {
   --btn-face: rgba(194, 193, 194, 0.1);
   --btn-ink: #fff;
   --btn-border: rgba(194, 193, 194, 0.22);
+  --btn-layer: rgba(194, 193, 194, 0.2);
 }
 
 .panel .btn-ghost {
@@ -218,7 +260,7 @@ input,
 select {
   font: inherit;
   border: 2px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 10px 12px;
   outline: none;
   background: var(--black);
@@ -291,7 +333,7 @@ select:focus {
   display: grid;
   gap: 22px;
   padding: 28px;
-  border-radius: 28px;
+  border-radius: var(--r-lg);
   background: linear-gradient(180deg, var(--surface-2), var(--surface) 70%);
   border: 1px solid var(--line);
   box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.08), 0 24px 60px rgba(0, 0, 0, 0.6);
@@ -349,7 +391,7 @@ select:focus {
   align-content: start;
   gap: 16px;
   padding: 22px;
-  border-radius: var(--radius);
+  border-radius: var(--r-lg);
   background: var(--black);
   border: 1px solid var(--line);
   min-width: 0;
@@ -406,11 +448,6 @@ select:focus {
   min-width: 0;
 }
 
-.btn-rooms {
-  --btn-face: var(--silver);
-  --btn-ink: var(--black);
-}
-
 /* ---------- como jogar ---------- */
 
 .howto-section {
@@ -448,7 +485,7 @@ select:focus {
   width: 92px;
   height: 128px;
   margin: 4px 0 10px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: #fff;
   color: var(--black);
   font-family: var(--font-display);
@@ -477,23 +514,39 @@ select:focus {
 
 .howto-dots {
   display: flex;
-  gap: 10px;
+  margin: -12px 0;
 }
 
+/* o botão tem 44×44px de toque; a bolinha visível é o ::before */
 .howto-dots button {
-  width: 10px;
-  height: 10px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 99px;
-  background: var(--line);
+  background: none;
   cursor: pointer;
+}
+
+.howto-dots button::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--line);
   transition: width 0.2s, background 0.2s;
 }
 
-.howto-dots button[aria-current='true'] {
+.howto-dots button[aria-current='true']::before {
   width: 26px;
   background: var(--racing-red);
+}
+
+.howto-dots button:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: -6px;
+  border-radius: var(--r-pill);
 }
 
 .rooms-box .room-list {
@@ -508,8 +561,10 @@ select:focus {
   }
 }
 
+/* o "Entrar" estica até a altura do campo */
 .join-row {
   display: flex;
+  align-items: stretch;
   gap: 8px;
 }
 
@@ -559,7 +614,7 @@ select:focus {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--surface-2);
 }
 
@@ -590,7 +645,7 @@ select:focus {
   font-size: 0.75rem;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   background: rgba(194, 193, 194, 0.16);
   color: var(--silver-300);
 }
@@ -653,7 +708,7 @@ select:focus {
   align-items: center;
   gap: 10px;
   padding: 10px;
-  border-radius: 14px;
+  border-radius: var(--r-md);
   background: var(--surface-2);
   position: relative;
   min-width: 0;
@@ -679,15 +734,30 @@ select:focus {
   color: var(--muted);
 }
 
+.member-grid li.kickable {
+  padding-right: 44px;
+}
+
 .member-grid .kick {
   position: absolute;
-  top: 4px;
-  right: 6px;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: 0;
+  border-radius: var(--r-md);
   background: none;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   cursor: pointer;
+}
+
+.member-grid .kick:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: -4px;
 }
 
 .member-grid .kick:hover {
@@ -714,7 +784,7 @@ select:focus {
   flex-wrap: wrap;
   gap: 10px 20px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--surface-2);
 }
 
@@ -910,7 +980,7 @@ select:focus {
   right: -10px;
   background: var(--silver-300);
   color: var(--black);
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   padding: 1px 8px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -926,7 +996,7 @@ select:focus {
   width: 100%;
   height: 100%;
   border: 3px dashed rgba(194, 193, 194, 0.4);
-  border-radius: 9px;
+  border-radius: var(--r-card);
   display: grid;
   place-items: center;
   text-align: center;
@@ -1005,7 +1075,7 @@ select:focus {
   font-style: italic;
   font-size: 0.95rem;
   padding: 1px 9px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   border: 2px solid var(--silver-300);
   box-shadow: var(--shadow);
   pointer-events: none;
@@ -1050,7 +1120,7 @@ select:focus {
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
   padding: 4px 12px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   border: 1px solid rgba(194, 193, 194, 0.2);
   font-weight: 600;
 }
@@ -1121,7 +1191,7 @@ select:focus {
   gap: 6px;
   font-size: 0.8rem;
   background: rgba(0, 0, 0, 0.6);
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   padding: 1px 8px;
 }
 
@@ -1129,7 +1199,7 @@ select:focus {
   display: inline-block;
   width: 9px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: calc(var(--r-card) / 4);
   background: linear-gradient(135deg, var(--racing-red), var(--red-700));
   border: 1px solid var(--silver-300);
   vertical-align: -1px;
@@ -1170,7 +1240,7 @@ select:focus {
   font-size: 0.7rem;
   background: var(--silver-300);
   color: var(--black);
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   padding: 0 5px;
   font-weight: 700;
   text-shadow: none;
@@ -1227,7 +1297,7 @@ select:focus {
 .toast {
   background: var(--silver-300);
   color: var(--black);
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   padding: 6px 14px;
   font-weight: 600;
   box-shadow: var(--shadow);
@@ -1268,7 +1338,7 @@ select:focus {
   color: var(--primary-ink);
   font-weight: 700;
   padding: 6px 18px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   box-shadow: var(--shadow);
   white-space: nowrap;
   z-index: 3;
@@ -1295,7 +1365,7 @@ select:focus {
 .timer-bar {
   flex: 1;
   height: 8px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   background: rgba(194, 193, 194, 0.18);
   overflow: hidden;
   visibility: hidden;
@@ -1378,7 +1448,7 @@ select:focus {
   position: absolute;
   inset: -8px;
   border: 2px dashed var(--silver-300);
-  border-radius: 14px;
+  border-radius: var(--r-md);
   pointer-events: none;
   animation: target-pulse 0.9s ease-in-out infinite alternate;
 }
@@ -1397,6 +1467,21 @@ select:focus {
 
 .hand.my-turn .card:not(.playable) {
   filter: brightness(0.6);
+}
+
+/* foco pelo teclado: a carta ganha contorno e fica por cima das vizinhas */
+.hand .card:focus {
+  outline: none;
+}
+
+.hand .card:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  z-index: 4;
+}
+
+.hand.my-turn .card.playable:focus-visible {
+  transform: translateY(-24px);
 }
 
 .hand .card.fresh {
@@ -1422,7 +1507,7 @@ select:focus {
 .card {
   width: var(--card-w);
   height: var(--card-h);
-  border-radius: 9px;
+  border-radius: var(--r-card);
   background: #fff;
   position: relative;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
@@ -1544,6 +1629,12 @@ select:focus {
   min-height: 0;
 }
 
+/* botão de fechar e fundo escurecido só existem na gaveta do celular */
+.side-close,
+.side-scrim {
+  display: none;
+}
+
 .side .chat-panel {
   flex: 1;
 }
@@ -1622,7 +1713,7 @@ select:focus {
 .score-list .bar {
   grid-column: 2 / 4;
   height: 6px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   background: var(--surface-3);
   overflow: hidden;
 }
@@ -1665,7 +1756,7 @@ select:focus {
   background: var(--surface);
   border: 1px solid var(--line);
   border-top: 3px solid var(--primary);
-  border-radius: var(--radius);
+  border-radius: var(--r-lg);
   padding: 22px;
   max-width: 420px;
   width: 100%;
@@ -1679,6 +1770,11 @@ select:focus {
 
 .modal-box.wide {
   max-width: 640px;
+}
+
+/* a caixa recebe o foco ao abrir só para o leitor de tela ler o título; não precisa de contorno */
+.modal-box:focus {
+  outline: none;
 }
 
 .modal-box h2 {
@@ -1696,7 +1792,7 @@ select:focus {
   font-size: 3rem;
   line-height: 1;
   border: 3px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--r-md);
   background: var(--surface-2);
   padding: 12px;
   cursor: pointer;
@@ -1833,7 +1929,7 @@ select:focus {
   font-weight: 700;
   color: #fff;
   background: var(--red-600);
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   padding: 1px 7px;
   white-space: nowrap;
 }
@@ -1847,7 +1943,7 @@ select:focus {
 }
 
 .results .mini-hand .card {
-  border-radius: 4px;
+  --r-card: 4px;
 }
 
 .results .mini-hand .card .corner.br,
@@ -1918,7 +2014,7 @@ select:focus {
   color: #fff;
   font-weight: 600;
   padding: 8px 16px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   z-index: 30;
 }
 
@@ -1932,7 +2028,7 @@ select:focus {
   border-left: 4px solid var(--primary);
   color: #fff;
   padding: 10px 18px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   z-index: 40;
   box-shadow: var(--shadow);
   animation: toast-in 0.2s, toast-out 0.4s ease-in 2.6s forwards;
@@ -2009,21 +2105,48 @@ select:focus {
     display: inline-flex;
   }
 
+  /* fechada, a gaveta fica fora da tela e invisível (não recebe foco nem é lida) */
   .side {
     position: fixed;
     inset: 0 0 0 auto;
     width: min(340px, 88vw);
     padding: 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
     background: rgba(10, 9, 8, 0.97);
     border-left: 1px solid var(--line);
     z-index: 15;
     transform: translateX(100%);
-    transition: transform 0.25s;
+    visibility: hidden;
+    transition: transform 0.25s, visibility 0s 0.25s;
   }
 
   .side.open {
     transform: none;
+    visibility: visible;
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+    transition: transform 0.25s;
+  }
+
+  .side-close {
+    display: inline-flex;
+    align-self: flex-end;
+    min-height: 44px;
+  }
+
+  .side-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 14;
+    background: rgba(10, 9, 8, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .side.open + .side-scrim {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .seat {
@@ -2158,7 +2281,7 @@ select:focus {
   align-content: center;
   gap: 16px;
   padding: 20px 14px;
-  border-radius: var(--radius);
+  border-radius: var(--r-lg);
   background: radial-gradient(circle at 50% 35%, rgba(237, 28, 36, 0.22), transparent 65%), var(--black);
   border: 1px solid var(--line);
 }
@@ -2195,7 +2318,7 @@ select:focus {
   justify-items: center;
   gap: 4px;
   padding: 9px 4px 8px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--muted);
@@ -2237,7 +2360,7 @@ select:focus {
   height: 340px;
   overflow-y: auto;
   padding: 14px;
-  border-radius: var(--radius);
+  border-radius: var(--r-lg);
   background: var(--black);
   border: 1px solid var(--line);
   scrollbar-width: thin;

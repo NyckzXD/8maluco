@@ -37,27 +37,27 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
 
 ## 🟠 Altos
 
-- [ ] **6. Modais acessíveis e consistentes**
+- [x] **6. Modais acessíveis e consistentes**
   O Esc só fecha o modal de avatar, e só ele tem `role="dialog"`. Nenhum modal prende o foco, e Regras, Salas e Pinta não fecham clicando fora.
   - Onde: `#suitModal`, `#roundModal`, `#roomsModal`, `#rulesModal` em `public/index.html` e os listeners de `[data-close]` em `public/app.js`
   - Pronto quando: todo modal tem `role="dialog"`, `aria-modal` e `aria-labelledby`, fecha com Esc e clicando fora (menos o resultado da rodada), leva o foco para dentro ao abrir e devolve ao botão de origem ao fechar.
 
-- [ ] **7. Jogar pelo teclado**
+- [x] **7. Jogar pelo teclado**
   As cartas são `div`s com click: não recebem foco e não dá para jogar pelo teclado.
   - Onde: `renderCard()` / `renderHand()` em `public/app.js`
   - Pronto quando: as cartas da mão são `button`s (ou têm `tabindex="0"` + `role="button"`), têm `aria-label` com o nome da carta ("7 de Copas, jogável") e jogam com Enter ou Espaço.
 
-- [ ] **8. Gaveta de placar e chat no celular**
+- [x] **8. Gaveta de placar e chat no celular**
   A gaveta não tem botão de fechar, não tem fundo escurecido e não fecha com Esc.
   - Onde: `.side` em `public/style.css` (abaixo de 860px) e `#sideToggle` em `public/app.js`
   - Pronto quando: tem botão "Fechar" visível, fundo escurecido (scrim de 40–60%) e fecha com Esc. O `#sideToggle` informa `aria-expanded`.
 
-- [ ] **9. Áreas de toque de 44px**
+- [x] **9. Áreas de toque de 44px**
   Botões abaixo do mínimo: Sair, som e chat (31px de altura), o "×" de remover jogador e as bolinhas do "Como jogar" (10px).
   - Onde: `.btn-small` na `.game-top`, `.member-grid .kick` e `.howto-dots button` em `public/style.css`
   - Pronto quando: todos têm pelo menos 44×44px de área tocável (pode ser só a área, com padding ou pseudo-elemento) e o "×" tem `aria-label="Remover <nome>"`.
 
-- [ ] **10. Anunciar eventos para leitores de tela**
+- [x] **10. Anunciar eventos para leitores de tela**
   Não existe nenhum `aria-live`: toasts, "Sua vez!" e erros não são anunciados.
   - Onde: `#toasts`, `#turnBanner` e `flash()` em `public/app.js`
   - Pronto quando: toasts e banner usam `aria-live="polite"` e os erros usam `role="alert"`.
@@ -79,22 +79,22 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
 
 ## 🟡 Médios
 
-- [ ] **14. Fundo mais calmo na mesa**
+- [x] **14. Fundo mais calmo na mesa**
   O fundo 3D (corações, espadas, linhas e quadradinhos vermelhos) compete com o jogo. Os quadradinhos perto da mão parecem notificação.
   - Onde: `body::before` / `public/bg-scene.svg`
   - Pronto quando: na tela `#game` o fundo fica escurecido ou desfocado (por exemplo, `opacity` de 0.3–0.4 ou `filter: blur()`), e a home continua com a cena completa.
 
-- [ ] **15. Botões de largura total alinhados**
+- [x] **15. Botões de largura total alinhados**
   A sombra deslocada do `.btn` empurra a face 4px para a esquerda, então o "Adicionar bot" fica fora da grade de jogadores. Com a camada prata em todos os botões, a sombra clara chama ainda mais atenção.
   - Onde: `.btn` em `public/style.css`
   - Pronto quando: botões de largura total ficam alinhados com o conteúdo (compensar com `margin` ou só deslocar a sombra, sem `translate` no repouso) e a cor da camada é revista por variante.
 
-- [ ] **16. Tokens de raio de canto**
+- [x] **16. Tokens de raio de canto**
   Hoje são 8, 9, 12, 14, 16, 18 e 28px.
   - Onde: `public/style.css`
   - Pronto quando: existem só `--r-sm` / `--r-md` / `--r-lg` (+ `--r-pill` e o raio da carta) e todos os componentes usam esses tokens.
 
-- [ ] **17. Hierarquia dos botões da home**
+- [x] **17. Hierarquia dos botões da home**
   O "Salas" prata chama tanto atenção quanto o "Criar sala" vermelho, e parecem dois botões principais. O "Entrar" tem altura diferente do campo de código.
   - Onde: `.btn-rooms` e `.join-row` em `public/style.css`
   - Pronto quando: há um só botão principal (Criar sala). "Salas" vira secundário, como os ghost, e o "Entrar" tem a mesma altura do campo.

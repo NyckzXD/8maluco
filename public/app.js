@@ -52,12 +52,22 @@ function show(id) {
   for (const s of ['home', 'lobby', 'game']) $(`#${s}`).classList.toggle('hidden', s !== id);
 }
 
-function flash(text) {
+// Escreve num aviso fixo para leitores de tela. Limpa antes, para repetir a mesma frase também ser lida.
+function speak(text, { urgent = false } = {}) {
+  const region = $(urgent ? '#srAlert' : '#srStatus');
+  region.textContent = '';
+  setTimeout(() => (region.textContent = text), 50);
+}
+
+// Aviso rápido no rodapé. Por padrão é um erro (lido na hora); `info` é lido sem interromper.
+function flash(text, { info = false } = {}) {
   const el = document.createElement('div');
   el.className = 'flash';
+  el.setAttribute('aria-hidden', 'true');
   el.textContent = text;
   document.body.append(el);
   setTimeout(() => el.remove(), 3100);
+  speak(text, { urgent: !info });
 }
 
 function emit(event, data = {}) {
@@ -112,6 +122,96 @@ function setUrl(code) {
   history.replaceState(null, '', code ? `?sala=${code}` : location.pathname);
 }
 
+// ---------- modais ----------
+// Todo modal: leva o foco para dentro ao abrir, deixa o resto da página inerte (o Tab não sai dele),
+// fecha com Esc e clicando fora (menos os marcados com data-static) e devolve o foco a quem abriu.
+
+const modalStack = [];
+const modalOpener = new WeakMap();
+
+function modalEl(modal) {
+  return typeof modal === 'string' ? $(`#${modal}`) : modal;
+}
+
+// Só o modal do topo fica interativo; as telas e os outros modais ficam inertes.
+function syncInert() {
+  const top = modalStack.at(-1);
+  for (const node of $$('body > .screen, body > .modal')) node.inert = !!top && node !== top;
+}
+
+function openModal(modal) {
+  modal = modalEl(modal);
+  if (!modal.classList.contains('hidden')) return;
+  const active = document.activeElement;
+  if (active && active !== document.body) modalOpener.set(modal, active);
+  modal.classList.remove('hidden');
+  modalStack.push(modal);
+  syncInert();
+  const target = $$('[data-autofocus]', modal).find((n) => n.offsetParent && !n.disabled) ?? $('.modal-box', modal);
+  target.focus({ preventScroll: true });
+}
+
+// Esconde na hora (o modal de pinta usa isso no fim da animação de fechar).
+function hideModal(modal) {
+  modal = modalEl(modal);
+  if (modal.classList.contains('hidden')) return;
+  modal.classList.add('hidden');
+  modalStack.splice(modalStack.indexOf(modal), 1);
+  syncInert();
+  const opener = modalOpener.get(modal);
+  modalOpener.delete(modal);
+  const usable = (node) => node?.isConnected && node.offsetParent && !node.closest('[inert]');
+  // Quem abriu pode ter sumido (a carta jogada com o 8 sai da mão): aí o foco vai para a mão.
+  const back = usable(opener) ? opener : opener?.matches?.('.card') ? $('#hand .card') : null;
+  if (usable(back)) back.focus({ preventScroll: true });
+  else if (modalStack.length && !modalStack.at(-1).contains(document.activeElement)) $('.modal-box', modalStack.at(-1)).focus();
+}
+
+function closeModal(modal) {
+  modal = modalEl(modal);
+  if (modal.id === 'suitModal') return closeSuitModal();
+  hideModal(modal);
+}
+
+for (const modal of $$('.modal')) {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal && !modal.hasAttribute('data-static')) closeModal(modal);
+  });
+}
+for (const b of $$('[data-close]')) b.addEventListener('click', () => closeModal(b.closest('.modal')));
+
+// ---------- gaveta de placar e chat (celular) ----------
+
+const sideQuery = matchMedia('(max-width: 860px)');
+
+function setSideOpen(open) {
+  const side = $('.side');
+  const wasOpen = side.classList.contains('open');
+  open = open && sideQuery.matches;
+  side.classList.toggle('open', open);
+  $('#sideToggle').setAttribute('aria-expanded', String(open));
+  // Com a gaveta aberta, a mesa atrás fica inerte (o fundo escurecido cobre ela).
+  $('.game-main').inert = open;
+  if (open && !wasOpen) {
+    $('#unread').classList.add('hidden');
+    $('.side-close').focus({ preventScroll: true });
+  } else if (!open && wasOpen && (side.contains(document.activeElement) || document.activeElement === document.body)) {
+    $('#sideToggle').focus({ preventScroll: true });
+  }
+}
+
+// Esc fecha o que estiver por cima: modal, depois a gaveta, depois a carta selecionada.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const top = modalStack.at(-1);
+  if (top) {
+    if (!top.hasAttribute('data-static')) closeModal(top);
+  } else if ($('.side').classList.contains('open')) setSideOpen(false);
+  else if (selectedId) setSelected(null);
+  else return;
+  e.preventDefault();
+});
+
 // ---------- cartas ----------
 
 // Naipes desenhados num quadrado 100×100, usados por <use> nas cartas (não dependem da fonte nem viram emoji).
@@ -141,6 +241,7 @@ document.body.insertAdjacentHTML(
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.52M2 8.82a15 15 0 0 1 4.18-2.64M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></symbol>
     <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></symbol>
     <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5zM15 5l4 4"/></symbol>
@@ -448,8 +549,8 @@ function renderAvatarEditor() {
 
 function openAvatarEditor() {
   avatarDraft = { ...myAvatar };
-  $('#avatarModal').classList.remove('hidden');
   renderAvatarEditor();
+  openModal('avatarModal');
   $('#avatarOptions').scrollTop = 0;
 }
 
@@ -462,22 +563,15 @@ $('#avatarSave').addEventListener('click', () => {
   myAvatar = sanitizeAvatar(avatarDraft) ?? myAvatar;
   store.set('om_avatar', JSON.stringify(myAvatar));
   updateHomeAvatar();
-  $('#avatarModal').classList.add('hidden');
-  flash('Avatar salvo!');
-});
-// Clicar fora da janela ou apertar Esc fecha sem salvar.
-$('#avatarModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') $('#avatarModal').classList.add('hidden');
+  closeModal('avatarModal');
+  flash('Avatar salvo!', { info: true });
 });
 
 function askName() {
   const name = nameInput.value.trim();
   if (!name) {
     flash('Escolha um apelido primeiro');
-    $('#roomsModal').classList.add('hidden');
+    closeModal('roomsModal');
     nameInput.focus();
     return null;
   }
@@ -487,7 +581,7 @@ function askName() {
 
 function onJoined(res) {
   if (!res.ok) return false;
-  $('#roomsModal').classList.add('hidden');
+  closeModal('roomsModal');
   roomCode = res.code;
   setUrl(res.code);
   return true;
@@ -536,7 +630,7 @@ $('#refreshRooms').addEventListener('click', refreshRooms);
 setInterval(refreshRooms, 5000);
 
 $('#roomsBtn').addEventListener('click', () => {
-  $('#roomsModal').classList.remove('hidden');
+  openModal('roomsModal');
   refreshRooms();
 });
 
@@ -557,6 +651,7 @@ howtoSlides.forEach((_, n) => {
   const dot = el('button');
   dot.type = 'button';
   dot.title = `Passo ${n + 1}`;
+  dot.setAttribute('aria-label', `Passo ${n + 1}`);
   dot.addEventListener('click', () => showHowto(n));
   $('#howtoDots').append(dot);
 });
@@ -567,7 +662,7 @@ function leaveRoom() {
   roomCode = null;
   state = null;
   setUrl(null);
-  $('#roundModal').classList.add('hidden');
+  closeModal('roundModal');
   show('home');
   refreshRooms();
 }
@@ -589,7 +684,7 @@ $('#copyLink').addEventListener('click', async () => {
   const link = `${location.origin}${location.pathname}?sala=${roomCode}`;
   try {
     await navigator.clipboard.writeText(link);
-    flash('Link copiado! Mande para a galera');
+    flash('Link copiado! Mande para a galera', { info: true });
   } catch {
     prompt('Copie o link da sala:', link);
   }
@@ -605,15 +700,19 @@ function renderLobby(s) {
   for (const m of s.members) {
     const li = el('li');
     const av = avatar(m);
+    const canKick = isHost && m.id !== s.me;
+    if (canKick) li.classList.add('kickable');
     if (m.id === s.hostId) av.append(icon('crown', 'crown'));
     const text = el('div');
     text.style.minWidth = '0';
     const sub = m.isBot ? 'bot' : !m.connected ? 'desconectado' : m.id === s.me ? 'você' : m.id === s.hostId ? 'anfitrião' : '';
     text.append(nameWithBot('name', m.name, m.isBot), el('div', 'sub', sub));
     li.append(av, text);
-    if (isHost && m.id !== s.me) {
+    if (canKick) {
       const kick = el('button', 'kick', '×');
-      kick.title = 'Remover';
+      kick.type = 'button';
+      kick.title = `Remover ${m.name}`;
+      kick.setAttribute('aria-label', `Remover ${m.name}`);
       kick.addEventListener('click', () => emit('room:kick', { id: m.id }));
       li.append(kick);
     }
@@ -820,6 +919,7 @@ function animateDraws(events, g, s) {
 function renderCenter(prev, g, myTurn, origin) {
   const drawPile = $('#drawPile');
   $('#drawCount').textContent = g.drawCount;
+  drawPile.setAttribute('aria-label', `Comprar carta (${g.drawCount} no baralho)`);
   const canDraw = myTurn && !g.hasDrawn;
   drawPile.disabled = !canDraw;
   // Comprar sempre é permitido na sua vez, mas o baralho só chama atenção quando não há jogada.
@@ -875,6 +975,8 @@ function layoutHand() {
   const hand = $('#hand');
   const cards = $$('.card', hand);
   if (!cards.length) return;
+  // Mover as cartas entre fileiras tira o foco delas; guarda para devolver no fim.
+  const focused = focusedHandCard();
   const n = cards.length;
   const cardW = cards[0].offsetWidth;
   const avail = hand.clientWidth - 16;
@@ -896,6 +998,20 @@ function layoutHand() {
   }
   hand.replaceChildren(...rowEls);
   hand.style.setProperty('--overlap', `${Math.max(overlapFor(base + (extra ? 1 : 0)), -cardW * 0.72)}px`);
+  focused?.focus({ preventScroll: true });
+}
+
+// Carta da mão que está com o foco (teclado), se houver.
+function focusedHandCard() {
+  const active = document.activeElement;
+  return active?.closest?.('#hand .card') ? active : null;
+}
+
+// Setas esquerda/direita andam entre as cartas da mão.
+function moveHandFocus(from, step) {
+  const cards = $$('#hand .card');
+  const i = cards.indexOf(from);
+  cards[Math.max(0, Math.min(cards.length - 1, i + step))]?.focus();
 }
 
 // Escala de uma carta em relação ao monte (o voo usa o tamanho do monte; a mão pode ter cartas maiores).
@@ -923,6 +1039,10 @@ function renderHand(prev, g, s, myTurn) {
   const sameRound = prev?.game?.round === g.round;
   const before = new Set(sameRound ? prev.game.hand.map((c) => c.id) : []);
   const playable = new Set(g.playable);
+  // A mão é redesenhada a cada jogada: o foco volta para a mesma carta ou, se ela saiu, para a vizinha.
+  const focused = focusedHandCard();
+  const focusedId = focused?.dataset.id;
+  const focusedIndex = focused ? $$('#hand .card').indexOf(focused) : -1;
   // A seleção só vale enquanto for a sua vez e a carta ainda puder ser jogada.
   if (!myTurn || !playable.has(selectedId)) selectedId = null;
   $('#discardPile').classList.toggle('drop-target', !!selectedId);
@@ -933,11 +1053,29 @@ function renderHand(prev, g, s, myTurn) {
       if (card.id === selectedId) node.classList.add('selected');
       if (sameRound && !before.has(card.id)) node.classList.add('fresh');
       if (liftedIds.has(card.id)) node.classList.add('lifted');
+      // Dá para jogar pelo teclado: Tab/setas escolhem, Enter ou Espaço joga.
+      node.tabIndex = 0;
+      node.setAttribute('role', 'button');
+      node.setAttribute('aria-label', myTurn && playable.has(card.id) ? `${cardName(card)}, jogável` : cardName(card));
       node.addEventListener('click', () => onCardClick(card));
+      node.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onCardClick(card, { direct: true });
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          moveHandFocus(node, e.key === 'ArrowRight' ? 1 : -1);
+        }
+      });
       return node;
     })
   );
   layoutHand();
+  if (focused) {
+    const cards = $$('#hand .card');
+    const target = cards.find((c) => c.dataset.id === focusedId) ?? cards[Math.min(focusedIndex, cards.length - 1)];
+    target?.focus({ preventScroll: true });
+  }
 }
 
 // No toque (celular/tablet), a 1ª batida numa carta só seleciona; a 2ª, ou tocar no monte, joga.
@@ -956,7 +1094,8 @@ function setSelected(id) {
   if (state?.game) renderBanner(state.game, isMyTurn(state));
 }
 
-function onCardClick(card) {
+// `direct` (teclado) joga sem o passo de selecionar, como o clique do mouse.
+function onCardClick(card, { direct = false } = {}) {
   const g = state?.game;
   if (!g || !isMyTurn(state)) return flash('Calma, ainda não é a sua vez');
   if (!g.playable.includes(card.id)) {
@@ -964,7 +1103,7 @@ function onCardClick(card) {
     $(`#hand [data-id="${card.id}"]`)?.classList.add('hit');
     return flash('Essa carta não combina com a pinta nem com o número');
   }
-  if (confirmByTap() && selectedId !== card.id) {
+  if (!direct && confirmByTap() && selectedId !== card.id) {
     setSelected(card.id);
     sounds.select();
     navigator.vibrate?.(15);
@@ -1040,7 +1179,7 @@ function openSuitModal(g, eight) {
   stopSuitAnims();
   modal.classList.remove('closing');
   row.replaceChildren(...rest.map((c) => renderCard(c)));
-  modal.classList.remove('hidden');
+  openModal('suitModal');
   layoutSuitHand();
 
   liftedIds = new Set(rest.map((c) => c.id));
@@ -1070,13 +1209,16 @@ function closeSuitModal({ animate = true } = {}) {
   const modal = $('#suitModal');
   pendingEight = null;
   if (modal.classList.contains('hidden')) return;
+  // Já está fechando (Esc duas vezes, por exemplo): deixa a animação terminar.
+  if (animate && modal.classList.contains('closing')) return;
   stopSuitAnims();
   const finish = () => {
-    modal.classList.add('hidden');
-    modal.classList.remove('closing');
-    $('#suitHand').replaceChildren();
+    // As cartas voltam a aparecer antes de fechar, para o foco poder voltar para a carta de origem.
     liftedIds = new Set();
     for (const n of $$('#hand .card.lifted')) n.classList.remove('lifted');
+    modal.classList.remove('closing');
+    $('#suitHand').replaceChildren();
+    hideModal(modal);
   };
   const cards = [...$('#suitHand').children];
   if (!animate || reducedMotion() || !cards.length) return finish();
@@ -1134,7 +1276,8 @@ function renderMe(g, s, myTurn) {
 }
 
 function renderBanner(g, myTurn) {
-  $('#turnBanner').textContent = !myTurn
+  const banner = $('#turnBanner');
+  const text = !myTurn
     ? ''
     : selectedId
       ? 'Toque de novo para jogar'
@@ -1145,16 +1288,17 @@ function renderBanner(g, myTurn) {
             ? 'Sua vez! Escolha uma carta'
             : 'Você abre o monte! Jogue qualquer carta'
           : 'Sua vez! Sem jogada, compre do baralho';
+  // O banner é anunciado (aria-live): só troca o texto quando ele muda, para não repetir a cada atualização.
+  if (banner.textContent !== text) banner.textContent = text;
 }
 
 function renderRoundModal(g, s) {
   const modal = $('#roundModal');
   const lr = g.lastRound;
   if (!lr || (g.phase !== 'roundOver' && g.phase !== 'gameOver')) {
-    modal.classList.add('hidden');
+    hideModal(modal);
     return;
   }
-  modal.classList.remove('hidden');
   const over = g.phase === 'gameOver';
   $('#roundTitle').replaceChildren(
     ...(over ? [icon('trophy', 'trophy'), ` ${nameOf(g.winnerId)} venceu o jogo!`] : [`${nameOf(lr.winnerId)} bateu a rodada ${lr.round}!`]),
@@ -1200,6 +1344,8 @@ function renderRoundModal(g, s) {
       ? imReady || !playing ? 'Começando a próxima rodada…' : 'Só falta você!'
       : `Esperando ${waiting.join(', ')} ficar${waiting.length > 1 ? 'em' : ''} pronto${waiting.length > 1 ? 's' : ''}…`;
   }
+  // Abre só depois de montar, para o foco cair no botão certo (pronto / voltar para a sala).
+  openModal('roundModal');
 }
 
 $('#againBtn').addEventListener('click', () => emit('room:lobby'));
@@ -1280,7 +1426,7 @@ function renderGame(prev, s) {
 
 function render(prev, s) {
   if (!s.game) {
-    $('#roundModal').classList.add('hidden');
+    hideModal($('#roundModal'));
     show('lobby');
     renderLobby(s);
   } else {
@@ -1317,23 +1463,19 @@ $('#muteBtn').addEventListener('click', () => {
 
 $('#sideToggle').addEventListener('click', (e) => {
   e.stopPropagation();
-  $('.side').classList.toggle('open');
-  $('#unread').classList.add('hidden');
+  setSideOpen(!$('.side').classList.contains('open'));
 });
+$('.side-close').addEventListener('click', () => setSideOpen(false));
+// Tocar fora (no fundo escurecido) fecha a gaveta.
 document.addEventListener('click', (e) => {
   const side = $('.side');
-  if (side.classList.contains('open') && !side.contains(e.target)) side.classList.remove('open');
+  if (side.classList.contains('open') && !side.contains(e.target)) setSideOpen(false);
 });
+// Voltou para a tela larga: o painel fica fixo do lado, então a gaveta não existe mais.
+sideQuery.addEventListener('change', () => setSideOpen(false));
 
 for (const b of [$('#rulesBtn'), ...$$('.rules-link')]) {
-  b.addEventListener('click', () => $('#rulesModal').classList.remove('hidden'));
-}
-for (const b of $$('[data-close]')) {
-  b.addEventListener('click', () => {
-    const modal = b.closest('.modal');
-    if (modal.id === 'suitModal') return closeSuitModal();
-    modal.classList.add('hidden');
-  });
+  b.addEventListener('click', () => openModal('rulesModal'));
 }
 
 // ---------- conexão ----------
@@ -1378,6 +1520,6 @@ if (invite) {
   if (nameInput.value.trim()) joinRoom(invite);
   else {
     nameInput.focus();
-    flash('Escolha um apelido e clique em Entrar');
+    flash('Escolha um apelido e clique em Entrar', { info: true });
   }
 }

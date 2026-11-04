@@ -35,7 +35,7 @@
 
                 <div class="play-actions">
                   <button id="createBtn" class="btn btn-primary btn-big"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar sala</button>
-                  <button id="roomsBtn" class="btn btn-big btn-rooms"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Salas</button>
+                  <button id="roomsBtn" class="btn btn-big btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Salas</button>
                   <div class="join-row">
                     <input id="codeInput" maxlength="5" placeholder="CÓDIGO" aria-label="Código da sala" autocomplete="off" />
                     <button id="joinBtn" class="btn">Entrar</button>
@@ -140,7 +140,7 @@
             <div id="roundLabel" class="round-label">Rodada 1</div>
             <div class="top-right">
               <button id="muteBtn" class="btn btn-ghost btn-small" title="Som" aria-label="Som"><svg class="icon" aria-hidden="true"><use href="#i-volume"/></svg></button>
-              <button id="sideToggle" class="btn btn-ghost btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden"></span></button>
+              <button id="sideToggle" class="btn btn-ghost btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat" aria-controls="sidePanel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden"></span></button>
             </div>
           </header>
 
@@ -156,48 +156,50 @@
               <div id="discardPile" class="pile discard-pile"></div>
               <div id="activeSuit" class="active-suit"></div>
             </div>
-            <div id="toasts" class="toasts"></div>
+            <div id="toasts" class="toasts" aria-live="polite"></div>
           </div>
 
           <div class="me-bar">
-            <div id="turnBanner" class="turn-banner"></div>
+            <div id="turnBanner" class="turn-banner" aria-live="polite"></div>
             <div class="me-actions">
               <div id="meInfo" class="me-info"></div>
               <div id="meTimer" class="timer-bar"><i></i></div>
               <button id="passBtn" class="btn btn-small hidden">Passar a vez</button>
             </div>
-            <div id="hand" class="hand"></div>
+            <div id="hand" class="hand" role="group" aria-label="Suas cartas"></div>
           </div>
         </div>
 
-        <aside class="side">
+        <aside id="sidePanel" class="side" aria-label="Placar e chat">
+          <button type="button" class="btn btn-ghost side-close"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Fechar</button>
           <div class="panel score-panel">
             <h3>Placar <small>(perde quem chegar a <span id="limitLabel">100</span>)</small></h3>
             <ul id="scoreList" class="score-list"></ul>
           </div>
           <div class="panel chat-panel" data-chat></div>
         </aside>
+        <div id="sideScrim" class="side-scrim" aria-hidden="true"></div>
       </div>
     </section>
 
     <!-- ===== Modais ===== -->
     <div id="suitModal" class="modal hidden">
-      <div class="modal-box">
-        <h2>Escolha a pinta</h2>
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="suitTitle" tabindex="-1">
+        <h2 id="suitTitle">Escolha a pinta</h2>
         <p class="muted">O próximo jogador terá que seguir essa pinta.</p>
         <div class="suit-grid">
-          <button class="suit-btn red" data-suit="H">♥<small>Copas</small></button>
+          <button class="suit-btn red" data-suit="H" data-autofocus>♥<small>Copas</small></button>
           <button class="suit-btn red" data-suit="D">♦<small>Ouros</small></button>
           <button class="suit-btn" data-suit="S">♠<small>Espadas</small></button>
           <button class="suit-btn" data-suit="C">♣<small>Paus</small></button>
         </div>
         <button class="btn btn-ghost" data-close>Cancelar</button>
       </div>
-      <div id="suitHand" class="suit-hand" aria-label="Suas outras cartas"></div>
+      <div id="suitHand" class="suit-hand" aria-hidden="true"></div>
     </div>
 
-    <div id="roundModal" class="modal hidden">
-      <div class="modal-box wide">
+    <div id="roundModal" class="modal hidden" data-static>
+      <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="roundTitle" tabindex="-1">
         <h2 id="roundTitle"></h2>
         <table class="results">
           <thead>
@@ -207,19 +209,19 @@
         </table>
         <p id="roundFooter" class="muted center"></p>
         <div id="readyActions" class="center hidden">
-          <button id="readyBtn" class="btn btn-primary btn-big">Estou pronto!</button>
+          <button id="readyBtn" class="btn btn-primary btn-big" data-autofocus>Estou pronto!</button>
         </div>
         <div id="gameOverActions" class="center hidden">
-          <button id="againBtn" class="btn btn-primary btn-big">Voltar para a sala</button>
+          <button id="againBtn" class="btn btn-primary btn-big" data-autofocus>Voltar para a sala</button>
           <p id="againWait" class="muted">Esperando o anfitrião…</p>
         </div>
       </div>
     </div>
 
     <div id="roomsModal" class="modal hidden">
-      <div class="modal-box wide rooms-box">
+      <div class="modal-box wide rooms-box" role="dialog" aria-modal="true" aria-labelledby="roomsTitle" tabindex="-1">
         <div class="panel-head">
-          <h2>Salas públicas</h2>
+          <h2 id="roomsTitle">Salas públicas</h2>
           <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar" aria-label="Atualizar"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
         </div>
         <ul id="roomList" class="room-list"></ul>
@@ -228,7 +230,7 @@
     </div>
 
     <div id="avatarModal" class="modal hidden">
-      <div class="modal-box avatar-box" role="dialog" aria-modal="true" aria-labelledby="avatarTitle">
+      <div class="modal-box avatar-box" role="dialog" aria-modal="true" aria-labelledby="avatarTitle" tabindex="-1">
         <h2 id="avatarTitle">Crie seu avatar</h2>
         <div class="avatar-editor">
           <div class="avatar-stage">
@@ -248,8 +250,8 @@
     </div>
 
     <div id="rulesModal" class="modal hidden">
-      <div class="modal-box wide rules">
-        <h2>Como jogar 8 Maluco</h2>
+      <div class="modal-box wide rules" role="dialog" aria-modal="true" aria-labelledby="rulesTitle" tabindex="-1">
+        <h2 id="rulesTitle">Como jogar 8 Maluco</h2>
         <ul>
           <li>Cada jogador recebe <b>9 cartas</b>. Quem dá as cartas na primeira rodada é sorteado; depois passa para a direita a cada rodada.</li>
           <li>Quem está à <b>direita</b> de quem deu as cartas <b>abre o monte</b> com a carta que quiser, e o jogo gira para a direita (anti-horário).</li>
@@ -288,7 +290,11 @@
       </form>
     </template>
 
-    <div id="netStatus" class="net-status hidden">Reconectando…</div>
+    <div id="netStatus" class="net-status hidden" role="status">Reconectando…</div>
+
+    <!-- Avisos para leitores de tela: os flashes visuais escrevem aqui também. -->
+    <div id="srStatus" class="sr-only" role="status" aria-live="polite"></div>
+    <div id="srAlert" class="sr-only" role="alert"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="app.js"></script>
