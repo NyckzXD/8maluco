@@ -104,7 +104,7 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
   - Onde: `.btn:disabled` em `public/style.css` e `renderLobby()` em `public/app.js`
   - Pronto quando: o botão desabilitado fica neutro (cinza) e mantém o texto "Começar partida", com "Precisa de pelo menos 2 jogadores" como texto de ajuda embaixo.
 
-- [ ] **19. Naipes em SVG em todo o jogo**
+- [x] **19. Naipes em SVG em todo o jogo**
   ♥♦♠♣ aparecem como texto no modal de pinta, no "Como jogar" e no selo "Pinta:". Em alguns celulares esses símbolos viram emoji.
   - Onde: `.suit-btn` e `.howto-card` em `public/index.html`, `renderCenter()` em `public/app.js`
   - Pronto quando: todos os naipes usam os `<symbol id="suit-*">` que já existem. Trocar também o ★ das cartas especiais e o "×" por ícones SVG.
@@ -143,14 +143,14 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
 - [ ] **27. Confirmar antes de remover jogador**
   - Pronto quando: o "×" pede confirmação (ou tem "desfazer"), mas para bots não precisa.
 
-- [ ] **28. Timer mais claro**
+- [x] **28. Timer mais claro**
   - Pronto quando: aparecem os segundos restantes, um som/vibração nos últimos 5s e o título da aba vira "Sua vez! · 8 Maluco" quando a aba está em segundo plano.
 
-- [ ] **29. Explicar as cartas especiais na mão**
+- [x] **29. Explicar as cartas especiais na mão**
   As cartas têm ★, mas sem explicação do efeito.
   - Pronto quando: passar o mouse ou dar um toque longo mostra o efeito ("9: o da direita compra 2 e perde a vez").
 
-- [ ] **30. Direção do jogo e alvo dos efeitos**
+- [x] **30. Direção do jogo e alvo dos efeitos**
   A seta girando com 8% de opacidade quase não aparece. 7 (esquerda) e 9 (direita) confundem.
   - Pronto quando: a direção fica visível (setas no feltro ou entre os assentos), e ao jogar 7/9 aparece uma seta até o jogador que vai comprar.
 

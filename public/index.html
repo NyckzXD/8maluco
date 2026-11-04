@@ -53,7 +53,7 @@
                   <p>Cada jogador começa a rodada com 9 cartas na mão</p>
                 </div>
                 <div class="howto-slide">
-                  <div class="howto-card red">♥</div>
+                  <div class="howto-card red"><svg class="howto-suit" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></div>
                   <h3>2. Siga o monte</h3>
                   <p>Jogue uma carta da mesma pinta ou do mesmo número da carta do monte</p>
                 </div>
@@ -86,7 +86,7 @@
           <footer class="home-foot">
             8 Maluco é um jogo de cartas para 2 a 8 pessoas: livre-se de todas as cartas da mão seguindo a pinta ou o
             número da carta do monte. Quem chegar a 100 pontos está fora — ganha o último que restar!
-            <p class="copyright">© Criado com <span class="heart" role="img" aria-label="amor">♥</span> por Nycolas F. 2026</p>
+            <p class="copyright">© Criado com <span class="heart" role="img" aria-label="amor"><svg class="heart-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span> por Nycolas F. 2026</p>
           </footer>
         </div>
       </div>
@@ -165,6 +165,7 @@
             <div class="me-actions">
               <div id="meInfo" class="me-info"></div>
               <div id="meTimer" class="timer-bar"><i></i></div>
+              <span id="meTimerSecs" class="timer-secs" aria-hidden="true"></span>
               <button id="passBtn" class="btn btn-small hidden">Passar a vez</button>
             </div>
             <div id="hand" class="hand" role="group" aria-label="Suas cartas"></div>
@@ -189,10 +190,10 @@
         <h2 id="suitTitle">Escolha a pinta</h2>
         <p class="muted">O próximo jogador terá que seguir essa pinta.</p>
         <div class="suit-grid">
-          <button class="suit-btn red" data-suit="H" data-autofocus>♥<small>Copas</small></button>
-          <button class="suit-btn red" data-suit="D">♦<small>Ouros</small></button>
-          <button class="suit-btn" data-suit="S">♠<small>Espadas</small></button>
-          <button class="suit-btn" data-suit="C">♣<small>Paus</small></button>
+          <button class="suit-btn red" data-suit="H" data-autofocus><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg><small>Copas</small></button>
+          <button class="suit-btn red" data-suit="D"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-D"/></svg><small>Ouros</small></button>
+          <button class="suit-btn" data-suit="S"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-S"/></svg><small>Espadas</small></button>
+          <button class="suit-btn" data-suit="C"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-C"/></svg><small>Paus</small></button>
         </div>
         <button class="btn btn-ghost" data-close>Cancelar</button>
       </div>

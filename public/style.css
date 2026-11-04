@@ -524,6 +524,12 @@ select:focus {
     0 10px 22px rgba(0, 0, 0, 0.5);
 }
 
+.howto-card .howto-suit {
+  width: 0.9em;
+  height: 0.9em;
+  fill: currentColor;
+}
+
 .howto-card.red {
   color: var(--racing-red);
   box-shadow:
@@ -630,6 +636,13 @@ select:focus {
 
 .copyright .heart {
   color: var(--racing-red);
+}
+
+.copyright .heart-glyph {
+  width: 0.9em;
+  height: 0.9em;
+  vertical-align: -0.1em;
+  fill: currentColor;
 }
 
 .room-list {
@@ -785,7 +798,7 @@ select:focus {
   border-radius: var(--r-md);
   background: none;
   color: var(--muted);
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   cursor: pointer;
 }
 
@@ -987,6 +1000,55 @@ select:focus {
   animation: spin-ccw 14s linear infinite;
 }
 
+/* setas no feltro entre os lugares: para onde a vez anda */
+.dir-arrow {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  translate: -50% -50%;
+  color: var(--silver);
+  opacity: 0.55;
+  stroke-width: 2.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* seta do 7 / 9: do monte até quem vai comprar */
+.target-arrow {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  overflow: visible;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  transition: opacity 0.3s;
+}
+
+.target-arrow.out {
+  opacity: 0;
+}
+
+.target-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: arrow-draw 0.4s ease-out forwards;
+}
+
+.target-head {
+  fill: var(--primary);
+  animation: fade 0.15s ease-out 0.3s both;
+}
+
+@keyframes arrow-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 .direction .icon {
   display: block;
   width: 1em;
@@ -1185,6 +1247,13 @@ select:focus {
   font-family: var(--font-hud);
   font-size: 1.3rem;
   vertical-align: -2px;
+}
+
+.active-suit .badge-suit {
+  width: 0.8em;
+  height: 0.8em;
+  vertical-align: -0.05em;
+  fill: currentColor;
 }
 
 .active-suit .red {
@@ -1452,6 +1521,26 @@ select:focus {
   background: var(--primary);
 }
 
+/* segundos que faltam, ao lado da barra */
+.timer-secs {
+  font-family: var(--font-hud);
+  font-weight: 700;
+  font-size: 1.05rem;
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--silver);
+  visibility: hidden;
+}
+
+.timer-secs.on {
+  visibility: visible;
+}
+
+.timer-secs.low {
+  color: var(--red-text);
+}
+
 .hand {
   display: flex;
   flex-direction: column;
@@ -1642,14 +1731,15 @@ select:focus {
   pointer-events: none;
 }
 
-.card.special::after {
-  content: "★";
+.card .star {
   position: absolute;
-  top: 3px;
-  right: 5px;
-  font-size: calc(var(--card-w) * 0.16);
-  line-height: 1;
+  top: calc(var(--card-w) * 0.04);
+  right: calc(var(--card-w) * 0.06);
+  width: calc(var(--card-w) * 0.16);
+  height: calc(var(--card-w) * 0.16);
   color: #f0a800;
+  fill: currentColor;
+  pointer-events: none;
 }
 
 .card.joker .pips {
@@ -1894,6 +1984,13 @@ select:focus {
   color: var(--red-text);
 }
 
+.suit-btn .suit-glyph {
+  width: 1em;
+  height: 1em;
+  justify-self: center;
+  fill: currentColor;
+}
+
 .suit-btn small {
   font-size: 1rem;
   color: var(--ink);
@@ -2040,7 +2137,7 @@ select:focus {
 .results .mini-hand .card .corner.br,
 .results .mini-hand .card .pips,
 .results .mini-hand .card .face,
-.results .mini-hand .card::after,
+.results .mini-hand .card .star,
 .results .mini-hand .card .label {
   display: none;
 }
@@ -2129,6 +2226,49 @@ select:focus {
   width: max-content;
   max-width: 90vw;
   text-align: center;
+}
+
+/* dica com o efeito da carta especial, logo acima da carta na mão */
+.card-tip {
+  position: fixed;
+  translate: -50% -100%;
+  z-index: 12;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: 8px 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.3;
+  text-align: center;
+  pointer-events: none;
+  animation: fade 0.15s;
+}
+
+.card-tip b {
+  color: var(--red-text);
+}
+
+/* setinha apontando para a carta */
+.card-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: calc(50% + var(--caret-x, 0px));
+  translate: -50% -50%;
+  width: 10px;
+  height: 10px;
+  rotate: 45deg;
+  background: var(--surface-3);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.hand .card {
+  -webkit-touch-callout: none;
 }
 
 /* durante a partida: logo abaixo da barra do topo, sem cobrir as cartas */

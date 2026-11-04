@@ -45,6 +45,14 @@ let muted = store.get('om_muted') === '1';
 const RANK_NAMES = { A: 'Ás', J: 'Valete', Q: 'Dama', K: 'Rei', JOKER: 'Joker' };
 const SUIT_ORDER = { S: 0, H: 1, C: 2, D: 3 };
 const RANK_ORDER = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'JOKER'];
+// Efeito de cada carta especial (as que têm estrela), mostrado na dica da mão.
+const SPECIAL_TIPS = {
+  A: 'pula o próximo jogador',
+  7: 'o jogador da esquerda compra 1 carta',
+  8: 'entra em qualquer pinta e você escolhe a pinta do próximo',
+  9: 'o jogador da direita compra 2 cartas e perde a vez',
+  JOKER: 'entra em qualquer carta e todos os outros compram 1',
+};
 
 // ---------- utilidades ----------
 
@@ -223,6 +231,7 @@ document.body.insertAdjacentHTML(
     <symbol id="suit-D" viewBox="0 0 100 100"><path fill="currentColor" d="M50 1 86 50 50 99 14 50z"/></symbol>
     <symbol id="suit-S" viewBox="0 0 100 100"><path fill="currentColor" d="M50 2C40 24 5 40 5 63c0 13 10 22 22 22 9 0 16-4 20-11-1 11-5 18-14 24h34c-9-6-13-13-14-24 4 7 11 11 20 11 12 0 22-9 22-22C95 40 60 24 50 2z"/></symbol>
     <symbol id="suit-C" viewBox="0 0 100 100"><g fill="currentColor"><circle cx="50" cy="27" r="21"/><circle cx="26" cy="60" r="21"/><circle cx="74" cy="60" r="21"/><path d="M42 40h16v20H42z"/><path d="M47 62c-1 15-5 26-15 36h36c-10-10-14-21-15-36z"/></g></symbol>
+    <symbol id="star" viewBox="0 0 24 24"><path fill="currentColor" d="m12 1.8 3 6.9 7.5.7-5.7 5 1.7 7.3L12 17.9l-6.5 3.8 1.7-7.3-5.7-5 7.5-.7z"/></symbol>
     <symbol id="jester" viewBox="0 0 100 100"><g stroke="#1d1d28" stroke-width="2.5" stroke-linejoin="round">
       <path fill="#d0102a" d="M24 72C18 54 10 42 6 30c14 2 26 14 30 30z"/><path fill="#d0102a" d="M76 72c6-18 14-30 18-42-14 2-26 14-30 30z"/>
       <path fill="#2aa7d8" d="M28 72C30 44 40 22 50 8c10 14 20 36 22 64z"/>
@@ -241,7 +250,8 @@ document.body.insertAdjacentHTML(
     <symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-chevrons" viewBox="0 0 24 24"><path d="m6 5 6 6 6-6M6 13l6 6 6-6"/></symbol>
+    <symbol id="i-check"viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.52M2 8.82a15 15 0 0 1 4.18-2.64M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></symbol>
     <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></symbol>
@@ -279,7 +289,7 @@ function nameWithBot(className, name, isBot) {
 }
 
 function suitIcon(suit, className) {
-  const icon = svg('svg', { class: className, viewBox: '0 0 100 100' });
+  const icon = svg('svg', { class: className, viewBox: '0 0 100 100', 'aria-hidden': 'true' });
   icon.append(svg('use', { href: `#suit-${suit}` }));
   return icon;
 }
@@ -311,6 +321,13 @@ function renderPips(card) {
   return box;
 }
 
+// Estrela dourada no canto das cartas especiais (SVG, para não virar emoji).
+function starMark() {
+  const star = svg('svg', { class: 'star', viewBox: '0 0 24 24', 'aria-hidden': 'true' });
+  star.append(svg('use', { href: '#star' }));
+  return star;
+}
+
 function renderCard(card) {
   const node = el('div', 'card');
   node.dataset.id = card.id;
@@ -318,12 +335,15 @@ function renderCard(card) {
     node.classList.add('joker', 'special');
     const hat = svg('svg', { class: 'pips', viewBox: '0 0 100 100' });
     hat.append(svg('use', { href: '#jester' }));
-    node.append(el('span', 'label', 'JOKER'), hat, el('span', 'label bottom', 'JOKER'));
+    node.append(el('span', 'label', 'JOKER'), hat, el('span', 'label bottom', 'JOKER'), starMark());
     return node;
   }
   const suit = SUIT_INFO[card.suit];
   if (suit.color === 'red') node.classList.add('red');
-  if (['A', '7', '8', '9'].includes(card.rank)) node.classList.add('special');
+  if (SPECIAL_TIPS[card.rank]) {
+    node.classList.add('special');
+    node.append(starMark());
+  }
   for (const pos of ['tl', 'br']) {
     const corner = el('span', `corner ${pos}`);
     corner.append(el('b', null, card.rank), suitIcon(card.suit));
@@ -375,6 +395,7 @@ const sounds = {
   select: () => beep([740], 0.04, 'triangle', 0.03),
   turn: () => beep([660, 880], 0.12),
   bad: () => beep([220, 160], 0.12, 'sawtooth', 0.03),
+  tick: () => beep([990], 0.05, 'square', 0.025),
   win: () => beep([523, 659, 784, 1046], 0.14),
 };
 
@@ -719,7 +740,8 @@ function renderLobby(s) {
     text.append(nameWithBot('name', m.name, m.isBot), el('div', 'sub', sub));
     li.append(av, text);
     if (canKick) {
-      const kick = el('button', 'kick', '×');
+      const kick = el('button', 'kick');
+      kick.append(icon('x'));
       kick.type = 'button';
       kick.title = `Remover ${m.name}`;
       kick.setAttribute('aria-label', `Remover ${m.name}`);
@@ -786,6 +808,99 @@ function renderSeats(g, s, hit) {
     seat.append(av, name, info);
     seats.append(seat);
   });
+  renderDirection(n);
+}
+
+// Setas no feltro, entre um lugar e o próximo, apontando para onde a vez anda (direita = anti-horário).
+let directionCount = 0;
+function renderDirection(n = directionCount) {
+  directionCount = n;
+  const seats = $('#seats');
+  for (const old of $$('.dir-arrow', seats)) old.remove();
+  const table = $('#table').getBoundingClientRect();
+  const felt = $('#table .felt').getBoundingClientRect();
+  if (!n || !table.width || !felt.width) return;
+  // Um pouco para dentro do aro, no próprio feltro.
+  const cx = felt.left - table.left + felt.width / 2;
+  const cy = felt.top - table.top + felt.height / 2;
+  const rx = felt.width / 2 - 26;
+  const ry = felt.height / 2 - 26;
+  for (let k = 0; k < n; k++) {
+    // Mesmo ângulo de seatPosition(), no meio do caminho entre o lugar k e o k+1.
+    const a = ((90 - ((k + 0.5) * 360) / n) * Math.PI) / 180;
+    const x = cx + rx * Math.cos(a);
+    const y = cy + ry * Math.sin(a);
+    // A vez anda com o ângulo diminuindo: a tangente nesse sentido é (rx·sen a, −ry·cos a).
+    const heading = (Math.atan2(-ry * Math.cos(a), rx * Math.sin(a)) * 180) / Math.PI;
+    const arrow = icon('chevrons', 'dir-arrow');
+    arrow.style.left = `${(x / table.width) * 100}%`;
+    arrow.style.top = `${(y / table.height) * 100}%`;
+    // O chevron do sprite aponta para baixo (90°).
+    arrow.style.rotate = `${heading - 90}deg`;
+    seats.append(arrow);
+  }
+}
+// A mesa mudou de tamanho (janela, gaveta, celular girado): as setas acompanham o feltro.
+new ResizeObserver(() => {
+  if (state?.game) renderDirection();
+}).observe($('#table'));
+
+// Ao jogar 7 ou 9, uma seta sai do monte até quem vai comprar.
+const TARGET_ARROW_MS = 1800;
+function showEffectTargets(events, s) {
+  const hits = events.filter((e) => e.type === 'penalty' && (e.reason === '7' || e.reason === '9'));
+  if (!hits.length) return;
+  // Espera a carta jogada chegar no monte.
+  const delay = reducedMotion() ? 0 : FLIGHT_MS * 0.8;
+  setTimeout(() => hits.forEach((e) => drawTargetArrow(e.playerId, s)), delay);
+}
+
+function drawTargetArrow(playerId, s) {
+  const target = playerId === s.me ? $('#meInfo .avatar') : $(`#seats .seat[data-id="${playerId}"] .avatar`);
+  const pile = $('#discardPile');
+  if (!target || !pile) return;
+  const from = centerOf(pile);
+  const to = centerOf(target);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 80) return;
+  const ux = dx / len;
+  const uy = dy / len;
+  // Começa na borda do monte e para antes do avatar.
+  const startGap = pile.getBoundingClientRect().width / 2 + 8;
+  const endGap = target.getBoundingClientRect().width / 2 + 10;
+  const x1 = from.x + ux * startGap;
+  const y1 = from.y + uy * startGap;
+  const x2 = to.x - ux * endGap;
+  const y2 = to.y - uy * endGap;
+  // Curva leve para o lado, para não passar por cima das cartas do centro.
+  const bend = Math.min(60, len * 0.18);
+  const qx = (x1 + x2) / 2 - uy * bend;
+  const qy = (y1 + y2) / 2 + ux * bend;
+  // Ponta da seta alinhada com a direção final da curva.
+  const ex = x2 - qx;
+  const ey = y2 - qy;
+  const el2 = Math.hypot(ex, ey) || 1;
+  const [tx, ty] = [ex / el2, ey / el2];
+  const head = 14;
+  const wing = 8;
+  const bx = x2 - tx * head;
+  const by = y2 - ty * head;
+
+  const layer = svg('svg', { class: 'target-arrow', width: innerWidth, height: innerHeight, 'aria-hidden': 'true' });
+  layer.append(
+    svg('path', { class: 'target-line', d: `M${x1} ${y1} Q${qx} ${qy} ${bx} ${by}`, pathLength: 1 }),
+    svg('polygon', {
+      class: 'target-head',
+      points: `${x2},${y2} ${bx - ty * wing},${by + tx * wing} ${bx + ty * wing},${by - tx * wing}`,
+    }),
+  );
+  document.body.append(layer);
+  setTimeout(() => {
+    layer.classList.add('out');
+    setTimeout(() => layer.remove(), 300);
+  }, TARGET_ARROW_MS);
 }
 
 function cardRotation(id) {
@@ -968,7 +1083,8 @@ function renderCenter(prev, g, myTurn, origin) {
         : `${nameOf(g.turnId)} vai abrir o monte`;
     badge.append(document.createTextNode(text));
   } else {
-    const sym = el('b', suit.color === 'red' ? 'red' : '', suit.symbol);
+    const sym = el('b', suit.color === 'red' ? 'red' : '');
+    sym.append(suitIcon(g.activeSuit, 'badge-suit'));
     const label = g.activeRank === '8' ? 'Pediu' : g.activeRank === 'JOKER' ? 'Continua' : 'Pinta';
     badge.append(document.createTextNode(`${label}: `), sym, document.createTextNode(` ${suit.name}`));
   }
@@ -1039,10 +1155,12 @@ function renderHand(prev, g, s, myTurn) {
   hand.classList.toggle('my-turn', myTurn);
   const me = g.players.find((p) => p.id === s.me);
   if (!me) {
+    hideCardTip();
     hand.replaceChildren(el('p', 'spectator', 'Você está assistindo. Entra na próxima partida!'));
     return;
   }
   if (me.eliminated) {
+    hideCardTip();
     hand.replaceChildren(el('p', 'spectator', 'Você está fora. Assista até o fim!'));
     return;
   }
@@ -1066,8 +1184,20 @@ function renderHand(prev, g, s, myTurn) {
       // Dá para jogar pelo teclado: Tab/setas escolhem, Enter ou Espaço joga.
       node.tabIndex = 0;
       node.setAttribute('role', 'button');
-      node.setAttribute('aria-label', myTurn && playable.has(card.id) ? `${cardName(card)}, jogável` : cardName(card));
-      node.addEventListener('click', () => onCardClick(card));
+      const tip = tipText(card);
+      node.setAttribute(
+        'aria-label',
+        `${cardName(card)}${myTurn && playable.has(card.id) ? ', jogável' : ''}${tip ? `. Efeito: ${tip.tip}` : ''}`,
+      );
+      node.addEventListener('click', () => {
+        // O toque longo só mostrou a dica: não seleciona nem joga.
+        if (tipLongPressed === card.id) {
+          tipLongPressed = null;
+          return;
+        }
+        onCardClick(card);
+      });
+      bindCardTip(node, card);
       node.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -1081,12 +1211,111 @@ function renderHand(prev, g, s, myTurn) {
     })
   );
   layoutHand();
+  refreshCardTip(g.hand);
   if (focused) {
     const cards = $$('#hand .card');
     const target = cards.find((c) => c.dataset.id === focusedId) ?? cards[Math.min(focusedIndex, cards.length - 1)];
     target?.focus({ preventScroll: true });
   }
 }
+
+// ---------- dica das cartas especiais ----------
+// Passar o mouse, dar um toque longo ou focar pelo teclado numa carta com estrela mostra o efeito dela.
+const TIP_HOVER_MS = 350;
+const TIP_PRESS_MS = 450;
+const cardTip = el('div', 'card-tip hidden');
+cardTip.setAttribute('aria-hidden', 'true'); // o efeito já vai no aria-label da carta
+document.body.append(cardTip);
+let tipCardId = null;
+let tipTimer;
+let tipPress = null; // toque longo em andamento: { id, x, y }
+let tipLongPressed = null; // id da carta cujo toque longo abriu a dica (o clique seguinte não seleciona)
+
+function tipText(card) {
+  const tip = SPECIAL_TIPS[card.rank];
+  return tip && { rank: RANK_NAMES[card.rank] ?? card.rank, tip };
+}
+
+function showCardTip(node, card) {
+  const t = tipText(card);
+  if (!t) return;
+  tipCardId = card.id;
+  cardTip.replaceChildren(el('b', null, `${t.rank}:`), ` ${t.tip}`);
+  cardTip.classList.remove('hidden');
+  placeCardTip(node);
+}
+
+// Acima da carta, centralizada nela, sem sair da tela.
+function placeCardTip(node) {
+  const r = node.getBoundingClientRect();
+  const w = cardTip.offsetWidth;
+  const x = Math.min(Math.max(r.left + r.width / 2, w / 2 + 8), innerWidth - w / 2 - 8);
+  cardTip.style.left = `${x}px`;
+  cardTip.style.top = `${r.top - 10}px`;
+  cardTip.style.setProperty('--caret-x', `${r.left + r.width / 2 - x}px`);
+}
+
+function hideCardTip() {
+  clearTimeout(tipTimer);
+  tipCardId = null;
+  cardTip.classList.add('hidden');
+}
+
+// Liga os eventos da dica numa carta da mão (só as especiais têm dica).
+function bindCardTip(node, card) {
+  if (!tipText(card)) return;
+  node.addEventListener('pointerenter', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(() => showCardTip(node, card), TIP_HOVER_MS);
+  });
+  node.addEventListener('pointerleave', (e) => {
+    if (e.pointerType === 'mouse') hideCardTip();
+  });
+  node.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    tipPress = { id: card.id, x: e.clientX, y: e.clientY };
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(() => {
+      tipLongPressed = card.id;
+      showCardTip(node, card);
+      navigator.vibrate?.(10);
+    }, TIP_PRESS_MS);
+  });
+  node.addEventListener('pointermove', (e) => {
+    if (tipPress && Math.hypot(e.clientX - tipPress.x, e.clientY - tipPress.y) > 10) {
+      tipPress = null;
+      clearTimeout(tipTimer);
+    }
+  });
+  const release = () => {
+    if (!tipPress) return;
+    tipPress = null;
+    clearTimeout(tipTimer);
+    // A dica do toque longo fica um pouco na tela depois de soltar.
+    if (tipLongPressed === card.id) tipTimer = setTimeout(hideCardTip, 1800);
+  };
+  node.addEventListener('pointerup', release);
+  node.addEventListener('pointercancel', release);
+  // Sem o menu de "copiar/salvar" do toque longo.
+  node.addEventListener('contextmenu', (e) => e.preventDefault());
+  node.addEventListener('focus', () => {
+    if (node.matches(':focus-visible')) showCardTip(node, card);
+  });
+  node.addEventListener('blur', hideCardTip);
+}
+
+// A mão é redesenhada a cada atualização: a dica volta a apontar para a mesma carta, se ela ainda estiver lá.
+function refreshCardTip(hand) {
+  if (!tipCardId) return;
+  const node = $(`#hand [data-id="${tipCardId}"]`);
+  const card = hand.find((c) => c.id === tipCardId);
+  if (node && card) showCardTip(node, card);
+  else hideCardTip();
+}
+
+addEventListener('resize', hideCardTip);
+addEventListener('scroll', hideCardTip); // só a página: o chat rola sozinho a cada jogada
 
 // No toque (celular/tablet), a 1ª batida numa carta só seleciona; a 2ª, ou tocar no monte, joga.
 // Com mouse, um clique já joga.
@@ -1426,7 +1655,10 @@ function renderGame(prev, s) {
   const play = prev?.game && s.events.find((e) => e.type === 'play' && e.card.id === g.top?.id);
   renderCenter(prev, g, myTurn, play ? playOrigin(play, s) : null);
   renderHand(prev, g, s, myTurn);
-  if (prev?.game) animateDraws(s.events, g, s);
+  if (prev?.game) {
+    animateDraws(s.events, g, s);
+    showEffectTargets(s.events, s);
+  }
   renderMe(g, s, myTurn);
   renderScores(g);
   renderRoundModal(g, s);
@@ -1452,20 +1684,50 @@ function render(prev, s) {
   }
 }
 
-// Relógio da vez.
-setInterval(() => {
+// Relógio da vez: barra, segundos que faltam, aviso nos últimos segundos e título da aba.
+const BASE_TITLE = document.title;
+const TICK_FROM_S = 5;
+let lastTick = null;
+
+function setTitle(myTurn) {
+  // Com a aba em segundo plano, o título avisa que é a sua vez.
+  const title = myTurn && document.hidden ? `Sua vez! · ${BASE_TITLE}` : BASE_TITLE;
+  if (document.title !== title) document.title = title;
+}
+
+function updateClock() {
   const g = state?.game;
+  const myTurn = !!g && g.phase === 'playing' && g.turnId === state.me;
+  setTitle(myTurn);
   if (!g) return;
   const now = Date.now() + clockOffset;
   const bar = $('#meTimer');
-  const myTurn = g.phase === 'playing' && g.turnId === state.me;
-  let p = 1;
-  if (state.deadline) p = Math.max(0, Math.min(1, (state.deadline - now) / (state.settings.turnSeconds * 1000)));
-  bar.classList.toggle('on', myTurn && !!state.deadline);
+  const secs = $('#meTimerSecs');
+  const left = state.deadline ? Math.max(0, state.deadline - now) : null;
+  const p = left == null ? 1 : Math.min(1, left / (state.settings.turnSeconds * 1000));
+  const on = myTurn && left != null;
+  const s = on ? Math.ceil(left / 1000) : null;
+  bar.classList.toggle('on', on);
   bar.classList.toggle('low', p < 0.2);
   $('i', bar).style.transform = `scaleX(${p})`;
+  secs.classList.toggle('on', on);
+  secs.classList.toggle('low', on && s <= TICK_FROM_S);
+  secs.textContent = on ? `${s}s` : '';
   $('#seats .seat.turn .ring')?.style.setProperty('--p', p);
-}, 200);
+
+  // Últimos segundos: um tique (e uma vibração) por segundo.
+  if (on && s > 0 && s <= TICK_FROM_S) {
+    if (s !== lastTick) {
+      lastTick = s;
+      sounds.tick();
+      navigator.vibrate?.(30);
+      if (s === TICK_FROM_S) speak(`Faltam ${TICK_FROM_S} segundos`);
+    }
+  } else lastTick = null;
+}
+
+setInterval(updateClock, 200);
+document.addEventListener('visibilitychange', () => setTitle(isMyTurn(state)));
 
 // ---------- painéis e modais ----------
 
