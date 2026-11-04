@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="240" height="480" viewBox="0 0 240 480">
+  <!-- Ladrilho do fundo: pintas em relevo (luz vindo de cima à esquerda) -->
+  <defs>
+    <!-- pintas escuras: grafite (Black/Silver) -->
+    <linearGradient id="g-dark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4a4847"/>
+      <stop offset="0.55" stop-color="#262423"/>
+      <stop offset="1" stop-color="#121110"/>
+    </linearGradient>
+    <!-- pintas vermelhas: Racing Red escurecido -->
+    <linearGradient id="g-red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8e0e13"/>
+      <stop offset="0.55" stop-color="#4f080b"/>
+      <stop offset="1" stop-color="#240305"/>
+    </linearGradient>
+
+    <filter id="relevo" x="-40%" y="-40%" width="190%" height="190%" color-interpolation-filters="sRGB">
+      <!-- brilho especular nas bordas superiores -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.2" result="altura"/>
+      <feSpecularLighting in="altura" surfaceScale="5" specularConstant="1" specularExponent="22" lighting-color="#ffffff" result="brilho">
+        <feDistantLight azimuth="235" elevation="38"/>
+      </feSpecularLighting>
+      <feComposite in="brilho" in2="SourceAlpha" operator="in" result="brilhoDentro"/>
+      <feComposite in="SourceGraphic" in2="brilhoDentro" operator="arithmetic" k1="0" k2="1" k3="0.45" k4="0" result="iluminado"/>
+      <!-- sombra projetada para baixo e à direita -->
+      <feOffset in="SourceAlpha" dx="3" dy="6" result="desloc"/>
+      <feGaussianBlur in="desloc" stdDeviation="3.5" result="desfoque"/>
+      <feFlood flood-color="#000000" flood-opacity="0.85"/>
+      <feComposite in2="desfoque" operator="in" result="sombra"/>
+      <feMerge>
+        <feMergeNode in="sombra"/>
+        <feMergeNode in="iluminado"/>
+      </feMerge>
+    </filter>
+
+    <!-- pintas desenhadas numa caixa 100x100 -->
+    <path id="copas" d="M50 90 C22 68 4 52 4 31 C4 16 15 6 29 6 C39 6 46 12 50 21 C54 12 61 6 71 6 C85 6 96 16 96 31 C96 52 78 68 50 90 Z"/>
+    <path id="ouros" d="M50 3 Q66 28 86 50 Q66 72 50 97 Q34 72 14 50 Q34 28 50 3 Z"/>
+    <path id="espadas" d="M50 4 C78 28 96 44 96 63 C96 77 86 85 74 85 C65 85 58 81 54 74 C55 84 59 91 67 96 L33 96 C41 91 45 84 46 74 C42 81 35 85 26 85 C14 85 4 77 4 63 C4 44 22 28 50 4 Z"/>
+    <path id="paus" d="M28 30 A22 22 0 1 1 72 30 A22 22 0 1 1 28 30 Z M6 62 A22 22 0 1 1 50 62 A22 22 0 1 1 6 62 Z M50 62 A22 22 0 1 1 94 62 A22 22 0 1 1 50 62 Z M38 44 L62 44 L62 66 L38 66 Z M56 66 C56 80 60 89 68 96 L32 96 C40 89 44 80 44 66 Z"/>
+  </defs>
+
+  <g filter="url(#relevo)">
+    <!-- linha 1 -->
+    <use href="#espadas" xlink:href="#espadas" fill="url(#g-dark)" transform="translate(8 38) scale(0.44)"/>
+    <use href="#copas" xlink:href="#copas" fill="url(#g-red)" transform="translate(128 38) scale(0.44)"/>
+    <!-- linha 2 -->
+    <use href="#paus" xlink:href="#paus" fill="url(#g-dark)" transform="translate(68 158) scale(0.44)"/>
+    <use href="#ouros" xlink:href="#ouros" fill="url(#g-red)" transform="translate(188 158) scale(0.44)"/>
+    <!-- linha 3 -->
+    <use href="#copas" xlink:href="#copas" fill="url(#g-red)" transform="translate(8 278) scale(0.44)"/>
+    <use href="#espadas" xlink:href="#espadas" fill="url(#g-dark)" transform="translate(128 278) scale(0.44)"/>
+    <!-- linha 4 -->
+    <use href="#ouros" xlink:href="#ouros" fill="url(#g-red)" transform="translate(68 398) scale(0.44)"/>
+    <use href="#paus" xlink:href="#paus" fill="url(#g-dark)" transform="translate(188 398) scale(0.44)"/>
+  </g>
+</svg>

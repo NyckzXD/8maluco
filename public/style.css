@@ -61,6 +61,35 @@ body {
   overflow-x: hidden;
 }
 
+/* padrão de pintas em relevo (public/bg-suits.svg), mais forte no centro e sumindo nas bordas */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+body::before {
+  background: url(bg-suits.svg) center top / 240px 480px repeat;
+  opacity: 0.7;
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 40%, #000 0, rgba(0, 0, 0, 0.3) 100%);
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 40%, #000 0, rgba(0, 0, 0, 0.3) 100%);
+}
+
+/* luz de holofote no centro e vinheta escura nas bordas */
+body::after {
+  background: radial-gradient(ellipse 60% 50% at 50% 38%, rgba(194, 193, 194, 0.07), transparent 70%),
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+@media (max-width: 600px) {
+  body::before {
+    background-size: 180px 360px;
+  }
+}
+
 .hidden {
   display: none !important;
 }
