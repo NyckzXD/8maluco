@@ -10,6 +10,7 @@ import {
   viewFor,
 } from "../shared/engine.js";
 import { chooseMove } from "../shared/bot.js";
+import { randomAvatar, sanitizeAvatar } from "../shared/avatar.js";
 
 export const MAX_PLAYERS = 8;
 const ROUND_BREAK_MS = 9000; // só usado quando não sobrou nenhum humano conectado para clicar em "pronto"
@@ -113,14 +114,16 @@ class Room {
 
   // ---------- membros ----------
 
-  join(socket, { token, name }) {
+  join(socket, { token, name, avatar }) {
     token = clean(token, 64);
     name = clean(name, 16) || "Jogador";
+    avatar = sanitizeAvatar(avatar);
     if (!token) return { ok: false, error: "Sessão inválida" };
 
     let m = this.members.find((x) => !x.isBot && x.token === token);
     if (m) {
       m.name = name;
+      m.avatar = avatar;
       if (m.socketId && m.socketId !== socket.id)
         this.io.sockets.sockets.get(m.socketId)?.leave(this.code);
     } else {
@@ -130,6 +133,7 @@ class Room {
         id: randomUUID().slice(0, 8),
         token,
         name,
+        avatar,
         color: this.freeColor(),
         isBot: false,
       };
@@ -203,6 +207,7 @@ class Room {
     this.members.push({
       id: randomUUID().slice(0, 8),
       name,
+      avatar: randomAvatar(),
       color: this.freeColor(),
       isBot: true,
       connected: true,
@@ -269,7 +274,7 @@ class Room {
     this.game = createGame(
       this.members.map((m) => ({ id: m.id, name: m.name })),
     );
-    this.system("A partida começou! Boa sorte 🍀");
+    this.system("A partida começou! Boa sorte!");
     this.apply(startRound(this.game));
     return { ok: true };
   }
@@ -355,7 +360,7 @@ class Room {
         this.system(`${this.nameOf(e.playerId)} saiu da mesa`);
     const over = events.find((e) => e.type === "gameOver");
     if (over)
-      this.system(`🏆 ${this.nameOf(over.winnerId)} é o grande vencedor!`);
+      this.system(`${this.nameOf(over.winnerId)} é o grande vencedor!`);
 
     if (end && g.phase === "roundOver") {
       this.clearTimer();
@@ -400,7 +405,7 @@ class Room {
     this.timer = setTimeout(
       () => {
         if (this.game === g && `${g.round}:${g.turn}` === turnKey) {
-          this.system(`⏰ O tempo de ${m.name} acabou, jogada automática`);
+          this.system(`O tempo de ${m.name} acabou, jogada automática`);
           this.autoplay(current.id, false);
         }
       },
@@ -460,6 +465,7 @@ class Room {
       members: this.members.map((m) => ({
         id: m.id,
         name: m.name,
+        avatar: m.avatar,
         color: m.color,
         isBot: m.isBot,
         connected: m.connected,

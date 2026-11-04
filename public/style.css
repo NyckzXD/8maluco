@@ -110,7 +110,23 @@ h3 {
   font-weight: 700;
 }
 
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.2em;
+}
+
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
   font: inherit;
   font-weight: 600;
   border: 0;
@@ -241,19 +257,36 @@ select:focus {
 /* ---------- tela inicial ---------- */
 
 .home-wrap {
-  max-width: 480px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 32px 16px;
+  min-height: 100dvh;
   display: grid;
-  gap: 16px;
-  justify-items: stretch;
+  align-content: center;
+}
+
+.home-card {
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface) 70%);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.08), 0 24px 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.home-head {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
 }
 
 .logo {
   margin: 0;
   text-align: center;
   color: #fff;
-  font-size: clamp(2.6rem, 10vw, 3.8rem);
+  font-size: clamp(2.6rem, 8vw, 4.2rem);
   letter-spacing: 1px;
   text-shadow: 0 4px 0 var(--red-700);
 }
@@ -273,25 +306,189 @@ select:focus {
 }
 
 .tagline {
-  margin: -6px 0 6px;
+  margin: 0;
   text-align: center;
   color: var(--silver);
+  font-family: var(--font-hud);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-.home-panel {
+.home-body {
   display: grid;
-  gap: 14px;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 18px;
 }
 
-.home-actions {
-  display: flex;
+.home-section {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 22px;
+  border-radius: var(--radius);
+  background: var(--black);
+  border: 1px solid var(--line);
+  min-width: 0;
+}
+
+.home-section h2.section-title {
+  margin: 0;
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--red-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* o conteúdo acompanha a altura do "Como jogar" e fica centralizado */
+.play-section {
+  grid-template-rows: auto 1fr;
+}
+
+.play-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 28px;
 }
 
-.home-actions .btn {
-  flex: 1;
+.profile {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: 200px;
+}
+
+.profile input {
+  width: 100%;
+  font-weight: 600;
+  text-align: center;
+}
+
+.avatar-xl {
+  width: 150px;
+  height: 150px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 4.2rem;
+  border-width: 6px;
+  background: radial-gradient(circle at 35% 30%, var(--red-400), var(--racing-red) 45%, var(--red-700));
+  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.18), 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.play-actions {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.btn-rooms {
+  background: var(--silver);
+  color: var(--black);
+  box-shadow: 0 4px 0 #7d7c7d;
+}
+
+.btn-rooms:active {
+  box-shadow: 0 2px 0 #7d7c7d;
+}
+
+/* ---------- como jogar ---------- */
+
+.howto-section {
+  justify-items: center;
+  text-align: center;
+}
+
+.howto {
+  display: grid;
+  width: 100%;
+}
+
+/* todos os passos ocupam a mesma célula, então a altura é a do maior */
+.howto-slide {
+  grid-area: 1 / 1;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(16px);
+  transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+}
+
+.howto-slide.active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.howto-card {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 128px;
+  margin: 4px 0 10px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--black);
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  transform: rotate(-6deg);
+  box-shadow: 0 6px 0 var(--silver), 0 10px 22px rgba(0, 0, 0, 0.5);
+}
+
+.howto-card.red {
+  color: var(--racing-red);
+  box-shadow: 0 6px 0 var(--red-700), 0 10px 22px rgba(0, 0, 0, 0.5);
+}
+
+.howto-slide h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.howto-slide p {
+  margin: 0;
+  color: var(--silver);
+  max-width: 280px;
+}
+
+.howto-dots {
+  display: flex;
+  gap: 10px;
+}
+
+.howto-dots button {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: var(--line);
+  cursor: pointer;
+  transition: width 0.2s, background 0.2s;
+}
+
+.howto-dots button[aria-current='true'] {
+  width: 26px;
+  background: var(--racing-red);
+}
+
+.rooms-box .room-list {
+  text-align: left;
+  max-height: 50dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .howto-slide {
+    transition: none;
+    transform: none;
+  }
 }
 
 .join-row {
@@ -308,13 +505,24 @@ select:focus {
   text-align: center;
 }
 
+.home-foot {
+  margin: 0 -28px -28px;
+  padding: 16px 28px;
+  background: var(--black);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .room-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
+  align-content: start;
   gap: 8px;
-  max-height: 260px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -460,10 +668,12 @@ select:focus {
 
 .crown {
   position: absolute;
-  top: -12px;
+  top: -13px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.9rem;
+  width: 20px;
+  height: 20px;
+  color: #f5c43a;
 }
 
 .host-controls {
@@ -532,15 +742,21 @@ select:focus {
 
 /* ---------- mesa ---------- */
 
+/* A 1ª coluna é um "espelho" vazio do painel lateral (placar/chat), para que
+   a mesa fique centralizada na tela. Ela cresce de 0 a 300px conforme a tela
+   alarga, então em telas médias a mesa não perde espaço. */
 .game-layout {
+  --side-w: 300px;
+  --mirror-w: clamp(0px, 100vw - 1000px, var(--side-w));
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: var(--mirror-w) minmax(0, 1fr) var(--side-w);
   height: 100dvh;
   gap: 12px;
   padding: 12px;
 }
 
 .game-main {
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -618,6 +834,13 @@ select:focus {
   color: rgba(255, 255, 255, 0.08);
   pointer-events: none;
   animation: spin-ccw 14s linear infinite;
+}
+
+.direction .icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+  stroke-width: 1.5;
 }
 
 @keyframes spin-ccw {
@@ -923,6 +1146,18 @@ select:focus {
   padding: 0 5px;
   font-weight: 700;
   text-shadow: none;
+}
+
+.badge.offline {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+}
+
+.badge.offline .icon {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.5;
 }
 
 .badge.dealer {
@@ -1251,11 +1486,10 @@ select:focus {
 }
 
 .side .chat-toggle {
-  display: inline-block;
+  display: inline-flex;
 }
 
 .chat-toggle .chevron {
-  display: inline-block;
   transition: transform 0.2s;
 }
 
@@ -1410,6 +1644,59 @@ select:focus {
   outline: none;
 }
 
+/* Janela de pintas com a mão recolhida logo abaixo. */
+#suitModal {
+  align-content: center;
+  gap: 18px;
+  overflow: hidden;
+}
+
+#suitModal .modal-box {
+  max-height: calc(100dvh - var(--card-h) - 70px);
+}
+
+#suitModal {
+  transition: background 0.25s;
+}
+
+#suitModal .modal-box {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+#suitModal.closing {
+  background: transparent;
+}
+
+#suitModal.closing .modal-box {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.suit-hand {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 560px);
+  justify-self: center;
+  pointer-events: none;
+}
+
+.suit-hand:empty {
+  display: none;
+}
+
+.suit-hand .card {
+  flex: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+}
+
+.suit-hand .card + .card {
+  margin-left: var(--overlap, -30px);
+}
+
+.hand .card.lifted {
+  visibility: hidden;
+}
+
 .results {
   width: 100%;
   border-collapse: collapse;
@@ -1441,6 +1728,27 @@ select:focus {
   height: 28px;
   font-size: 0.8rem;
   border-width: 2px;
+}
+
+.ready-tag .icon {
+  stroke-width: 3;
+}
+
+.toast-suit {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.12em;
+  fill: currentColor;
+  stroke: none;
+}
+
+.toast-suit.red {
+  color: var(--red-600);
+}
+
+#roundTitle .trophy {
+  color: #f5c43a;
+  vertical-align: -0.12em;
 }
 
 .results .ready-tag {
@@ -1479,12 +1787,11 @@ select:focus {
   font-size: 10px;
 }
 
-.results .mini-hand .card.joker::before {
-  content: '🃏';
-  font-size: 16px;
-  display: grid;
-  place-items: center;
-  height: 100%;
+.results .mini-hand .card.joker .pips {
+  display: block;
+  inset: 22% 12%;
+  width: 76%;
+  height: 56%;
 }
 
 .results tr.winner td {
@@ -1564,6 +1871,33 @@ select:focus {
     --card-h: 84px;
   }
 
+  .home-wrap {
+    padding: 16px;
+    align-content: start;
+  }
+
+  .home-card {
+    padding: 20px 16px;
+    gap: 18px;
+  }
+
+  .home-body {
+    grid-template-columns: 1fr;
+  }
+
+  .home-section {
+    padding: 18px 14px;
+  }
+
+  .home-section h2.section-title {
+    font-size: 1.25rem;
+  }
+
+  .home-foot {
+    margin: 0 -16px -20px;
+    padding: 14px 16px;
+  }
+
   .lobby-layout {
     grid-template-columns: 1fr;
     min-height: auto;
@@ -1579,8 +1913,12 @@ select:focus {
     padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 
+  .game-main {
+    grid-column: auto;
+  }
+
   .side-toggle {
-    display: inline-block;
+    display: inline-flex;
   }
 
   .side {
@@ -1629,5 +1967,346 @@ select:focus {
 
   .results .hide-sm {
     display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .play-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .profile {
+    width: 100%;
+  }
+
+  .avatar-xl {
+    width: 112px;
+    height: 112px;
+    font-size: 3.2rem;
+  }
+}
+
+/* ---------- avatar ---------- */
+
+.avatar-art {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: block;
+}
+
+.avatar-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.avatar.has-art {
+  background: var(--surface-3);
+}
+
+/* avatar da tela inicial: é um botão que abre o editor */
+.avatar-edit {
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.avatar-edit:hover {
+  transform: translateY(-2px) rotate(-2deg);
+}
+
+.avatar-edit:focus-visible {
+  outline: 3px solid var(--silver);
+  outline-offset: 6px;
+}
+
+.edit-badge {
+  position: absolute;
+  right: -2px;
+  bottom: 2px;
+  z-index: 1;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: #fff;
+  border: 3px solid var(--silver-300);
+  box-shadow: 0 3px 0 var(--primary-edge), 0 6px 14px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s;
+}
+
+.edit-badge .icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.4;
+}
+
+.avatar-edit:hover .edit-badge {
+  transform: scale(1.1);
+}
+
+/* editor */
+.modal-box.avatar-box {
+  max-width: 780px;
+  gap: 18px;
+}
+
+.avatar-editor {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  text-align: left;
+}
+
+.avatar-stage {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 16px;
+  padding: 20px 14px;
+  border-radius: var(--radius);
+  background: radial-gradient(circle at 50% 35%, rgba(237, 28, 36, 0.22), transparent 65%), var(--black);
+  border: 1px solid var(--line);
+}
+
+.avatar-xxl {
+  width: 172px;
+  height: 172px;
+  border-width: 6px;
+  box-shadow: 0 0 0 6px rgba(237, 28, 36, 0.18), 0 12px 28px rgba(0, 0, 0, 0.55);
+  animation: pop 0.25s;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+  }
+}
+
+.avatar-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatar-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.avatar-tab {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 9px 4px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-family: var(--font-hud);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.avatar-tab .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.avatar-tab:hover {
+  color: var(--ink);
+}
+
+.avatar-tab:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+}
+
+.avatar-tab[aria-selected='true'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--primary-edge);
+}
+
+.avatar-options {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  height: 340px;
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--black);
+  border: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+
+.opt-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 10px;
+}
+
+.style-opt {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--surface-3);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+
+.style-opt:hover {
+  transform: translateY(-2px);
+  border-color: var(--silver);
+}
+
+.style-opt:focus-visible,
+.swatch:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 3px;
+}
+
+.style-opt[aria-pressed='true'] {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.35);
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swatch {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--surface-3);
+  background: var(--c);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.swatches.big {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 12px;
+}
+
+.swatches.big .swatch {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-width: 4px;
+}
+
+.swatch:hover {
+  transform: scale(1.08);
+}
+
+.swatch[aria-pressed='true'] {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px var(--primary), inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+}
+
+.avatar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 680px) {
+  .modal-box.avatar-box {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .avatar-editor {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .avatar-stage {
+    grid-template-columns: auto auto;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    padding: 14px;
+  }
+
+  .avatar-xxl {
+    width: 112px;
+    height: 112px;
+    border-width: 5px;
+  }
+
+  .avatar-tab {
+    font-size: 0.72rem;
+    padding: 7px 2px 6px;
+  }
+
+  .avatar-tab .icon {
+    width: 19px;
+    height: 19px;
+  }
+
+  .avatar-options {
+    height: min(300px, 40dvh);
+    padding: 10px;
+  }
+
+  .style-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
+  }
+
+  .swatch {
+    width: 34px;
+    height: 34px;
+  }
+
+  .avatar-actions .btn {
+    flex: 1;
+    white-space: nowrap;
+    padding-inline: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .edit-badge {
+    width: 34px;
+    height: 34px;
+  }
+
+  .edit-badge .icon {
+    width: 16px;
+    height: 16px;
   }
 }
