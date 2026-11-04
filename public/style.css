@@ -138,7 +138,7 @@ h3 {
 .btn {
   --btn-face: var(--surface-3);
   --btn-ink: var(--ink);
-  --btn-layer: var(--silver);
+  --btn-layer: var(--silver-300);
   --btn-border: #000;
   --btn-rest: 4px;
   --btn-lift: var(--btn-rest);
@@ -187,7 +187,6 @@ h3 {
 .btn-primary {
   --btn-face: var(--primary);
   --btn-ink: var(--primary-ink);
-  --btn-layer: var(--silver-300);
   font-family: var(--font-display);
   font-weight: 700;
 }
@@ -208,7 +207,6 @@ h3 {
   --btn-face: rgba(194, 193, 194, 0.1);
   --btn-ink: #fff;
   --btn-border: rgba(194, 193, 194, 0.22);
-  --btn-layer: rgba(194, 193, 194, 0.35);
 }
 
 .panel .btn-ghost {
@@ -411,7 +409,6 @@ select:focus {
 .btn-rooms {
   --btn-face: var(--silver);
   --btn-ink: var(--black);
-  --btn-layer: var(--primary);
 }
 
 /* ---------- como jogar ---------- */
