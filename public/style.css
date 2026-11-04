@@ -53,41 +53,22 @@ body {
   /* a Russo One só tem peso 400: sem isso o navegador cria um negrito falso */
   font-synthesis: none;
   color: var(--ink);
-  background: radial-gradient(circle at 15% 0%, rgba(237, 28, 36, 0.22) 0, transparent 45%),
-    radial-gradient(circle at 90% 100%, rgba(237, 28, 36, 0.12) 0, transparent 40%),
-    linear-gradient(160deg, #161413, var(--bg) 60%);
+  /* centro quase preto, bordas em vermelho escuro */
+  background: radial-gradient(ellipse 70% 65% at 50% 48%, #0b0808 0, #0b0808 35%, #1e0405 70%, #3d0709 100%);
+  background-color: var(--bg);
   background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
 }
 
-/* padrão de pintas em relevo (public/bg-suits.svg), mais forte no centro e sumindo nas bordas */
-body::before,
-body::after {
+/* cena de fundo: pintas 3D, cartas e rede de linhas nas bordas (public/bg-scene.svg) */
+body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-}
-
-body::before {
-  background: url(bg-suits.svg) center top / 240px 480px repeat;
-  opacity: 0.7;
-  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 40%, #000 0, rgba(0, 0, 0, 0.3) 100%);
-  mask-image: radial-gradient(ellipse 75% 70% at 50% 40%, #000 0, rgba(0, 0, 0, 0.3) 100%);
-}
-
-/* luz de holofote no centro e vinheta escura nas bordas */
-body::after {
-  background: radial-gradient(ellipse 60% 50% at 50% 38%, rgba(194, 193, 194, 0.07), transparent 70%),
-    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
-}
-
-@media (max-width: 600px) {
-  body::before {
-    background-size: 180px 360px;
-  }
+  background: url(bg-scene.svg) 0 0 / 100% 100% no-repeat;
 }
 
 .hidden {
@@ -542,6 +523,17 @@ select:focus {
   color: var(--muted);
   font-size: 0.9rem;
   text-align: center;
+}
+
+.copyright {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.copyright .heart {
+  color: var(--racing-red);
 }
 
 .room-list {
