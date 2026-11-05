@@ -109,38 +109,38 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
   - Onde: `.suit-btn` e `.howto-card` em `public/index.html`, `renderCenter()` em `public/app.js`
   - Pronto quando: todos os naipes usam os `<symbol id="suit-*">` que já existem. Trocar também o ★ das cartas especiais e o "×" por ícones SVG.
 
-- [ ] **20. Tamanho mínimo de texto**
+- [x] **20. Tamanho mínimo de texto**
   Abaixo de 12px: selo do carteador (0.7rem), "pronto" (0.7rem), `.tag` (0.75rem), nomes nos assentos no celular (0.78rem).
   - Onde: `public/style.css`
   - Pronto quando: nenhum texto fica abaixo de 12px e há uma escala de tipografia em tokens (por exemplo, 12 / 14 / 16 / 18 / 24 / 32).
 
-- [ ] **21. Selo do carteador legível**
+- [x] **21. Selo do carteador legível**
   O "D" fica por cima do anel de tempo e é pequeno demais para ser entendido.
   - Onde: `.badge.dealer` em `public/style.css`
   - Pronto quando: o selo fica fora do anel, é maior e tem `title` / `aria-label` "Deu as cartas".
 
 ## 🟢 Polimento
 
-- [ ] **22. Rótulo e erro no campo de apelido**
+- [x] **22. Rótulo e erro no campo de apelido**
   O apelido só tem placeholder como rótulo, e o erro aparece num toast no rodapé.
   - Pronto quando: há um rótulo visível "Seu apelido", e o erro aparece logo abaixo do campo com o foco nele.
 
-- [ ] **23. Campo de código melhor**
+- [x] **23. Campo de código melhor**
   - Pronto quando: o campo tem `autocapitalize="characters"`, `enterkeyhint="go"` e `spellcheck="false"`, e colar o link inteiro da sala extrai o código.
 
-- [ ] **24. Trocar `confirm()` e `prompt()` nativos**
+- [x] **24. Trocar `confirm()` e `prompt()` nativos**
   Usados para sair da partida e copiar o link.
   - Pronto quando: sair usa um modal próprio no estilo do jogo, e no celular "Convidar" usa `navigator.share` (com cópia como alternativa).
 
-- [ ] **25. Configurações visíveis para todos no lobby**
+- [x] **25. Configurações visíveis para todos no lobby**
   Quem não é anfitrião não vê o tempo por vez nem se a sala é pública.
   - Pronto quando: os outros jogadores veem as configurações em modo só leitura.
 
-- [ ] **26. Lugares vazios menos poluídos**
+- [x] **26. Lugares vazios menos poluídos**
   Sete caixas pontilhadas de "lugar vazio" fazem barulho visual.
   - Pronto quando: aparece uma única caixa "Convide amigos" com ação de copiar/compartilhar o link e o contador de vagas.
 
-- [ ] **27. Confirmar antes de remover jogador**
+- [x] **27. Confirmar antes de remover jogador**
   - Pronto quando: o "×" pede confirmação (ou tem "desfazer"), mas para bots não precisa.
 
 - [x] **28. Timer mais claro**
@@ -154,18 +154,18 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
   A seta girando com 8% de opacidade quase não aparece. 7 (esquerda) e 9 (direita) confundem.
   - Pronto quando: a direção fica visível (setas no feltro ou entre os assentos), e ao jogar 7/9 aparece uma seta até o jogador que vai comprar.
 
-- [ ] **31. Carrossel do "Como jogar"**
+- [x] **31. Carrossel do "Como jogar"**
   Avança sozinho mesmo com reduced-motion, não pausa ao passar o mouse e não aceita deslizar.
   - Pronto quando: pausa com mouse/foco, não avança sozinho com reduced-motion, aceita deslizar no celular e tem setas de anterior/próximo.
 
-- [ ] **32. Rodapé da home sem repetição**
+- [x] **32. Rodapé da home sem repetição**
   O rodapé repete o que o "Como jogar" já explica.
   - Pronto quando: o rodapé fica só com o crédito (ou com links úteis).
 
-- [ ] **33. Placar com mais contexto**
+- [x] **33. Placar com mais contexto**
   - Pronto quando: o placar destaca você e quem está jogando agora, e mostra quanto falta para 100.
 
-- [ ] **34. Resultado da rodada no celular**
+- [x] **34. Resultado da rodada no celular**
   A classe `.hide-sm` existe no CSS mas não é usada no HTML, então a tabela de 4 colunas provavelmente aperta no celular (não confirmado: não cheguei ao fim de uma rodada).
   - Onde: `#roundModal` em `public/index.html` e `renderRoundModal()` em `public/app.js`
   - Pronto quando: em 375px a tabela cabe sem rolagem horizontal (esconder a coluna "Cartas na mão" ou virar lista).
