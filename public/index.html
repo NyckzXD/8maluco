@@ -149,11 +149,11 @@
       <div class="game-layout">
         <div class="game-main">
           <header class="game-top">
-            <button class="btn btn-ghost btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
+            <button class="btn btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
             <h1 id="roundLabel" class="round-label">Rodada 1</h1>
             <div class="top-right">
-              <button id="muteBtn" class="btn btn-ghost btn-small" title="Silenciar" aria-label="Silenciar" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-volume"/></svg></button>
-              <button id="sideToggle" class="btn btn-ghost btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat" aria-controls="sidePanel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden" aria-hidden="true"></span></button>
+              <button id="muteBtn" class="btn btn-small" title="Silenciar" aria-label="Silenciar" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-volume"/></svg></button>
+              <button id="sideToggle" class="btn btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat" aria-controls="sidePanel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden" aria-hidden="true"></span></button>
             </div>
           </header>
 
@@ -193,7 +193,7 @@
         </div>
 
         <aside id="sidePanel" class="side" aria-label="Placar e chat">
-          <button type="button" class="btn btn-ghost side-close"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Fechar</button>
+          <button type="button" class="btn btn-text side-close"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Fechar</button>
           <div class="panel score-panel">
             <h3>Placar <small>(perde quem chegar a <span id="limitLabel">100</span>)</small></h3>
             <ul id="scoreList" class="score-list"></ul>
@@ -215,7 +215,7 @@
           <button class="suit-btn" data-suit="S"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-S"/></svg><small>Espadas</small></button>
           <button class="suit-btn" data-suit="C"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-C"/></svg><small>Paus</small></button>
         </div>
-        <button class="btn btn-ghost" data-close>Cancelar</button>
+        <button class="btn btn-text" data-close>Cancelar</button>
       </div>
       <div id="suitHand" class="suit-hand" aria-hidden="true"></div>
     </div>
@@ -244,10 +244,10 @@
       <div class="modal-box wide rooms-box" role="dialog" aria-modal="true" aria-labelledby="roomsTitle" tabindex="-1">
         <div class="panel-head">
           <h2 id="roomsTitle">Salas públicas</h2>
-          <button id="refreshRooms" class="btn btn-small btn-ghost" title="Atualizar" aria-label="Atualizar"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+          <button id="refreshRooms" class="btn btn-small" title="Atualizar" aria-label="Atualizar"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
         </div>
         <ul id="roomList" class="room-list"></ul>
-        <button class="btn btn-ghost" data-close>Fechar</button>
+        <button class="btn btn-text" data-close>Fechar</button>
       </div>
     </div>
 
@@ -257,7 +257,7 @@
         <div class="avatar-editor">
           <div class="avatar-stage">
             <div id="avatarPreview" class="avatar avatar-xxl"></div>
-            <button id="avatarRandom" type="button" class="btn btn-small btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-dice"/></svg>Aleatório</button>
+            <button id="avatarRandom" type="button" class="btn btn-small"><svg class="icon" aria-hidden="true"><use href="#i-dice"/></svg>Aleatório</button>
           </div>
           <div class="avatar-panel">
             <div id="avatarTabs" class="avatar-tabs" role="tablist" aria-label="Partes do avatar"></div>
@@ -265,7 +265,7 @@
           </div>
         </div>
         <div class="avatar-actions">
-          <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn btn-text" data-close>Cancelar</button>
           <button id="avatarSave" type="button" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Salvar avatar</button>
         </div>
       </div>
@@ -276,7 +276,7 @@
         <h2 id="leaveTitle">Sair da partida?</h2>
         <p id="leaveDesc" class="muted">Você será eliminado desta partida e volta para a tela inicial.</p>
         <div class="modal-actions">
-          <button class="btn btn-ghost" data-close data-autofocus>Continuar jogando</button>
+          <button class="btn btn-text" data-close data-autofocus>Continuar jogando</button>
           <button id="leaveConfirm" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair da partida</button>
         </div>
       </div>
@@ -287,7 +287,7 @@
         <h2 id="kickTitle">Remover jogador?</h2>
         <p id="kickDesc" class="muted">Ele sai da sala e pode voltar pelo link.</p>
         <div class="modal-actions">
-          <button class="btn btn-ghost" data-close data-autofocus>Cancelar</button>
+          <button class="btn btn-text" data-close data-autofocus>Cancelar</button>
           <button id="kickConfirm" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Remover</button>
         </div>
       </div>
@@ -323,7 +323,7 @@
     <template id="chatTemplate">
       <div class="panel-head">
         <h3>Chat</h3>
-        <button type="button" class="btn btn-ghost btn-small chat-toggle" title="Recolher chat" aria-label="Chat" aria-expanded="true">
+        <button type="button" class="btn btn-text btn-small chat-toggle" title="Recolher chat" aria-label="Chat" aria-expanded="true">
           <span class="chat-unread dot hidden" aria-hidden="true"></span><svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
         </button>
       </div>
