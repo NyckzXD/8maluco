@@ -26,8 +26,12 @@
   --primary-edge: var(--red-700);
   --accent: var(--racing-red);
   --red-text: var(--red-400);
-  --felt: #1f1d1c;
-  --felt-dark: #0f0e0d;
+  /* mesa: feltro verde de carteado e borda de couro escuro */
+  --felt: #17543c;
+  --felt-dark: #0e3a29;
+  --felt-print: rgba(255, 255, 255, 0.07);
+  --rail: #1c1311;
+  --rail-edge: #2e201c;
   --red: var(--racing-red);
   /* escala de tipografia: nenhum texto abaixo de --fs-xs (12px) */
   --fs-xs: 0.75rem; /* 12px */
@@ -71,37 +75,26 @@ body {
   /* a Russo One só tem peso 400: sem isso o navegador cria um negrito falso */
   font-synthesis: none;
   color: var(--ink);
-  /* centro quase preto, bordas em vermelho escuro */
-  background: radial-gradient(
-    ellipse 70% 65% at 50% 48%,
-    #0b0808 0,
-    #0b0808 35%,
-    #1e0405 70%,
-    #3d0709 100%
-  );
+  /* fundo de um material só: preto quente com as pintas estampadas tom sobre tom */
   background-color: var(--bg);
-  background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
 }
 
-/* cena de fundo: pintas 3D, cartas e rede de linhas nas bordas (public/bg-scene.svg) */
+/* a estampa fica numa camada fixa, para não rolar junto com a home */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: url(bg-scene.svg) 0 0 / 100% 100% no-repeat;
-  transition:
-    opacity 0.4s,
-    filter 0.4s;
+  background: url(bg-pattern.svg) 0 0 / 168px 168px repeat;
+  transition: opacity 0.4s;
 }
 
-/* Na mesa a cena fica apagada e desfocada, para não competir com as cartas. A home mantém a cena inteira. */
+/* Na mesa a estampa some quase toda, para não competir com o feltro. */
 body:has(> #game:not(.hidden))::before {
-  opacity: 0.3;
-  filter: blur(3px);
+  opacity: 0.4;
 }
 
 /* sem o atraso do toque duplo para zoom nos controles */
@@ -359,42 +352,35 @@ select:focus {
 
 /* ---------- tela inicial ---------- */
 
+/* menu de jogo: logo grande, você e os botões, tudo solto sobre o fundo */
 .home-wrap {
-  max-width: 1080px;
+  max-width: 960px;
   margin: 0 auto;
   padding: max(32px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
-    max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   min-height: 100dvh;
   display: grid;
-  align-content: center;
-}
-
-.home-card {
-  display: grid;
-  gap: 22px;
-  padding: 28px;
-  border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-2), var(--surface) 70%);
-  border: 1px solid var(--line);
-  box-shadow:
-    0 0 0 6px rgba(237, 28, 36, 0.08),
-    0 24px 60px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
+  grid-template-rows: 1fr auto 1fr;
+  justify-items: center;
+  align-items: center;
+  gap: 48px;
 }
 
 .home-head {
   display: grid;
-  gap: 8px;
+  gap: 14px;
   justify-items: center;
+  align-self: end;
 }
 
 .logo {
   margin: 0;
   text-align: center;
   color: #fff;
-  font-size: clamp(2.6rem, 8vw, 4.2rem);
+  font-size: clamp(3.4rem, 10vw, 6.5rem);
+  line-height: 1;
   letter-spacing: 1px;
-  text-shadow: 0 4px 0 var(--red-700);
+  text-shadow: 0 5px 0 var(--red-700);
 }
 
 .logo-8 {
@@ -415,56 +401,22 @@ select:focus {
   margin: 0;
   text-align: center;
   color: var(--silver);
-  font-family: var(--font-hud);
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  font-size: var(--fs-xl);
+  font-weight: 500;
 }
 
-.home-body {
+.home-stage {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 18px;
-}
-
-.home-section {
-  display: grid;
-  align-content: start;
-  gap: 16px;
-  padding: 22px;
-  border-radius: var(--r-lg);
-  background: var(--black);
-  border: 1px solid var(--line);
-  min-width: 0;
-}
-
-.home-section h2.section-title {
-  margin: 0;
-  font-size: var(--fs-2xl);
-  text-align: center;
-  color: var(--red-text);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* o conteúdo acompanha a altura do "Como jogar" e fica centralizado */
-.play-section {
-  grid-template-rows: auto 1fr;
-}
-
-.play-grid {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 360px);
   align-items: center;
-  gap: 28px;
+  gap: 64px;
 }
 
 .profile {
   display: grid;
   justify-items: center;
-  gap: 14px;
-  width: 200px;
+  gap: 16px;
+  width: 220px;
 }
 
 .profile input {
@@ -499,241 +451,61 @@ input[aria-invalid="true"] {
 }
 
 .avatar-xl {
-  width: 150px;
-  height: 150px;
+  width: 160px;
+  height: 160px;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 4.2rem;
   border-width: 6px;
-  background: radial-gradient(
-    circle at 35% 30%,
-    var(--red-400),
-    var(--racing-red) 45%,
-    var(--red-700)
-  );
+  background: var(--racing-red);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
 }
 
-.play-actions {
+/* a pilha de botões do menu */
+.home-menu {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  width: 100%;
   min-width: 0;
 }
 
-/* ---------- como jogar ---------- */
-
-.howto-section {
-  justify-items: center;
-  text-align: center;
-}
-
-.howto {
-  display: grid;
-  width: 100%;
-}
-
-/* todos os passos ocupam a mesma célula, então a altura é a do maior */
-.howto-slide {
-  grid-area: 1 / 1;
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 8px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(16px);
-  transition:
-    opacity 0.3s,
-    transform 0.3s,
-    visibility 0.3s;
-}
-
-.howto-slide.active {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-}
-
-.howto-card {
-  display: grid;
-  place-items: center;
-  width: 92px;
-  height: 128px;
-  margin: 4px 0 10px;
-  border-radius: var(--r-md);
-  background: #fff;
-  color: var(--black);
-  font-family: var(--font-display);
-  font-size: 2.6rem;
-  transform: rotate(-6deg);
-  box-shadow:
-    0 6px 0 var(--silver),
-    0 10px 22px rgba(0, 0, 0, 0.5);
-}
-
-.howto-card .howto-suit {
-  width: 0.9em;
-  height: 0.9em;
-  fill: currentColor;
-}
-
-.howto-card.red {
-  color: var(--racing-red);
-  box-shadow:
-    0 6px 0 var(--red-700),
-    0 10px 22px rgba(0, 0, 0, 0.5);
-}
-
-.howto-slide h3 {
-  margin: 0;
+.home-menu .btn-big {
+  min-height: 60px;
   font-size: var(--fs-xl);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.howto-slide p {
-  margin: 0;
-  color: var(--silver);
-  max-width: 280px;
-}
-
-/* setas de anterior/próximo em volta das bolinhas */
-.howto-nav {
-  display: flex;
-  align-items: center;
-  margin: -12px 0;
-}
-
-.howto-dots {
-  display: flex;
-}
-
-.howto-arrow {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
+/* link de texto: a terceira opção, abaixo dos botões */
+.text-link {
+  justify-self: center;
+  min-height: 44px;
+  padding: 8px 12px;
   border: 0;
-  border-radius: var(--r-md);
   background: none;
   color: var(--silver);
+  font: inherit;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(194, 193, 194, 0.4);
   cursor: pointer;
 }
 
-.howto-arrow:hover {
+.text-link:hover {
   color: var(--ink);
+  text-decoration-color: currentColor;
 }
 
-.howto-arrow:focus-visible {
+.text-link:focus-visible {
   outline: 2px solid var(--silver);
-  outline-offset: -4px;
-}
-
-/* contador "1 / 6": só no celular, onde as bolinhas não cabem junto com as setas */
-.howto-count {
-  display: none;
-  min-width: 64px;
-  font-family: var(--font-hud);
-  font-weight: 700;
-  font-size: var(--fs-md);
-  color: var(--silver);
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-@media (max-width: 520px) {
-  .howto-dots {
-    display: none;
-  }
-
-  .howto-count {
-    display: block;
-  }
-}
-
-/* o chevron do sprite aponta para baixo */
-.howto-arrow.prev .icon {
-  rotate: 90deg;
-}
-
-.howto-arrow.next .icon {
-  rotate: -90deg;
-}
-
-/* deslizar para os lados chega como eventos de ponteiro; a rolagem vertical continua normal */
-.howto {
-  touch-action: pan-y;
-}
-
-/* o botão tem 44×44px de toque; a bolinha visível é o ::before */
-.howto-dots button {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-}
-
-.howto-dots button::before,
-.howto-dots button::after {
-  content: "";
-  grid-area: 1 / 1;
-  height: 10px;
-  border-radius: var(--r-pill);
-}
-
-.howto-dots button::before {
-  width: 10px;
-  background: var(--line);
-  transition:
-    opacity 0.2s,
-    transform 0.15s;
-}
-
-.howto-dots button::after {
-  width: 26px;
-  background: var(--racing-red);
-  opacity: 0;
-  transform: scaleX(0.38);
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
-}
-
-.howto-dots button:hover::before {
-  background: var(--silver);
-  transform: scale(1.2);
-}
-
-.howto-dots button[aria-current="true"]::before {
-  opacity: 0;
-}
-
-.howto-dots button[aria-current="true"]::after {
-  opacity: 1;
-  transform: none;
-}
-
-.howto-dots button:focus-visible {
-  outline: 2px solid var(--silver);
-  outline-offset: -6px;
-  border-radius: var(--r-pill);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
 }
 
 .rooms-box .room-list {
   text-align: left;
   max-height: 50dvh;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .howto-slide {
-    transition: none;
-    transform: none;
-  }
 }
 
 /* o "Entrar" estica até a altura do campo */
@@ -746,6 +518,8 @@ input[aria-invalid="true"] {
 .join-row input {
   font-family: var(--font-hud);
   flex: 1;
+  min-width: 0;
+  font-size: var(--fs-xl);
   text-transform: uppercase;
   letter-spacing: 4px;
   font-weight: 700;
@@ -753,10 +527,7 @@ input[aria-invalid="true"] {
 }
 
 .home-foot {
-  margin: 0 -28px -28px;
-  padding: 16px 28px;
-  background: var(--black);
-  border-top: 1px solid var(--line);
+  align-self: end;
   color: var(--muted);
   font-size: var(--fs-sm);
   text-align: center;
@@ -841,20 +612,22 @@ input[aria-invalid="true"] {
 /* ---------- lobby ---------- */
 
 .lobby-layout {
-  max-width: 1080px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
-    max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 16px;
-  min-height: 100dvh;
+  height: 100dvh;
 }
 
 .lobby-main {
-  display: grid;
-  gap: 14px;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
 }
 
 .lobby-head {
@@ -862,106 +635,100 @@ input[aria-invalid="true"] {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
-.room-code {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.room-code-title {
+.lobby-title {
   margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font: inherit;
-}
-
-.room-code strong {
   font-family: var(--font-hud);
-  font-size: 1.8rem;
-  letter-spacing: 6px;
-  color: var(--red-text);
+  font-weight: 700;
+  font-size: var(--fs-xl);
 }
 
-.member-grid {
+.table.lobby-table {
+  min-height: 380px;
+}
+
+.lobby-seats {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
 }
 
-.member-grid li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  position: relative;
-  min-width: 0;
-}
-
-/* uma só caixa de convite no lugar das vagas vazias, ocupando a linha toda */
-.member-grid li.invite {
-  grid-column: 1 / -1;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  border: 2px dashed var(--line);
-  background: none;
-  min-height: 66px;
-  padding: 10px 14px;
-}
-
-.member-grid .invite-text {
-  display: grid;
-  gap: 2px;
-}
-
-.member-grid .name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.member-grid .sub {
+.lobby-seat .seat-sub {
   font-size: var(--fs-xs);
+  color: var(--silver);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* cadeira livre: um lugar tracejado que convida */
+.seat-invite {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--silver);
+  font-size: var(--fs-xl);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.15s;
+}
+
+.seat-invite:hover {
+  border-style: solid;
+  border-color: var(--silver-300);
+  color: var(--ink);
+  transform: scale(1.06);
+}
+
+.seat-invite:focus-visible {
+  outline: 3px solid var(--silver-300);
+  outline-offset: 3px;
+}
+
+.lobby-seat.empty .seat-name {
   color: var(--muted);
+  font-weight: 500;
 }
 
-.member-grid li.kickable {
-  padding-right: 44px;
-}
-
-.member-grid .kick {
+/* remover jogador: um "×" pequeno no canto do avatar, com área de toque de 44px */
+.lobby-seat .kick {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 44px;
-  height: 44px;
+  top: -8px;
+  left: calc(50% + 14px);
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
   padding: 0;
-  border: 0;
-  border-radius: var(--r-md);
-  background: none;
-  color: var(--muted);
-  font-size: var(--fs-lg);
+  border: 2px solid var(--rail);
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--silver-300);
+  font-size: var(--fs-sm);
   cursor: pointer;
+  z-index: 1;
 }
 
-.member-grid .kick:focus-visible {
-  outline: 2px solid var(--silver);
-  outline-offset: -4px;
+.lobby-seat .kick::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
 }
 
-.member-grid .kick:hover {
-  color: var(--red-text);
+.lobby-seat .kick:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.lobby-seat .kick:focus-visible {
+  outline: 2px solid var(--silver-300);
+  outline-offset: 2px;
 }
 
 .crown {
@@ -974,19 +741,77 @@ input[aria-invalid="true"] {
   color: #f5c43a;
 }
 
-.host-controls {
+/* no centro do feltro: o código da sala, quantos já sentaram e o convite */
+.lobby-center {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
   display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.room-code {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  color: var(--silver);
+  font-weight: 600;
+}
+
+.room-code strong {
+  font-family: var(--font-hud);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: 0.18em;
+  margin-right: -0.18em;
+  color: var(--ink);
+}
+
+.lobby-count {
+  margin: 0 0 6px;
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--silver);
+}
+
+/* embaixo da mesa, como a sua barra na partida: configurações e os botões do anfitrião */
+.lobby-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.host-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
   gap: 12px;
+}
+
+.host-controls .start-hint {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+}
+
+.wait-host {
+  margin: 0;
+  color: var(--silver);
+  font-weight: 600;
 }
 
 .settings {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 20px;
-  padding: 12px;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
+  gap: 10px 24px;
 }
 
 /* quem não é anfitrião vê as configurações sem poder mudar */
@@ -1016,7 +841,7 @@ input[aria-invalid="true"] {
 }
 
 .lobby-layout .chat-panel {
-  max-height: calc(100dvh - 40px);
+  min-height: 0;
 }
 
 .chat-log {
@@ -1133,23 +958,49 @@ input[aria-invalid="true"] {
   min-height: 300px;
 }
 
+/* Mesa de carteado: feltro verde com a trama do tecido (ruído), a luz de um lustre
+   no centro e uma borda de couro acolchoada com costura. */
 .felt {
+  --rail-w: 22px;
   position: absolute;
   inset: 8% 6%;
   border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    #2e2b2a 0,
-    var(--felt) 55%,
-    var(--felt-dark) 100%
-  );
-  border: 12px solid var(--black);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")
+      0 0 / 160px 160px,
+    radial-gradient(ellipse 60% 55% at 50% 45%, var(--felt) 0, var(--felt) 40%, var(--felt-dark) 100%);
+  background-blend-mode: soft-light, normal;
+  border: var(--rail-w) solid var(--rail);
   box-shadow:
-    0 0 0 2px var(--red-600),
-    inset 0 0 0 2px rgba(194, 193, 194, 0.18),
-    inset 0 0 40px rgba(0, 0, 0, 0.6),
-    0 12px 30px rgba(0, 0, 0, 0.6),
-    0 0 60px rgba(237, 28, 36, 0.15);
+    0 0 0 2px var(--rail-edge),
+    inset 0 0 0 2px var(--rail-edge),
+    inset 0 6px 24px rgba(0, 0, 0, 0.55),
+    0 18px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* costura no meio da borda de couro */
+.felt::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--rail-w) / -2 - 1px);
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+/* nome do jogo "impresso" no feltro, na parte de baixo (onde fica o seu lugar) */
+.felt-logo {
+  position: absolute;
+  left: 50%;
+  bottom: 13%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3.4vw, 2.4rem);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--felt-print);
+  pointer-events: none;
+  user-select: none;
 }
 
 .table-center {
@@ -1162,16 +1013,42 @@ input[aria-invalid="true"] {
   gap: 18px;
 }
 
+/* anel de setas "impresso" no feltro em volta dos montes: mostra o sentido do jogo */
 .direction {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 13rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.08);
+  width: 15rem;
+  height: 15rem;
+  overflow: visible;
   pointer-events: none;
+  fill: none;
+  stroke: var(--felt-print);
+  stroke-width: 5;
+  stroke-linecap: round;
   animation: spin-ccw 14s linear infinite;
+}
+
+.direction .head {
+  fill: var(--felt-print);
+  stroke: none;
+}
+
+/* o anel gira devagar no sentido do jogo (anti-horário) */
+@keyframes spin-ccw {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .direction {
+    animation: none;
+  }
 }
 
 /* seta do 7 / 9: do monte até quem vai comprar */
@@ -1207,22 +1084,6 @@ input[aria-invalid="true"] {
 @keyframes arrow-draw {
   to {
     stroke-dashoffset: 0;
-  }
-}
-
-.direction .icon {
-  display: block;
-  width: 1em;
-  height: 1em;
-  stroke-width: 1.5;
-}
-
-@keyframes spin-ccw {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(-360deg);
   }
 }
 
@@ -2602,36 +2463,43 @@ body.is-dragging * {
   }
 
   .home-wrap {
-    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
-      max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-    align-content: start;
+    grid-template-rows: auto auto 1fr;
+    gap: 36px;
+    padding-top: max(40px, env(safe-area-inset-top));
   }
 
-  .home-card {
-    padding: 20px 16px;
-    gap: 18px;
+  .home-stage {
+    grid-template-columns: minmax(0, 360px);
+    justify-content: center;
+    gap: 28px;
   }
 
-  .home-body {
-    grid-template-columns: 1fr;
-  }
-
-  .home-section {
-    padding: 18px 14px;
-  }
-
-  .home-section h2.section-title {
-    font-size: var(--fs-xl);
-  }
-
-  .home-foot {
-    margin: 0 -16px -20px;
-    padding: 14px 16px;
+  .profile {
+    justify-self: center;
   }
 
   .lobby-layout {
     grid-template-columns: 1fr;
-    min-height: auto;
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .table.lobby-table {
+    min-height: 460px;
+  }
+
+  .lobby-bar {
+    display: grid;
+  }
+
+  .host-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .host-controls .start-hint {
+    grid-column: 1 / -1;
+    text-align: center;
   }
 
   .lobby-layout .chat-panel {
@@ -2725,7 +2593,8 @@ body.is-dragging * {
   }
 
   .direction {
-    font-size: 8rem;
+    width: 11rem;
+    height: 11rem;
   }
 
   .table-center {
@@ -2733,8 +2602,8 @@ body.is-dragging * {
   }
 
   .felt {
+    --rail-w: 12px;
     inset: 10% 2%;
-    border-width: 8px;
   }
 
   .results .hide-sm {
@@ -2749,15 +2618,6 @@ body.is-dragging * {
 }
 
 @media (max-width: 520px) {
-  .play-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-
-  .profile {
-    width: 100%;
-  }
-
   .avatar-xl {
     width: 112px;
     height: 112px;

@@ -14,129 +14,88 @@
   </head>
   <body>
     <!-- ===== Tela inicial ===== -->
+    <!-- Menu de jogo: logo e botões soltos sobre o fundo, sem caixas em volta. -->
     <section id="home" class="screen">
       <div class="home-wrap">
-        <div class="home-card">
-          <header class="home-head">
-            <h1 class="logo"><span class="logo-8">8</span> Maluco</h1>
-            <p class="tagline">O jogo de cartas mais maluco da mesa, agora online!</p>
-          </header>
+        <header class="home-head">
+          <h1 class="logo"><span class="logo-8">8</span> Maluco</h1>
+          <p class="tagline">O jogo de cartas mais maluco da mesa, agora online</p>
+        </header>
 
-          <div class="home-body">
-            <div class="home-section play-section">
-              <h2 class="section-title">Jogue agora</h2>
-              <div class="play-grid">
-                <div class="profile">
-                  <button id="homeAvatar" type="button" class="avatar avatar-xl avatar-edit" title="Editar avatar" aria-label="Editar avatar">
-                    <span class="edit-badge" aria-hidden="true"><svg class="icon"><use href="#i-pencil"/></svg></span>
-                  </button>
-                  <div class="name-field">
-                    <label for="nameInput" class="field-label">Seu apelido</label>
-                    <input id="nameInput" name="nickname" maxlength="16" placeholder="Ex.: Tia Neide…" autocomplete="nickname" aria-describedby="nameError" />
-                    <p id="nameError" class="field-error hidden"></p>
-                  </div>
-                </div>
-
-                <div class="play-actions">
-                  <button id="createBtn" class="btn btn-primary btn-big"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar sala</button>
-                  <button id="roomsBtn" class="btn btn-big btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Salas</button>
-                  <div class="join-row">
-                    <input id="codeInput" name="code" maxlength="5" placeholder="Ex.: K7M2Q…" aria-label="Código da sala" autocomplete="off" autocapitalize="characters" enterkeyhint="go" spellcheck="false" />
-                    <button id="joinBtn" class="btn">Entrar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="home-section howto-section">
-              <h2 class="section-title">Como jogar</h2>
-              <div id="howto" class="howto" role="group" aria-roledescription="carrossel" aria-label="Como jogar, passo a passo">
-                <div class="howto-slide">
-                  <div class="howto-card">9</div>
-                  <h3>1. Receba as cartas</h3>
-                  <p>Cada jogador começa a rodada com 9 cartas na mão</p>
-                </div>
-                <div class="howto-slide">
-                  <div class="howto-card red"><svg class="howto-suit" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></div>
-                  <h3>2. Siga o monte</h3>
-                  <p>Jogue uma carta da mesma pinta ou do mesmo número da carta do monte</p>
-                </div>
-                <div class="howto-slide">
-                  <div class="howto-card">+1</div>
-                  <h3>3. Sem carta? Compre</h3>
-                  <p>Compre uma carta do baralho. Se ela servir, pode jogar; se não, a vez passa</p>
-                </div>
-                <div class="howto-slide">
-                  <div class="howto-card red">8</div>
-                  <h3>4. Cartas especiais</h3>
-                  <p>Ás pula, 7 e 9 fazem comprar, o 8 troca a pinta e o Joker faz todo mundo comprar</p>
-                </div>
-                <div class="howto-slide">
-                  <div class="howto-card">0</div>
-                  <h3>5. Esvazie a mão</h3>
-                  <p>Quem termina as cartas fecha a rodada; os outros somam os pontos do que sobrou</p>
-                </div>
-                <div class="howto-slide">
-                  <div class="howto-card red js-limit">100</div>
-                  <h3>6. Fuja dos <span class="js-limit">100</span></h3>
-                  <p>Quem chega a <span class="js-limit">100</span> pontos está fora. Ganha o último que restar!</p>
-                </div>
-              </div>
-              <div class="howto-nav">
-                <button id="howtoPrev" type="button" class="howto-arrow prev" aria-label="Passo anterior"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
-                <div id="howtoDots" class="howto-dots"></div>
-                <span id="howtoCount" class="howto-count" aria-hidden="true"></span>
-                <button id="howtoNext" type="button" class="howto-arrow next" aria-label="Próximo passo"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
-                <button id="howtoPause" type="button" class="howto-arrow howto-pause" aria-label="Pausar passo a passo" title="Pausar passo a passo"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg></button>
-              </div>
-              <button id="rulesBtn" class="btn btn-small btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Regras completas</button>
+        <div class="home-stage">
+          <div class="profile">
+            <button id="homeAvatar" type="button" class="avatar avatar-xl avatar-edit" title="Editar avatar" aria-label="Editar avatar">
+              <span class="edit-badge" aria-hidden="true"><svg class="icon"><use href="#i-pencil"/></svg></span>
+            </button>
+            <div class="name-field">
+              <label for="nameInput" class="field-label">Seu apelido</label>
+              <input id="nameInput" name="nickname" maxlength="16" placeholder="Ex.: Tia Neide…" autocomplete="nickname" aria-describedby="nameError" />
+              <p id="nameError" class="field-error hidden"></p>
             </div>
           </div>
 
-          <footer class="home-foot">
-            <p class="copyright">© Criado com <span class="heart" role="img" aria-label="amor"><svg class="heart-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span> por Nycolas F. 2026</p>
-          </footer>
+          <nav class="home-menu" aria-label="Jogar">
+            <button id="createBtn" class="btn btn-primary btn-big">Criar sala</button>
+            <button id="roomsBtn" class="btn btn-big">Salas abertas</button>
+            <div class="join-row">
+              <input id="codeInput" name="code" maxlength="5" placeholder="Código" aria-label="Código da sala" autocomplete="off" autocapitalize="characters" enterkeyhint="go" spellcheck="false" />
+              <button id="joinBtn" class="btn btn-big">Entrar</button>
+            </div>
+            <button id="rulesBtn" class="text-link">Como jogar</button>
+          </nav>
         </div>
+
+        <footer class="home-foot">
+          <p class="copyright">© Criado com <span class="heart" role="img" aria-label="amor"><svg class="heart-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span> por Nycolas F. 2026</p>
+        </footer>
       </div>
     </section>
 
     <!-- ===== Lobby ===== -->
+    <!-- A sala de espera é a própria mesa: cada jogador já sentado no lugar dele, as cadeiras
+         livres viram convite e os controles ficam embaixo, como a sua barra na partida. -->
     <section id="lobby" class="screen hidden">
       <div class="lobby-layout">
-        <div class="panel lobby-main">
-          <div class="lobby-head">
-            <button class="btn btn-ghost btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
-            <div class="room-code">
-              <h1 class="room-code-title"><span>Sala</span> <strong id="lobbyCode">-----</strong></h1>
+        <div class="lobby-main">
+          <header class="lobby-head">
+            <button class="btn btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
+            <h1 class="lobby-title">Sala de espera</h1>
+            <button class="btn btn-small rules-link">Como jogar</button>
+          </header>
+
+          <div class="table lobby-table">
+            <div class="felt"><span class="felt-logo" aria-hidden="true">8 Maluco</span></div>
+            <ul id="memberList" class="lobby-seats" aria-labelledby="lobbyCount"></ul>
+            <div class="lobby-center">
+              <p class="room-code"><span>Sala</span> <strong id="lobbyCode">-----</strong></p>
+              <h2 id="lobbyCount" class="lobby-count">Jogadores</h2>
               <button id="copyLink" class="btn btn-small">Copiar link</button>
             </div>
           </div>
 
-          <h2 id="lobbyCount">Jogadores</h2>
-          <ul id="memberList" class="member-grid"></ul>
+          <div class="lobby-bar">
+            <!-- Todo mundo vê as configurações; só o anfitrião muda (para os outros ficam desabilitadas). -->
+            <div class="settings">
+              <label class="check"><input type="checkbox" id="setPublic" aria-describedby="settingsNote" /> Sala pública</label>
+              <label class="select">
+                Tempo por vez
+                <select id="setTurn" aria-describedby="settingsNote">
+                  <option value="15">15s</option>
+                  <option value="30">30s</option>
+                  <option value="45">45s</option>
+                  <option value="60">60s</option>
+                </select>
+              </label>
+              <p id="settingsNote" class="settings-note hidden">Só o anfitrião muda as configurações</p>
+            </div>
 
-          <!-- Todo mundo vê as configurações; só o anfitrião muda (para os outros ficam desabilitadas). -->
-          <div class="settings">
-            <label class="check"><input type="checkbox" id="setPublic" aria-describedby="settingsNote" /> Sala pública</label>
-            <label class="select">
-              Tempo por vez
-              <select id="setTurn" aria-describedby="settingsNote">
-                <option value="15">15s</option>
-                <option value="30">30s</option>
-                <option value="45">45s</option>
-                <option value="60">60s</option>
-              </select>
-            </label>
-            <p id="settingsNote" class="settings-note hidden">Só o anfitrião muda as configurações</p>
+            <div id="hostControls" class="host-controls">
+              <button id="addBotBtn" class="btn btn-big">Adicionar bot</button>
+              <button id="startBtn" class="btn btn-primary btn-big" aria-describedby="startHint">Começar partida</button>
+              <p id="startHint" class="start-hint hidden">Precisa de pelo menos 2 jogadores</p>
+            </div>
+            <p id="waitHost" class="wait-host">Esperando o anfitrião começar a partida…</p>
           </div>
-
-          <div id="hostControls" class="host-controls">
-            <button id="addBotBtn" class="btn"><svg class="icon" aria-hidden="true"><use href="#i-bot"/></svg>Adicionar bot</button>
-            <button id="startBtn" class="btn btn-primary btn-big" aria-describedby="startHint">Começar partida</button>
-            <p id="startHint" class="start-hint hidden">Precisa de pelo menos 2 jogadores</p>
-          </div>
-          <p id="waitHost" class="muted center">Esperando o anfitrião começar a partida…</p>
-          <button class="btn btn-ghost rules-link"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Como jogar</button>
         </div>
         <aside class="panel chat-panel" data-chat></aside>
       </div>
@@ -156,10 +115,18 @@
           </header>
 
           <div id="table" class="table">
-            <div class="felt"></div>
+            <div class="felt"><span class="felt-logo" aria-hidden="true">8 Maluco</span></div>
             <div id="seats"></div>
             <div class="table-center">
-              <div class="direction" title="O jogo gira para a direita (anti-horário)"><svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"/></svg></div>
+              <svg class="direction" viewBox="0 0 200 200" role="img" aria-label="O jogo gira para a direita (anti-horário)">
+                <title>O jogo gira para a direita (anti-horário)</title>
+                <path d="M156.6 167.4A88 88 0 0 0 162.2 37.8"/>
+                <path class="head" d="M156.3 31.8L171.8 36.1L160.5 47.4z"/>
+                <path d="M13.3 115.3A88 88 0 0 0 122.8 185.0"/>
+                <path class="head" d="M130.9 182.8L119.4 194.2L115.3 178.7z"/>
+                <path d="M130.1 17.3A88 88 0 0 0 15.0 77.2"/>
+                <path class="head" d="M12.8 85.3L8.7 69.7L24.2 73.9z"/>
+              </svg>
               <button id="drawPile" class="pile draw-pile" title="Comprar carta">
                 <span class="card back"></span>
                 <span id="drawCount" class="pile-count" aria-hidden="true">0</span>

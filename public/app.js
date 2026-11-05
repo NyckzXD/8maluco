@@ -751,92 +751,6 @@ $('#roomsBtn').addEventListener('click', () => {
   refreshRooms();
 });
 
-// Passo a passo do "Como jogar": troca sozinho, pelas bolinhas, pelas setas e deslizando.
-// Pausa com o mouse em cima ou com o foco dentro, e não anda sozinho com movimento reduzido.
-const howtoSlides = $$('#howto .howto-slide');
-const howtoSection = $('.howto-section');
-const HOWTO_MS = 5000;
-let howtoIndex = 0;
-let howtoTimer;
-let howtoHover = false;
-// Parado pelo botão de pausa: fica parado até a pessoa mandar continuar (vale entre visitas).
-let howtoStopped = store.get('om_howto_paused') === '1';
-
-const howtoPaused = () =>
-  howtoStopped ||
-  howtoHover ||
-  howtoSection.contains(document.activeElement) ||
-  matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function syncHowtoPause() {
-  const btn = $('#howtoPause');
-  const label = howtoStopped ? 'Continuar passo a passo' : 'Pausar passo a passo';
-  btn.replaceChildren(icon(howtoStopped ? 'play' : 'pause'));
-  btn.setAttribute('aria-label', label);
-  btn.title = label;
-}
-syncHowtoPause();
-$('#howtoPause').addEventListener('click', () => {
-  howtoStopped = !howtoStopped;
-  store.set('om_howto_paused', howtoStopped ? '1' : '0');
-  syncHowtoPause();
-  scheduleHowto();
-});
-
-function scheduleHowto() {
-  clearTimeout(howtoTimer);
-  if (!howtoPaused()) howtoTimer = setTimeout(() => showHowto(howtoIndex + 1), HOWTO_MS);
-}
-
-function showHowto(i) {
-  howtoIndex = (i + howtoSlides.length) % howtoSlides.length;
-  howtoSlides.forEach((s, n) => {
-    s.classList.toggle('active', n === howtoIndex);
-    s.setAttribute('aria-label', `Passo ${n + 1} de ${howtoSlides.length}`);
-  });
-  $$('#howtoDots button').forEach((d, n) => d.setAttribute('aria-current', n === howtoIndex));
-  $('#howtoCount').textContent = `${howtoIndex + 1} / ${howtoSlides.length}`;
-  scheduleHowto();
-}
-
-howtoSection.addEventListener('mouseenter', () => {
-  howtoHover = true;
-  clearTimeout(howtoTimer);
-});
-howtoSection.addEventListener('mouseleave', () => {
-  howtoHover = false;
-  scheduleHowto();
-});
-howtoSection.addEventListener('focusin', () => clearTimeout(howtoTimer));
-// Espera o foco chegar no próximo elemento antes de ver se ainda está dentro.
-howtoSection.addEventListener('focusout', () => setTimeout(scheduleHowto));
-$('#howtoPrev').addEventListener('click', () => showHowto(howtoIndex - 1));
-$('#howtoNext').addEventListener('click', () => showHowto(howtoIndex + 1));
-
-// Deslizar para os lados no celular troca o passo.
-let howtoSwipe = null;
-$('#howto').addEventListener('pointerdown', (e) => {
-  if (e.pointerType !== 'mouse') howtoSwipe = { x: e.clientX, y: e.clientY };
-});
-$('#howto').addEventListener('pointerup', (e) => {
-  if (!howtoSwipe) return;
-  const dx = e.clientX - howtoSwipe.x;
-  const dy = e.clientY - howtoSwipe.y;
-  howtoSwipe = null;
-  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) showHowto(howtoIndex + (dx < 0 ? 1 : -1));
-});
-$('#howto').addEventListener('pointercancel', () => (howtoSwipe = null));
-
-howtoSlides.forEach((_, n) => {
-  const dot = el('button');
-  dot.type = 'button';
-  dot.title = `Passo ${n + 1}`;
-  dot.setAttribute('aria-label', `Passo ${n + 1}`);
-  dot.addEventListener('click', () => showHowto(n));
-  $('#howtoDots').append(dot);
-});
-showHowto(0);
-
 function leaveRoom() {
   socket.emit('room:leave');
   roomCode = null;
@@ -926,29 +840,46 @@ $('#kickConfirm').addEventListener('click', () => {
 function renderLobby(s) {
   const isHost = s.hostId === s.me;
   $('#lobbyCode').textContent = s.code;
-  $('#lobbyCount').textContent = `Jogadores (${s.members.length}/${s.maxPlayers})`;
+  $('#lobbyCount').textContent = `${s.members.length} de ${s.maxPlayers} jogadores`;
 
+  // Cada jogador sentado no lugar dele em volta da mesa, você embaixo, como na partida.
+  // As cadeiras que sobram viram convite.
   const list = $('#memberList');
   list.replaceChildren();
-  for (const m of s.members) {
-    const li = el('li');
-    const av = avatar(m);
-    const canKick = isHost && m.id !== s.me;
-    if (canKick) li.classList.add('kickable');
-    if (m.id === s.hostId) av.append(icon('crown', 'crown'));
-    const text = el('div');
-    text.style.minWidth = '0';
-    const sub = m.isBot ? 'bot' : !m.connected ? 'desconectado' : m.id === s.me ? 'você' : m.id === s.hostId ? 'anfitrião' : '';
-    text.append(nameWithBot('name', m.name, m.isBot), el('div', 'sub', sub));
-    li.append(av, text);
-    if (canKick) {
+  const total = s.maxPlayers;
+  const myIdx = Math.max(0, s.members.findIndex((m) => m.id === s.me));
+  for (let i = 0; i < total; i++) {
+    const { x, y } = seatPosition(i, total);
+    const li = el('li', 'seat lobby-seat');
+    li.style.left = `${x}%`;
+    li.style.top = `${y}%`;
+    if (i >= s.members.length) {
+      // lugar livre
+      const btn = el('button', 'seat-invite');
+      btn.type = 'button';
+      btn.append(icon('plus'));
+      btn.title = canShare() ? 'Convidar amigos' : 'Copiar link do convite';
+      btn.setAttribute('aria-label', btn.title);
+      btn.addEventListener('click', inviteFriends);
+      li.classList.add('empty');
+      li.append(btn, el('span', 'seat-name', 'Livre'));
+      list.append(li);
+      continue;
+    }
+    // a partir de você, na ordem da sala
+    const realM = s.members[(myIdx + i) % s.members.length];
+    const av = avatar(realM);
+    if (realM.id === s.hostId) av.append(icon('crown', 'crown'));
+    const sub = realM.isBot ? 'bot' : !realM.connected ? 'desconectado' : realM.id === s.me ? 'você' : realM.id === s.hostId ? 'anfitrião' : '';
+    li.append(av, nameWithBot('seat-name', realM.name, realM.isBot), el('span', 'seat-sub', sub));
+    if (isHost && realM.id !== s.me) {
       const kick = el('button', 'kick');
       kick.append(icon('x'));
       kick.type = 'button';
-      kick.title = `Remover ${m.name}`;
-      kick.setAttribute('aria-label', `Remover ${m.name}`);
+      kick.title = `Remover ${realM.name}`;
+      kick.setAttribute('aria-label', `Remover ${realM.name}`);
       // Bot sai na hora; pessoa pede confirmação antes.
-      kick.addEventListener('click', () => (m.isBot ? emit('room:kick', { id: m.id }) : askKick(m)));
+      kick.addEventListener('click', () => (realM.isBot ? emit('room:kick', { id: realM.id }) : askKick(realM)));
       li.append(kick);
     }
     list.append(li);
@@ -957,19 +888,6 @@ function renderLobby(s) {
   if (pendingKick && !s.members.some((m) => m.id === pendingKick)) {
     pendingKick = null;
     hideModal('kickModal');
-  }
-  // Em vez de uma caixa por lugar vazio, uma só com o convite e as vagas que sobram.
-  const free = s.maxPlayers - s.members.length;
-  if (free > 0) {
-    const li = el('li', 'invite');
-    const text = el('div', 'invite-text');
-    text.append(el('b', null, 'Convide amigos'), el('span', 'sub', `${free} vaga${free > 1 ? 's' : ''} livre${free > 1 ? 's' : ''}`));
-    const btn = el('button', 'btn btn-small');
-    btn.type = 'button';
-    btn.append(icon('users'), canShare() ? 'Convidar' : 'Copiar link');
-    btn.addEventListener('click', inviteFriends);
-    li.append(text, btn);
-    list.append(li);
   }
 
   // Configurações: todos veem, só o anfitrião muda.
