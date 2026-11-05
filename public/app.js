@@ -1027,7 +1027,7 @@ function renderSeats(g, s, hit) {
     if (hit.has(p.id)) seat.classList.add('hit');
 
     const av = avatar(m, p.name);
-    if (p.id === g.turnId) av.prepend(el('span', 'ring'));
+    if (p.id === g.turnId) av.prepend(turnRing());
     if (p.id === g.dealerId) av.append(dealerBadge());
     if (m && !m.isBot && !m.connected) {
       const off = el('span', 'badge offline');
@@ -1967,7 +1967,7 @@ function renderMe(g, s, myTurn) {
   info.classList.toggle('turn', myTurn);
   if (me) {
     const av = avatar(memberOf(me.id), me.name);
-    if (myTurn) av.prepend(el('span', 'ring'));
+    if (myTurn) av.prepend(turnRing());
     info.append(av, el('span', null, `Você · ${me.score} pts`));
     if (me.id === g.dealerId) info.append(dealerBadge());
   }
@@ -2160,6 +2160,23 @@ function setTitle(myTurn) {
   if (document.title !== title) document.title = title;
 }
 
+// Quanto ainda resta da vez atual, de 1 (cheio) a 0 (acabou).
+function turnProgress() {
+  if (!state?.deadline || !state.settings) return 1;
+  const left = Math.max(0, state.deadline - (Date.now() + clockOffset));
+  // turnMs é o prazo desta vez: o tempo por vez para humanos, alguns segundos para bots
+  const total = state.turnMs || state.settings.turnSeconds * 1000;
+  return Math.min(1, left / total);
+}
+
+// Anel de tempo em volta do avatar de quem joga. Já nasce com o tempo certo,
+// para não "encher" de novo cada vez que a mesa é redesenhada.
+function turnRing() {
+  const ring = el('span', 'ring');
+  ring.style.setProperty('--p', turnProgress());
+  return ring;
+}
+
 function updateClock() {
   const g = state?.game;
   const myTurn = !!g && g.phase === 'playing' && g.turnId === state.me;
@@ -2169,7 +2186,7 @@ function updateClock() {
   const bar = $('#meTimer');
   const secs = $('#meTimerSecs');
   const left = state.deadline ? Math.max(0, state.deadline - now) : null;
-  const p = left == null ? 1 : Math.min(1, left / (state.settings.turnSeconds * 1000));
+  const p = turnProgress();
   const on = myTurn && left != null;
   const s = on ? Math.ceil(left / 1000) : null;
   bar.classList.toggle('on', on);

@@ -1623,11 +1623,9 @@ input[aria-invalid="true"] {
   margin-right: 2px;
 }
 
+/* quem joga agora: o avatar balança e ganha o anel de tempo (.ring) */
 .seat.turn .avatar,
 .me-info.turn .avatar {
-  box-shadow:
-    0 0 0 4px var(--primary),
-    0 0 20px var(--primary);
   animation: bob 1s ease-in-out infinite;
 }
 
@@ -1642,17 +1640,30 @@ input[aria-invalid="true"] {
   filter: grayscale(1);
 }
 
+/* Anel de tempo como um relógio: o vermelho é o tempo que resta e vai sumindo no
+   sentido horário, a partir do meio-dia, deixando à mostra o trilho claro.
+   --p vai de 1 (cheio) a 0 e é atualizado pelo updateClock() a cada 200ms;
+   registrado com @property, ele desliza entre uma atualização e outra. */
+@property --p {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
 .seat .ring,
 .me-info .ring {
+  --ring-w: 5px;
   position: absolute;
-  inset: -6px;
+  inset: calc(-1 * var(--ring-w) - 2px);
   border-radius: 50%;
   background: conic-gradient(
-    var(--primary) calc(var(--p, 1) * 360deg),
-    transparent 0
+    rgba(255, 255, 255, 0.16) calc((1 - var(--p)) * 360deg),
+    var(--primary) 0
   );
-  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%);
-  mask: radial-gradient(circle, transparent 58%, #000 60%);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - var(--ring-w)), #000 calc(100% - var(--ring-w) + 0.5px));
+  mask: radial-gradient(closest-side, transparent calc(100% - var(--ring-w)), #000 calc(100% - var(--ring-w) + 0.5px));
+  transition: --p 0.2s linear;
+  pointer-events: none;
 }
 
 .badge {

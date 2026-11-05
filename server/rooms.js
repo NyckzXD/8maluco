@@ -108,6 +108,7 @@ class Room {
     this.game = null;
     this.timer = null;
     this.deadline = null;
+    this.turnMs = null; // duração total do prazo atual (o anel de tempo do cliente mede contra ela)
     this.ready = new Set(); // quem já clicou em "pronto" no intervalo entre rodadas
     this.emptyTimer = null;
   }
@@ -392,15 +393,20 @@ class Room {
       const delay = m?.isBot
         ? min + Math.random() * (max - min)
         : AWAY_DELAY_MS;
-      this.deadline = null;
+      // Bot e ausente também têm prazo: é quando a jogada automática acontece,
+      // e o anel de tempo dos outros esvazia até lá.
+      this.deadline = Date.now() + delay;
+      this.turnMs = delay;
       this.timer = setTimeout(
         () => this.autoplay(current.id, !!m?.isBot),
         delay,
       );
       return;
     }
-    if (newTurn || !this.deadline)
-      this.deadline = Date.now() + this.settings.turnSeconds * 1000;
+    if (newTurn || !this.deadline || !this.turnMs || this.turnMs < this.settings.turnSeconds * 1000) {
+      this.turnMs = this.settings.turnSeconds * 1000;
+      this.deadline = Date.now() + this.turnMs;
+    }
     const turnKey = `${g.round}:${g.turn}`;
     this.timer = setTimeout(
       () => {
@@ -472,6 +478,7 @@ class Room {
       })),
       game: this.game ? viewFor(this.game, memberId) : null,
       deadline: this.deadline,
+      turnMs: this.turnMs,
       ready: [...this.ready],
       waitingOn: this.waitingOn(),
       serverNow: Date.now(),
