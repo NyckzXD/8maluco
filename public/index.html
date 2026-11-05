@@ -32,7 +32,7 @@
                   </button>
                   <div class="name-field">
                     <label for="nameInput" class="field-label">Seu apelido</label>
-                    <input id="nameInput" maxlength="16" placeholder="Como te chamam?" autocomplete="nickname" aria-describedby="nameError" />
+                    <input id="nameInput" name="nickname" maxlength="16" placeholder="Ex.: Tia Neide…" autocomplete="nickname" aria-describedby="nameError" />
                     <p id="nameError" class="field-error hidden"></p>
                   </div>
                 </div>
@@ -41,7 +41,7 @@
                   <button id="createBtn" class="btn btn-primary btn-big"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar sala</button>
                   <button id="roomsBtn" class="btn btn-big btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Salas</button>
                   <div class="join-row">
-                    <input id="codeInput" maxlength="5" placeholder="CÓDIGO" aria-label="Código da sala" autocomplete="off" autocapitalize="characters" enterkeyhint="go" spellcheck="false" />
+                    <input id="codeInput" name="code" maxlength="5" placeholder="Ex.: K7M2Q…" aria-label="Código da sala" autocomplete="off" autocapitalize="characters" enterkeyhint="go" spellcheck="false" />
                     <button id="joinBtn" class="btn">Entrar</button>
                   </div>
                 </div>
@@ -77,9 +77,9 @@
                   <p>Quem termina as cartas fecha a rodada; os outros somam os pontos do que sobrou</p>
                 </div>
                 <div class="howto-slide">
-                  <div class="howto-card red">100</div>
-                  <h3>6. Fuja dos 100</h3>
-                  <p>Quem chega a 100 pontos está fora. Ganha o último que restar!</p>
+                  <div class="howto-card red js-limit">100</div>
+                  <h3>6. Fuja dos <span class="js-limit">100</span></h3>
+                  <p>Quem chega a <span class="js-limit">100</span> pontos está fora. Ganha o último que restar!</p>
                 </div>
               </div>
               <div class="howto-nav">
@@ -87,6 +87,7 @@
                 <div id="howtoDots" class="howto-dots"></div>
                 <span id="howtoCount" class="howto-count" aria-hidden="true"></span>
                 <button id="howtoNext" type="button" class="howto-arrow next" aria-label="Próximo passo"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+                <button id="howtoPause" type="button" class="howto-arrow howto-pause" aria-label="Pausar passo a passo" title="Pausar passo a passo"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg></button>
               </div>
               <button id="rulesBtn" class="btn btn-small btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Regras completas</button>
             </div>
@@ -106,8 +107,7 @@
           <div class="lobby-head">
             <button class="btn btn-ghost btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
             <div class="room-code">
-              <span>Sala</span>
-              <strong id="lobbyCode">-----</strong>
+              <h1 class="room-code-title"><span>Sala</span> <strong id="lobbyCode">-----</strong></h1>
               <button id="copyLink" class="btn btn-small">Copiar link</button>
             </div>
           </div>
@@ -116,11 +116,11 @@
           <ul id="memberList" class="member-grid"></ul>
 
           <!-- Todo mundo vê as configurações; só o anfitrião muda (para os outros ficam desabilitadas). -->
-          <div class="settings" aria-describedby="settingsNote">
-            <label class="check"><input type="checkbox" id="setPublic" /> Sala pública</label>
+          <div class="settings">
+            <label class="check"><input type="checkbox" id="setPublic" aria-describedby="settingsNote" /> Sala pública</label>
             <label class="select">
               Tempo por vez
-              <select id="setTurn">
+              <select id="setTurn" aria-describedby="settingsNote">
                 <option value="15">15s</option>
                 <option value="30">30s</option>
                 <option value="45">45s</option>
@@ -148,10 +148,10 @@
         <div class="game-main">
           <header class="game-top">
             <button class="btn btn-ghost btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
-            <div id="roundLabel" class="round-label">Rodada 1</div>
+            <h1 id="roundLabel" class="round-label">Rodada 1</h1>
             <div class="top-right">
-              <button id="muteBtn" class="btn btn-ghost btn-small" title="Som" aria-label="Som"><svg class="icon" aria-hidden="true"><use href="#i-volume"/></svg></button>
-              <button id="sideToggle" class="btn btn-ghost btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat" aria-controls="sidePanel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden"></span></button>
+              <button id="muteBtn" class="btn btn-ghost btn-small" title="Silenciar" aria-label="Silenciar" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-volume"/></svg></button>
+              <button id="sideToggle" class="btn btn-ghost btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat" aria-controls="sidePanel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden" aria-hidden="true"></span></button>
             </div>
           </header>
 
@@ -161,10 +161,10 @@
             <div class="table-center">
               <div class="direction" title="O jogo gira para a direita (anti-horário)"><svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"/></svg></div>
               <button id="drawPile" class="pile draw-pile" title="Comprar carta">
-                <div class="card back"></div>
-                <span id="drawCount" class="pile-count">0</span>
+                <span class="card back"></span>
+                <span id="drawCount" class="pile-count" aria-hidden="true">0</span>
               </button>
-              <div id="discardPile" class="pile discard-pile"></div>
+              <div id="discardPile" class="pile discard-pile" role="button" tabindex="-1" aria-disabled="true" aria-label="Monte"></div>
               <div id="activeSuit" class="active-suit"></div>
             </div>
             <div id="toasts" class="toasts" aria-live="polite"></div>
@@ -174,7 +174,7 @@
             <div id="turnBanner" class="turn-banner" aria-live="polite"></div>
             <div class="me-actions">
               <div id="meInfo" class="me-info"></div>
-              <div id="meTimer" class="timer-bar"><i></i></div>
+              <div id="meTimer" class="timer-bar" role="progressbar" aria-label="Tempo da sua vez" aria-valuemin="0" aria-valuemax="30" aria-valuenow="30"><i></i></div>
               <span id="meTimerSecs" class="timer-secs" aria-hidden="true"></span>
               <button id="passBtn" class="btn btn-small hidden">Passar a vez</button>
             </div>
@@ -304,7 +304,7 @@
         <ul>
           <li>A rodada acaba quando alguém <b>termina as cartas</b>. Os outros somam os pontos das cartas que sobraram na mão.</li>
           <li>Ás = 1 · 2 a 10 = o próprio número · Valete, Dama e Rei = 10 · Joker = 11.</li>
-          <li>Quem chega a <b>100 pontos</b> está fora. <b>Ganha o último que restar!</b></li>
+          <li>Quem chega a <b><span class="js-limit">100</span> pontos</b> está fora. <b>Ganha o último que restar!</b></li>
         </ul>
         <button class="btn btn-primary" data-close>Bora jogar!</button>
       </div>
@@ -313,13 +313,13 @@
     <template id="chatTemplate">
       <div class="panel-head">
         <h3>Chat</h3>
-        <button type="button" class="btn btn-ghost btn-small chat-toggle" title="Recolher chat" aria-expanded="true">
-          <span class="chat-unread dot hidden"></span><svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+        <button type="button" class="btn btn-ghost btn-small chat-toggle" title="Recolher chat" aria-label="Chat" aria-expanded="true">
+          <span class="chat-unread dot hidden" aria-hidden="true"></span><svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
         </button>
       </div>
       <ul class="chat-log"></ul>
       <form class="chat-form">
-        <input maxlength="200" placeholder="Mande um recado…" autocomplete="off" />
+        <input name="message" maxlength="200" placeholder="Mande um recado…" aria-label="Mensagem para o chat" autocomplete="off" enterkeyhint="send" />
         <button class="btn btn-small">Enviar</button>
       </form>
     </template>

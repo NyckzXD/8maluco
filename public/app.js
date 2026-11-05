@@ -202,7 +202,7 @@ function setSideOpen(open) {
   // Com a gaveta aberta, a mesa atrás fica inerte (o fundo escurecido cobre ela).
   $('.game-main').inert = open;
   if (open && !wasOpen) {
-    $('#unread').classList.add('hidden');
+    setSideUnread(false);
     $('.side-close').focus({ preventScroll: true });
   } else if (!open && wasOpen && (side.contains(document.activeElement) || document.activeElement === document.body)) {
     $('#sideToggle').focus({ preventScroll: true });
@@ -246,6 +246,8 @@ document.body.insertAdjacentHTML(
     <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></symbol>
     <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
     <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
     <symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5"/></symbol>
@@ -401,8 +403,13 @@ const sounds = {
 // ---------- chat ----------
 
 const chatTemplate = $('#chatTemplate');
-for (const panel of $$('[data-chat]')) {
+$$('[data-chat]').forEach((panel, i) => {
   panel.append(chatTemplate.content.cloneNode(true));
+  // Cada cópia do chat ganha ids próprios para o botão de recolher apontar para o que ele controla.
+  const log = $('.chat-log', panel);
+  log.id = `chatLog${i}`;
+  $('.chat-form', panel).id = `chatForm${i}`;
+  $('.chat-toggle', panel).setAttribute('aria-controls', `${log.id} chatForm${i}`);
   const form = $('form', panel);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -412,18 +419,28 @@ for (const panel of $$('[data-chat]')) {
     socket.emit('chat', { text });
     input.value = '';
   });
-}
+});
 
 // Chat da mesa recolhível, para dar mais espaço e foco ao jogo.
 const gameChat = $('.side .chat-panel');
 const chatToggle = $('.chat-toggle', gameChat);
+
+// Os pontinhos de "mensagem nova" são só visuais: o nome do botão diz a mesma coisa para o leitor de tela.
+function setSideUnread(on) {
+  $('#unread').classList.toggle('hidden', !on);
+  $('#sideToggle').setAttribute('aria-label', on ? 'Placar e chat, mensagens novas' : 'Placar e chat');
+}
+function setChatUnread(on) {
+  $('.chat-unread', gameChat).classList.toggle('hidden', !on);
+  chatToggle.setAttribute('aria-label', on ? 'Chat, mensagens novas' : 'Chat');
+}
 function setChatCollapsed(collapsed) {
   gameChat.classList.toggle('collapsed', collapsed);
   chatToggle.setAttribute('aria-expanded', String(!collapsed));
   chatToggle.title = collapsed ? 'Abrir chat' : 'Recolher chat';
   store.set('om_chat_collapsed', collapsed ? '1' : '0');
   if (!collapsed) {
-    $('.chat-unread', gameChat).classList.add('hidden');
+    setChatUnread(false);
     const log = $('.chat-log', gameChat);
     log.scrollTop = log.scrollHeight;
   }
@@ -450,11 +467,9 @@ function addChat(msg) {
     if (nearBottom) log.scrollTop = log.scrollHeight;
   }
   if (!msg.log && !$('.side').classList.contains('open') && !$('#game').classList.contains('hidden')) {
-    $('#unread').classList.remove('hidden');
+    setSideUnread(true);
   }
-  if (!msg.log && gameChat.classList.contains('collapsed')) {
-    $('.chat-unread', gameChat).classList.remove('hidden');
-  }
+  if (!msg.log && gameChat.classList.contains('collapsed')) setChatUnread(true);
 }
 
 function logLine(text) {
@@ -511,34 +526,87 @@ const AVATAR_TABS = [
 let avatarDraft = null;
 let avatarTab = 0;
 
-function renderAvatarEditor() {
+// As abas são criadas uma vez só; escolher uma opção atualiza o estado no lugar, sem recriar os
+// botões, para o foco do teclado continuar onde está.
+const avatarTabs = AVATAR_TABS.map((t, i) => {
+  const b = el('button', 'avatar-tab');
+  b.type = 'button';
+  b.id = `avatarTab${i}`;
+  b.setAttribute('role', 'tab');
+  b.setAttribute('aria-controls', 'avatarOptions');
+  b.append(icon(t.icon), el('span', null, t.label));
+  b.addEventListener('click', () => selectAvatarTab(i));
+  return b;
+});
+$('#avatarTabs').replaceChildren(...avatarTabs);
+
+// Setas trocam de aba (tabindex móvel): Tab sai da lista e vai direto para as opções.
+$('#avatarTabs').addEventListener('keydown', (e) => {
+  const n = AVATAR_TABS.length;
+  const next = {
+    ArrowRight: avatarTab + 1,
+    ArrowLeft: avatarTab - 1,
+    Home: 0,
+    End: n - 1,
+  }[e.key];
+  if (next == null) return;
+  e.preventDefault();
+  selectAvatarTab((next + n) % n);
+  avatarTabs[avatarTab].focus();
+});
+
+function selectAvatarTab(i) {
+  avatarTab = i;
+  renderAvatarOptions();
+  $('#avatarOptions').scrollTop = 0;
+}
+
+function syncAvatarTabs() {
+  avatarTabs.forEach((b, i) => {
+    b.setAttribute('aria-selected', String(i === avatarTab));
+    b.tabIndex = i === avatarTab ? 0 : -1;
+  });
+  $('#avatarOptions').setAttribute('aria-labelledby', avatarTabs[avatarTab].id);
+}
+
+function renderAvatarPreview() {
   $('#avatarPreview').replaceChildren(avatarArt(avatarDraft, { title: 'Prévia do avatar' }));
+}
 
-  const tabs = $('#avatarTabs');
-  tabs.replaceChildren(
-    ...AVATAR_TABS.map((t, i) => {
-      const b = el('button', 'avatar-tab');
-      b.type = 'button';
-      b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(i === avatarTab));
-      b.append(icon(t.icon), el('span', null, t.label));
-      b.addEventListener('click', () => {
-        avatarTab = i;
-        renderAvatarEditor();
-        $('#avatarOptions').scrollTop = 0;
-      });
-      return b;
-    }),
-  );
+// Atualiza seleção e miniaturas sem tirar os botões do lugar.
+function syncAvatarOptions() {
+  const box = $('#avatarOptions');
+  for (const b of $$('[data-key]', box)) {
+    b.setAttribute('aria-pressed', String(avatarDraft[b.dataset.key] === Number(b.dataset.value)));
+  }
+  const view = AVATAR_TABS[avatarTab].styles?.view;
+  for (const b of $$('.style-opt', box)) {
+    b.replaceChildren(avatarArt({ ...avatarDraft, [b.dataset.key]: Number(b.dataset.value) }, { view, title: b.title }));
+  }
+}
 
+function setAvatarPart(key, value) {
+  avatarDraft = { ...avatarDraft, [key]: value };
+  renderAvatarPreview();
+  syncAvatarOptions();
+}
+
+function optionButton(className, key, value, name) {
+  const b = el('button', className);
+  b.type = 'button';
+  b.title = name;
+  b.dataset.key = key;
+  b.dataset.value = String(value);
+  b.setAttribute('aria-label', name);
+  b.addEventListener('click', () => setAvatarPart(key, value));
+  return b;
+}
+
+function renderAvatarOptions() {
+  syncAvatarTabs();
   const tab = AVATAR_TABS[avatarTab];
   const box = $('#avatarOptions');
-  const scroll = box.scrollTop;
   box.replaceChildren();
-  const set = (key, value) => {
-    avatarDraft = { ...avatarDraft, [key]: value };
-    renderAvatarEditor();
-  };
 
   // A cor vem primeiro (é uma fileira curta), assim ela aparece sem precisar rolar.
   if (tab.colors) {
@@ -546,40 +614,27 @@ function renderAvatarEditor() {
     if (tab.styles) box.append(el('h3', 'opt-label', 'Cor'));
     const row = el('div', `swatches${tab.styles ? '' : ' big'}`);
     list.forEach(({ name, hex }, i) => {
-      const b = el('button', 'swatch');
-      b.type = 'button';
-      b.title = name;
-      b.setAttribute('aria-label', name);
-      b.setAttribute('aria-pressed', String(avatarDraft[key] === i));
+      const b = optionButton('swatch', key, i, name);
       b.style.setProperty('--c', hex);
-      b.addEventListener('click', () => set(key, i));
       row.append(b);
     });
     box.append(row);
   }
 
   if (tab.styles) {
-    const { key, list, view } = tab.styles;
+    const { key, list } = tab.styles;
     if (tab.colors) box.append(el('h3', 'opt-label', 'Estilo'));
     const grid = el('div', 'style-grid');
-    list.forEach((name, i) => {
-      const b = el('button', 'style-opt');
-      b.type = 'button';
-      b.title = name;
-      b.setAttribute('aria-label', name);
-      b.setAttribute('aria-pressed', String(avatarDraft[key] === i));
-      b.append(avatarArt({ ...avatarDraft, [key]: i }, { view, title: name }));
-      b.addEventListener('click', () => set(key, i));
-      grid.append(b);
-    });
+    list.forEach((name, i) => grid.append(optionButton('style-opt', key, i, name)));
     box.append(grid);
   }
-  box.scrollTop = scroll;
+  syncAvatarOptions();
 }
 
 function openAvatarEditor() {
   avatarDraft = { ...myAvatar };
-  renderAvatarEditor();
+  renderAvatarPreview();
+  renderAvatarOptions();
   openModal('avatarModal');
   $('#avatarOptions').scrollTop = 0;
 }
@@ -587,7 +642,8 @@ function openAvatarEditor() {
 $('#homeAvatar').addEventListener('click', openAvatarEditor);
 $('#avatarRandom').addEventListener('click', () => {
   avatarDraft = randomAvatar();
-  renderAvatarEditor();
+  renderAvatarPreview();
+  syncAvatarOptions();
 });
 $('#avatarSave').addEventListener('click', () => {
   myAvatar = sanitizeAvatar(avatarDraft) ?? myAvatar;
@@ -698,9 +754,29 @@ const HOWTO_MS = 5000;
 let howtoIndex = 0;
 let howtoTimer;
 let howtoHover = false;
+// Parado pelo botão de pausa: fica parado até a pessoa mandar continuar (vale entre visitas).
+let howtoStopped = store.get('om_howto_paused') === '1';
 
 const howtoPaused = () =>
-  howtoHover || howtoSection.contains(document.activeElement) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  howtoStopped ||
+  howtoHover ||
+  howtoSection.contains(document.activeElement) ||
+  matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function syncHowtoPause() {
+  const btn = $('#howtoPause');
+  const label = howtoStopped ? 'Continuar passo a passo' : 'Pausar passo a passo';
+  btn.replaceChildren(icon(howtoStopped ? 'play' : 'pause'));
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+}
+syncHowtoPause();
+$('#howtoPause').addEventListener('click', () => {
+  howtoStopped = !howtoStopped;
+  store.set('om_howto_paused', howtoStopped ? '1' : '0');
+  syncHowtoPause();
+  scheduleHowto();
+});
 
 function scheduleHowto() {
   clearTimeout(howtoTimer);
@@ -1208,6 +1284,7 @@ function renderCenter(prev, g, myTurn, origin) {
     badge.append(document.createTextNode(`${label}: `), sym, document.createTextNode(` ${suit.name}`));
   }
   badge.classList.toggle('changed', g.activeRank === '8' || g.activeRank === 'JOKER');
+  syncDiscardTarget();
 }
 
 // Quanto de cada carta precisa aparecer para dar para tocar nela (área mínima de toque).
@@ -1263,10 +1340,16 @@ function moveHandFocus(from, step) {
 function pileScale(node) {
   return node.offsetWidth / $('#discardPile').offsetWidth;
 }
+// Um redesenho por quadro, no máximo: o resize dispara dezenas de vezes enquanto a janela muda.
+let resizeFrame = 0;
 addEventListener('resize', () => {
-  layoutHand();
-  layoutSuitHand();
-  if (state?.game) renderSeats(state.game, state, new Set());
+  if (resizeFrame) return;
+  resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = 0;
+    layoutHand();
+    layoutSuitHand();
+    if (state?.game) renderSeats(state.game, state, new Set());
+  });
 });
 
 function renderHand(prev, g, s, myTurn) {
@@ -1292,12 +1375,14 @@ function renderHand(prev, g, s, myTurn) {
   const focusedIndex = focused ? $$('#hand .card').indexOf(focused) : -1;
   // A seleção só vale enquanto for a sua vez e a carta ainda puder ser jogada.
   if (!myTurn || !playable.has(selectedId)) selectedId = null;
-  $('#discardPile').classList.toggle('drop-target', !!selectedId);
+  syncDiscardTarget();
   hand.replaceChildren(
     ...sortHand(g.hand).map((card) => {
       const node = renderCard(card);
       if (playable.has(card.id)) node.classList.add('playable');
       if (card.id === selectedId) node.classList.add('selected');
+      // No toque, a primeira batida seleciona: o estado vai junto para o leitor de tela.
+      if (confirmByTap()) node.setAttribute('aria-pressed', String(card.id === selectedId));
       if (sameRound && !before.has(card.id)) node.classList.add('fresh');
       if (liftedIds.has(card.id)) node.classList.add('lifted');
       // Dá para jogar pelo teclado: Tab/setas escolhem, Enter ou Espaço joga.
@@ -1447,8 +1532,11 @@ function isMyTurn(s) {
 
 function setSelected(id) {
   selectedId = id;
-  for (const node of $$('#hand .card')) node.classList.toggle('selected', node.dataset.id === id);
-  $('#discardPile').classList.toggle('drop-target', !!id);
+  for (const node of $$('#hand .card')) {
+    node.classList.toggle('selected', node.dataset.id === id);
+    if (confirmByTap() || node.hasAttribute('aria-pressed')) node.setAttribute('aria-pressed', String(node.dataset.id === id));
+  }
+  syncDiscardTarget();
   if (state?.game) renderBanner(state.game, isMyTurn(state));
 }
 
@@ -1481,10 +1569,29 @@ function playCard(card) {
   emit('game:play', { cardId: card.id });
 }
 
-// Tocar no monte joga a carta selecionada.
-$('#discardPile').addEventListener('click', () => {
+// O monte só vira botão quando há carta selecionada; fora disso fica fora da ordem do Tab.
+function syncDiscardTarget() {
+  const pile = $('#discardPile');
+  const g = state?.game;
+  const card = selectedId && g?.hand.find((c) => c.id === selectedId);
+  pile.classList.toggle('drop-target', !!card);
+  pile.tabIndex = card ? 0 : -1;
+  pile.setAttribute('aria-disabled', String(!card));
+  const top = g?.top ? `Monte: ${cardName(g.top)}` : 'Monte vazio';
+  pile.setAttribute('aria-label', card ? `${top}. Jogar ${cardName(card)} aqui` : top);
+}
+
+function playSelected() {
   const card = selectedId && state?.game?.hand.find((c) => c.id === selectedId);
   if (card) playCard(card);
+}
+
+// Tocar no monte joga a carta selecionada.
+$('#discardPile').addEventListener('click', playSelected);
+$('#discardPile').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  playSelected();
 });
 
 // Tocar fora da mão (e do monte) desfaz a seleção.
@@ -1605,6 +1712,7 @@ for (const btn of $$('.suit-btn')) {
 
 function renderScores(g) {
   $('#limitLabel').textContent = g.rules.eliminationScore;
+  for (const n of $$('.js-limit')) n.textContent = g.rules.eliminationScore;
   const list = $('#scoreList');
   list.replaceChildren();
   const limit = g.rules.eliminationScore;
@@ -1706,7 +1814,7 @@ function renderRoundModal(g, s) {
   $('#gameOverActions').classList.toggle('hidden', !over);
   $('#againBtn').classList.toggle('hidden', s.hostId !== s.me);
   $('#againWait').classList.toggle('hidden', s.hostId === s.me);
-  if (over) $('#roundFooter').textContent = 'Fim de jogo! Todos os outros chegaram a 100 pontos.';
+  if (over) $('#roundFooter').textContent = `Fim de jogo! Todos os outros chegaram a ${g.rules.eliminationScore} pontos.`;
 
   // Entre rodadas: a próxima só começa quando todo mundo que ainda está na mesa clicar em "pronto".
   const playing = g.players.some((p) => p.id === s.me && !p.eliminated);
@@ -1848,6 +1956,13 @@ function updateClock() {
   bar.classList.toggle('on', on);
   bar.classList.toggle('low', p < 0.2);
   $('i', bar).style.transform = `scaleX(${p})`;
+  const total = state.settings.turnSeconds;
+  const secsLeft = left == null ? total : Math.ceil(left / 1000);
+  if (bar.getAttribute('aria-valuenow') !== String(secsLeft)) {
+    bar.setAttribute('aria-valuemax', String(total));
+    bar.setAttribute('aria-valuenow', String(secsLeft));
+    bar.setAttribute('aria-valuetext', `${secsLeft} segundos restantes`);
+  }
   secs.classList.toggle('on', on);
   secs.classList.toggle('low', on && s <= TICK_FROM_S);
   secs.textContent = on ? `${s}s` : '';
@@ -1869,11 +1984,18 @@ document.addEventListener('visibilitychange', () => setTitle(isMyTurn(state)));
 
 // ---------- painéis e modais ----------
 
-$('#muteBtn').replaceChildren(icon(muted ? 'mute' : 'volume'));
+// Botão de alternar: o nome fica fixo ("Silenciar") e o aria-pressed diz se está ligado.
+function syncMuteBtn() {
+  const btn = $('#muteBtn');
+  btn.replaceChildren(icon(muted ? 'mute' : 'volume'));
+  btn.setAttribute('aria-pressed', String(muted));
+  btn.title = muted ? 'Ativar som' : 'Silenciar';
+}
+syncMuteBtn();
 $('#muteBtn').addEventListener('click', () => {
   muted = !muted;
   store.set('om_muted', muted ? '1' : '0');
-  $('#muteBtn').replaceChildren(icon(muted ? 'mute' : 'volume'));
+  syncMuteBtn();
 });
 
 $('#sideToggle').addEventListener('click', (e) => {
@@ -1931,7 +2053,7 @@ socket.on('disconnect', () => $('#netStatus').classList.remove('hidden'));
 // Entrou por um link de convite (?sala=CODIGO).
 const invite = new URLSearchParams(location.search).get('sala');
 if (invite) {
-  codeInput.value = invite.toUpperCase();
+  codeInput.value = extractCode(invite);
   if (nameInput.value.trim()) joinRoom(invite);
   else {
     nameInput.focus();

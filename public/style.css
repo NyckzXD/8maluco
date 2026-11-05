@@ -1,4 +1,6 @@
 :root {
+  /* controles nativos (barra de rolagem, checkbox, select) no tema escuro */
+  color-scheme: dark;
   /* paleta base: Racing Red, Black e Silver */
   --racing-red: #ed1c24;
   --red-300: #ff6b70;
@@ -102,6 +104,17 @@ body:has(> #game:not(.hidden))::before {
   filter: blur(3px);
 }
 
+/* sem o atraso do toque duplo para zoom nos controles */
+button,
+a,
+input,
+select,
+textarea,
+label,
+[role="button"] {
+  touch-action: manipulation;
+}
+
 .hidden {
   display: none !important;
 }
@@ -156,6 +169,7 @@ h1,
 h2 {
   font-family: var(--font-display);
   font-weight: 400;
+  text-wrap: balance;
 }
 
 h3 {
@@ -348,7 +362,8 @@ select:focus {
 .home-wrap {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: max(32px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   min-height: 100dvh;
   display: grid;
   align-content: center;
@@ -428,7 +443,7 @@ select:focus {
   margin: 0;
   font-size: var(--fs-2xl);
   text-align: center;
-  color: var(--red-600);
+  color: var(--red-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -496,9 +511,7 @@ input[aria-invalid="true"] {
     var(--racing-red) 45%,
     var(--red-700)
   );
-  box-shadow:
-    0 0 0 6px rgba(237, 28, 36, 0.18),
-    0 10px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
 }
 
 .play-actions {
@@ -657,7 +670,7 @@ input[aria-invalid="true"] {
 .howto-dots button {
   display: grid;
   place-items: center;
-  width: 44px;
+  width: 32px;
   height: 44px;
   padding: 0;
   border: 0;
@@ -665,20 +678,44 @@ input[aria-invalid="true"] {
   cursor: pointer;
 }
 
-.howto-dots button::before {
+.howto-dots button::before,
+.howto-dots button::after {
   content: "";
-  width: 10px;
+  grid-area: 1 / 1;
   height: 10px;
   border-radius: var(--r-pill);
+}
+
+.howto-dots button::before {
+  width: 10px;
   background: var(--line);
   transition:
-    width 0.2s,
-    background 0.2s;
+    opacity 0.2s,
+    transform 0.15s;
+}
+
+.howto-dots button::after {
+  width: 26px;
+  background: var(--racing-red);
+  opacity: 0;
+  transform: scaleX(0.38);
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.howto-dots button:hover::before {
+  background: var(--silver);
+  transform: scale(1.2);
 }
 
 .howto-dots button[aria-current="true"]::before {
-  width: 26px;
-  background: var(--racing-red);
+  opacity: 0;
+}
+
+.howto-dots button[aria-current="true"]::after {
+  opacity: 1;
+  transform: none;
 }
 
 .howto-dots button:focus-visible {
@@ -752,6 +789,7 @@ input[aria-invalid="true"] {
   gap: 8px;
   max-height: 300px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .room-list li {
@@ -805,7 +843,8 @@ input[aria-invalid="true"] {
 .lobby-layout {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 20px 16px;
+  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 16px;
@@ -830,6 +869,14 @@ input[aria-invalid="true"] {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.room-code-title {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font: inherit;
 }
 
 .room-code strong {
@@ -978,6 +1025,7 @@ input[aria-invalid="true"] {
   padding: 0;
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1031,7 +1079,8 @@ input[aria-invalid="true"] {
   grid-template-columns: var(--mirror-w) minmax(0, 1fr) var(--side-w);
   height: 100dvh;
   gap: 12px;
-  padding: 12px;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
 }
 
 .game-main {
@@ -1052,6 +1101,7 @@ input[aria-invalid="true"] {
 }
 
 .round-label {
+  margin: 0;
   font-family: var(--font-hud);
   font-weight: 700;
   font-size: var(--fs-lg);
@@ -1194,8 +1244,33 @@ input[aria-invalid="true"] {
     6px 6px 10px rgba(0, 0, 0, 0.5);
 }
 
-.draw-pile.can-draw .card {
+.draw-pile.can-draw::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: var(--r-card);
+  box-shadow:
+    0 0 0 4px var(--primary),
+    0 0 22px var(--primary);
+  pointer-events: none;
+  opacity: 0;
   animation: glow 1.2s ease-in-out infinite;
+}
+
+.draw-pile .card {
+  transition: transform 0.15s;
+}
+
+.draw-pile:not(:disabled):hover .card {
+  transform: translateY(-3px);
+}
+
+.draw-pile:focus-visible {
+  outline: 3px solid var(--silver-300);
+  outline-offset: 6px;
+  border-radius: var(--r-card);
 }
 
 .draw-pile:disabled {
@@ -1213,6 +1288,7 @@ input[aria-invalid="true"] {
   padding: 1px 8px;
   font-size: var(--fs-xs);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   box-shadow: var(--shadow);
 }
 
@@ -1345,11 +1421,14 @@ input[aria-invalid="true"] {
   top: calc(100% + 14px);
   left: 50%;
   transform: translateX(-50%);
-  white-space: nowrap;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 48px));
+  text-align: center;
+  text-wrap: balance;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
   padding: 4px 12px;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-lg);
   border: 1px solid rgba(194, 193, 194, 0.2);
   font-weight: 600;
 }
@@ -1390,9 +1469,7 @@ input[aria-invalid="true"] {
 
 @keyframes glow {
   50% {
-    box-shadow:
-      0 0 0 4px var(--primary),
-      0 0 22px var(--primary);
+    opacity: 1;
   }
 }
 
@@ -1428,6 +1505,7 @@ input[aria-invalid="true"] {
   display: flex;
   gap: 6px;
   font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
   background: rgba(0, 0, 0, 0.6);
   border-radius: var(--r-pill);
   padding: 1px 8px;
@@ -1604,16 +1682,19 @@ input[aria-invalid="true"] {
 .turn-banner {
   font-family: var(--font-display);
   position: absolute;
-  top: -40px;
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
+  width: max-content;
+  max-width: min(100%, calc(100vw - 32px));
   background: var(--primary);
   color: var(--primary-ink);
   font-weight: 700;
   padding: 6px 18px;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow);
-  white-space: nowrap;
+  text-align: center;
+  text-wrap: balance;
   z-index: 3;
 }
 
@@ -1706,7 +1787,6 @@ input[aria-invalid="true"] {
   flex: none;
   transition:
     transform 0.15s,
-    margin 0.2s,
     filter 0.2s,
     box-shadow 0.15s;
   touch-action: manipulation;
@@ -1743,6 +1823,12 @@ input[aria-invalid="true"] {
 
 .discard-pile.drop-target {
   cursor: pointer;
+}
+
+.discard-pile:focus-visible {
+  outline: 3px solid var(--silver-300);
+  outline-offset: 12px;
+  border-radius: var(--r-md);
 }
 
 .discard-pile.drop-target::after {
@@ -2014,6 +2100,7 @@ input[aria-invalid="true"] {
 .score-list b {
   font-family: var(--font-hud);
   font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
@@ -2114,6 +2201,7 @@ input[aria-invalid="true"] {
   width: 100%;
   max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: var(--shadow);
   text-align: center;
   display: grid;
@@ -2181,7 +2269,11 @@ input[aria-invalid="true"] {
 .suit-btn:focus-visible {
   border-color: var(--primary);
   background: var(--red-900);
-  outline: none;
+}
+
+.suit-btn:focus-visible {
+  outline: 3px solid var(--silver-300);
+  outline-offset: 3px;
 }
 
 /* Janela de pintas com a mão recolhida logo abaixo. */
@@ -2351,6 +2443,7 @@ input[aria-invalid="true"] {
 .results .pts {
   font-family: var(--font-hud);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   font-size: var(--fs-lg);
 }
 
@@ -2380,7 +2473,7 @@ input[aria-invalid="true"] {
 
 .net-status {
   position: fixed;
-  bottom: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   background: var(--accent);
@@ -2471,7 +2564,8 @@ input[aria-invalid="true"] {
   }
 
   .home-wrap {
-    padding: 16px;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     align-content: start;
   }
 
@@ -2508,8 +2602,8 @@ input[aria-invalid="true"] {
 
   .game-layout {
     grid-template-columns: 1fr;
-    padding: 8px;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   }
 
   .game-main {
@@ -2536,8 +2630,9 @@ input[aria-invalid="true"] {
     position: fixed;
     inset: 0 0 0 auto;
     width: min(340px, 88vw);
-    padding: 12px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom)) 12px;
+    overscroll-behavior: contain;
     background: rgba(10, 9, 8, 0.97);
     border-left: 1px solid var(--line);
     z-index: 15;
@@ -2732,9 +2827,7 @@ input[aria-invalid="true"] {
   width: 172px;
   height: 172px;
   border-width: 6px;
-  box-shadow:
-    0 0 0 6px rgba(237, 28, 36, 0.18),
-    0 12px 28px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
   animation: pop 0.25s;
 }
 
@@ -2805,6 +2898,7 @@ input[aria-invalid="true"] {
   gap: 12px;
   height: 340px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 14px;
   border-radius: var(--r-lg);
   background: var(--black);
@@ -2988,9 +3082,8 @@ input[aria-invalid="true"] {
   }
 
   /* o monte sem jogada fica aceso, sem piscar */
-  .draw-pile.can-draw .card {
-    box-shadow:
-      0 0 0 4px var(--primary),
-      0 0 22px var(--primary);
+  .draw-pile.can-draw::after {
+    animation: none !important;
+    opacity: 1;
   }
 }
