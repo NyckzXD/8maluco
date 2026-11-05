@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="168" viewBox="0 0 168 168">
+  <!-- Estampa de fundo do 8 Maluco: as quatro pintas, tom sobre tom, repetidas como num verso de carta.
+       Ladrilho sem emendas de 168px; a cor de fundo vem do CSS (body). -->
+  <defs>
+    <path id="h" d="M50 94C22 68 3 52 3 30 3 14 15 4 29 4c10 0 17 6 21 15 4-9 11-15 21-15 14 0 26 10 26 26 0 22-19 38-47 64z"/>
+    <path id="d" d="M50 1 86 50 50 99 14 50z"/>
+    <path id="s" d="M50 2C40 24 5 40 5 63c0 13 10 22 22 22 9 0 16-4 20-11-1 11-5 18-14 24h34c-9-6-13-13-14-24 4 7 11 11 20 11 12 0 22-9 22-22C95 40 60 24 50 2z"/>
+    <g id="c"><circle cx="50" cy="27" r="21"/><circle cx="26" cy="60" r="21"/><circle cx="74" cy="60" r="21"/><path d="M42 40h16v20H42z"/><path d="M47 62c-1 15-5 26-15 36h36c-10-10-14-21-15-36z"/></g>
+  </defs>
+  <g fill="#ffffff" fill-opacity="0.035">
+    <use href="#s" transform="translate(12 12) scale(0.2)"/>
+    <use href="#h" transform="translate(96 12) scale(0.2)"/>
+    <use href="#d" transform="translate(54 54) scale(0.2)"/>
+    <use href="#c" transform="translate(138 54) scale(0.2)"/>
+    <use href="#h" transform="translate(12 96) scale(0.2)"/>
+    <use href="#s" transform="translate(96 96) scale(0.2)"/>
+    <use href="#c" transform="translate(54 138) scale(0.2)"/>
+    <use href="#d" transform="translate(138 138) scale(0.2)"/>
+  </g>
+</svg>
