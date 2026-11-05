@@ -1831,7 +1831,44 @@ input[aria-invalid="true"] {
   border-radius: var(--r-md);
 }
 
-.discard-pile.drop-target::after {
+/* ---------- arrastar a carta para o monte ---------- */
+
+/* na sua vez o dedo arrasta a carta em vez de rolar a tela */
+.hand.my-turn .card {
+  touch-action: none;
+}
+
+.hand .card.dragging {
+  opacity: 0.25;
+  filter: none;
+}
+
+.card.drag-ghost {
+  position: fixed;
+  z-index: 11;
+  margin: 0;
+  pointer-events: none;
+  will-change: transform;
+  box-shadow:
+    0 0 0 3px var(--primary),
+    0 18px 36px rgba(0, 0, 0, 0.55);
+}
+
+body.is-dragging,
+body.is-dragging * {
+  cursor: grabbing !important;
+}
+
+.discard-pile.drag-ready.drag-over::after {
+  inset: -12px;
+  border: 3px solid var(--primary);
+  background: rgba(237, 28, 36, 0.14);
+  animation: none;
+  opacity: 1;
+}
+
+.discard-pile.drop-target::after,
+.discard-pile.drag-ready::after {
   content: "";
   position: absolute;
   inset: -8px;
@@ -1848,7 +1885,8 @@ input[aria-invalid="true"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .discard-pile.drop-target::after {
+  .discard-pile.drop-target::after,
+  .discard-pile.drag-ready::after {
     animation: none;
   }
 }
