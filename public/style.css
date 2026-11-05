@@ -1124,19 +1124,6 @@ input[aria-invalid="true"] {
   animation: spin-ccw 14s linear infinite;
 }
 
-/* setas no feltro entre os lugares: para onde a vez anda */
-.dir-arrow {
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  translate: -50% -50%;
-  color: var(--silver);
-  opacity: 0.55;
-  stroke-width: 2.5;
-  pointer-events: none;
-  z-index: 1;
-}
-
 /* seta do 7 / 9: do monte até quem vai comprar */
 .target-arrow {
   position: fixed;

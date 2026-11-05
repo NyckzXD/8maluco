@@ -250,7 +250,6 @@ document.body.insertAdjacentHTML(
     <symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
-    <symbol id="i-chevrons" viewBox="0 0 24 24"><path d="m6 5 6 6 6-6M6 13l6 6 6-6"/></symbol>
     <symbol id="i-check"viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.52M2 8.82a15 15 0 0 1 4.18-2.64M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></symbol>
@@ -963,42 +962,7 @@ function renderSeats(g, s, hit) {
     seat.append(av, name, info);
     seats.append(seat);
   });
-  renderDirection(n);
 }
-
-// Setas no feltro, entre um lugar e o próximo, apontando para onde a vez anda (direita = anti-horário).
-let directionCount = 0;
-function renderDirection(n = directionCount) {
-  directionCount = n;
-  const seats = $('#seats');
-  for (const old of $$('.dir-arrow', seats)) old.remove();
-  const table = $('#table').getBoundingClientRect();
-  const felt = $('#table .felt').getBoundingClientRect();
-  if (!n || !table.width || !felt.width) return;
-  // Um pouco para dentro do aro, no próprio feltro.
-  const cx = felt.left - table.left + felt.width / 2;
-  const cy = felt.top - table.top + felt.height / 2;
-  const rx = felt.width / 2 - 26;
-  const ry = felt.height / 2 - 26;
-  for (let k = 0; k < n; k++) {
-    // Mesmo ângulo de seatPosition(), no meio do caminho entre o lugar k e o k+1.
-    const a = ((90 - ((k + 0.5) * 360) / n) * Math.PI) / 180;
-    const x = cx + rx * Math.cos(a);
-    const y = cy + ry * Math.sin(a);
-    // A vez anda com o ângulo diminuindo: a tangente nesse sentido é (rx·sen a, −ry·cos a).
-    const heading = (Math.atan2(-ry * Math.cos(a), rx * Math.sin(a)) * 180) / Math.PI;
-    const arrow = icon('chevrons', 'dir-arrow');
-    arrow.style.left = `${(x / table.width) * 100}%`;
-    arrow.style.top = `${(y / table.height) * 100}%`;
-    // O chevron do sprite aponta para baixo (90°).
-    arrow.style.rotate = `${heading - 90}deg`;
-    seats.append(arrow);
-  }
-}
-// A mesa mudou de tamanho (janela, gaveta, celular girado): as setas acompanham o feltro.
-new ResizeObserver(() => {
-  if (state?.game) renderDirection();
-}).observe($('#table'));
 
 // Ao jogar 7 ou 9, uma seta sai do monte até quem vai comprar.
 const TARGET_ARROW_MS = 1800;

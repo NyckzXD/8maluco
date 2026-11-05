@@ -153,6 +153,7 @@ Lista de tarefas tirada da análise de UI/UX feita em 03/11/2026, jogando uma pa
 - [x] **30. Direção do jogo e alvo dos efeitos**
   A seta girando com 8% de opacidade quase não aparece. 7 (esquerda) e 9 (direita) confundem.
   - Pronto quando: a direção fica visível (setas no feltro ou entre os assentos), e ao jogar 7/9 aparece uma seta até o jogador que vai comprar.
+  - Decisão: as setas no feltro foram feitas e depois retiradas; a seta girando no centro já indica a direção. Ficou só a seta do 7/9 até quem compra.
 
 - [x] **31. Carrossel do "Como jogar"**
   Avança sozinho mesmo com reduced-motion, não pausa ao passar o mouse e não aceita deslizar.
