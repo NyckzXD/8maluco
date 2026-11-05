@@ -5,7 +5,7 @@
 const color = (name, hex) => ({ name, hex });
 
 export const BACKGROUNDS = [
-  color('Vermelho', '#ed1c24'),
+  color('Vermelho', '#c8463f'),
   color('Laranja', '#ff8a3d'),
   color('Amarelo', '#ffc83d'),
   color('Verde', '#6fcf5f'),

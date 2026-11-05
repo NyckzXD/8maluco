@@ -62,12 +62,13 @@
   --card-h: 104px;
   --shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
 
-  /* fontes: Russo One para destaque, Barlow Condensed para números e Barlow Semi Condensed para o texto */
-  --font-display: "Russo One", "Barlow Condensed", system-ui, sans-serif;
-  --font-hud:
-    "Barlow Condensed", "Barlow Semi Condensed", system-ui, sans-serif;
+  /* Duas famílias só. Russo One: o logo e os títulos grandes (h1, h2, letreiros, o 8 do verso).
+     Barlow Semi Condensed: todo o resto, do texto aos números da mesa e das cartas.
+     --font-hud continua como apelido de --font-body, para números e placares. */
+  --font-display: "Russo One", "Barlow Semi Condensed", system-ui, sans-serif;
   --font-body:
     "Barlow Semi Condensed", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-hud: var(--font-body);
 }
 
 * {
@@ -148,12 +149,10 @@ label,
 
 /* ---------- componentes ---------- */
 
+/* Seções da lateral (placar e chat): sem moldura, o conteúdo fica direto sobre o fundo
+   e o espaço entre elas é o que separa. Só a gaveta do celular tem fundo próprio. */
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow);
-  padding: 18px;
+  min-width: 0;
 }
 
 .panel-head {
@@ -165,7 +164,20 @@ label,
 
 .panel h2,
 .panel h3 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
+}
+
+.panel h3 {
+  font-size: var(--fs-xl);
+  line-height: 1.1;
+}
+
+.panel .panel-head h3 {
+  margin: 0;
+}
+
+.panel > .panel-head {
+  margin-bottom: 12px;
 }
 
 h1,
@@ -264,8 +276,7 @@ h3 {
   --btn-face: var(--primary);
   --btn-edge: var(--red-700);
   --btn-ink: var(--primary-ink);
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 700;
 }
 
 /* terciário: sem fundo e sem relevo; no hover ganha um fundo leve */
@@ -324,7 +335,7 @@ input,
 select {
   font: inherit;
   border: 2px solid var(--line);
-  border-radius: var(--r-md);
+  border-radius: var(--r-sm);
   padding: 10px 12px;
   outline: none;
   background: var(--black);
@@ -338,8 +349,8 @@ input::placeholder {
 
 input:focus,
 select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.25);
+  border-color: var(--silver-300);
+  box-shadow: 0 0 0 3px rgba(220, 219, 220, 0.2);
 }
 
 .field {
@@ -490,7 +501,7 @@ input[aria-invalid="true"] {
   font-weight: 400;
   font-size: 4.2rem;
   border-width: 6px;
-  background: var(--racing-red);
+  background: var(--surface-3);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
 }
 
@@ -742,11 +753,32 @@ input[aria-invalid="true"] {
   font-family: var(--font-hud);
   flex: 1;
   min-width: 0;
+  min-height: 60px;
+  border-color: var(--surface-3);
+  background: var(--black);
+  box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.6);
   font-size: var(--fs-xl);
   text-transform: uppercase;
   letter-spacing: 4px;
   font-weight: 700;
   text-align: center;
+}
+
+.join-row input:focus {
+  border-color: var(--silver-300);
+  box-shadow:
+    inset 0 3px 0 rgba(0, 0, 0, 0.6),
+    0 0 0 3px rgba(220, 219, 220, 0.2);
+}
+
+.join-row input::placeholder {
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.join-row .btn {
+  min-height: 60px;
+  padding-inline: 24px;
 }
 
 .home-foot {
@@ -1065,6 +1097,7 @@ input[aria-invalid="true"] {
 
 .lobby-layout .chat-panel {
   min-height: 0;
+  padding-top: 6px;
 }
 
 .chat-log {
@@ -1478,7 +1511,6 @@ input[aria-invalid="true"] {
   color: #fff;
   font-family: var(--font-hud);
   font-weight: 800;
-  font-style: italic;
   font-size: var(--fs-sm);
   padding: 1px 9px;
   border-radius: var(--r-pill);
@@ -1898,7 +1930,7 @@ input[aria-invalid="true"] {
 }
 
 .turn-banner {
-  font-family: var(--font-display);
+  font-weight: 700;
   min-width: 0;
   background: var(--primary);
   color: var(--primary-ink);
@@ -2281,8 +2313,9 @@ body.is-dragging * {
 .side {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 28px;
   min-height: 0;
+  padding: 4px 8px 0;
 }
 
 /* botão de fechar e fundo escurecido só existem na gaveta do celular */
@@ -2319,7 +2352,6 @@ body.is-dragging * {
 
 .side .chat-panel.collapsed {
   flex: 0 0 auto;
-  padding-block: 10px;
 }
 
 .side .chat-panel.collapsed .chat-log,
@@ -2331,12 +2363,25 @@ body.is-dragging * {
   transform: rotate(-90deg);
 }
 
+/* "Limite 100" no cabeçalho do placar */
+.score-limit {
+  color: var(--silver);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.score-limit b {
+  font-family: var(--font-hud);
+  font-size: var(--fs-lg);
+  color: var(--ink);
+}
+
 .score-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 12px;
 }
 
 .score-list li {
@@ -2370,10 +2415,10 @@ body.is-dragging * {
 
 /* você: fundo levemente mais claro; quem joga agora: anel vermelho no avatar */
 .score-list li.me {
-  margin: 0 -6px;
-  padding: 4px 6px;
+  margin: 0 -8px;
+  padding: 6px 8px;
   border-radius: var(--r-md);
-  background: rgba(194, 193, 194, 0.08);
+  background: rgba(194, 193, 194, 0.07);
 }
 
 .score-list .you {
@@ -2382,7 +2427,7 @@ body.is-dragging * {
 }
 
 .score-list li.turn .avatar {
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
 }
 
 .score-list li.turn .nm {
@@ -2401,18 +2446,31 @@ body.is-dragging * {
 }
 
 .score-list .bar {
+  position: relative;
   grid-column: 2;
   align-self: center;
   height: 6px;
+  margin-right: 5px;
   border-radius: var(--r-pill);
   background: var(--surface-3);
-  overflow: hidden;
 }
 
 .score-list .bar i {
   display: block;
   height: 100%;
+  border-radius: inherit;
   background: var(--silver);
+}
+
+.score-list .bar::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  top: -3px;
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--primary);
 }
 
 .score-list li.out {
