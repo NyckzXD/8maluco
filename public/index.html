@@ -35,14 +35,57 @@
           </div>
 
           <nav class="home-menu" aria-label="Jogar">
-            <button id="createBtn" class="btn btn-primary btn-big">Criar sala</button>
-            <button id="roomsBtn" class="btn btn-big">Salas abertas</button>
+            <button id="createBtn" class="btn btn-primary btn-big"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar sala</button>
+            <button id="roomsBtn" class="btn btn-big"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Salas abertas</button>
             <div class="join-row">
               <input id="codeInput" name="code" maxlength="5" placeholder="Código" aria-label="Código da sala" autocomplete="off" autocapitalize="characters" enterkeyhint="go" spellcheck="false" />
               <button id="joinBtn" class="btn btn-big">Entrar</button>
             </div>
-            <button id="rulesBtn" class="text-link">Como jogar</button>
           </nav>
+
+          <section class="howto-section" aria-labelledby="howtoTitle">
+            <h2 id="howtoTitle" class="howto-title">Como jogar</h2>
+            <div id="howto" class="howto" role="group" aria-roledescription="carrossel" aria-label="Como jogar, passo a passo">
+              <div class="howto-slide">
+                <div class="howto-card">9</div>
+                <h3>1. Receba as cartas</h3>
+                <p>Cada jogador começa a rodada com 9 cartas na mão</p>
+              </div>
+              <div class="howto-slide">
+                <div class="howto-card red"><svg class="howto-suit" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></div>
+                <h3>2. Siga o monte</h3>
+                <p>Jogue uma carta da mesma pinta ou do mesmo número da carta do monte</p>
+              </div>
+              <div class="howto-slide">
+                <div class="howto-card">+1</div>
+                <h3>3. Sem carta? Compre</h3>
+                <p>Compre uma carta do baralho. Se ela servir, pode jogar; se não, a vez passa</p>
+              </div>
+              <div class="howto-slide">
+                <div class="howto-card red">8</div>
+                <h3>4. Cartas especiais</h3>
+                <p>Ás pula, 7 e 9 fazem comprar, o 8 troca a pinta e o Joker faz todo mundo comprar</p>
+              </div>
+              <div class="howto-slide">
+                <div class="howto-card">0</div>
+                <h3>5. Esvazie a mão</h3>
+                <p>Quem termina as cartas fecha a rodada; os outros somam os pontos do que sobrou</p>
+              </div>
+              <div class="howto-slide">
+                <div class="howto-card red js-limit">100</div>
+                <h3>6. Fuja dos <span class="js-limit">100</span></h3>
+                <p>Quem chega a <span class="js-limit">100</span> pontos está fora. Ganha o último que restar!</p>
+              </div>
+            </div>
+            <div class="howto-nav">
+              <button id="howtoPrev" type="button" class="howto-arrow prev" aria-label="Passo anterior"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <div id="howtoDots" class="howto-dots"></div>
+              <span id="howtoCount" class="howto-count" aria-hidden="true"></span>
+              <button id="howtoNext" type="button" class="howto-arrow next" aria-label="Próximo passo"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <button id="howtoPause" type="button" class="howto-arrow howto-pause" aria-label="Pausar passo a passo" title="Pausar passo a passo"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg></button>
+            </div>
+            <button id="rulesBtn" class="btn btn-small"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Regras completas</button>
+          </section>
         </div>
 
         <footer class="home-foot">
@@ -60,7 +103,7 @@
           <header class="lobby-head">
             <button class="btn btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
             <h1 class="lobby-title">Sala de espera</h1>
-            <button class="btn btn-small rules-link">Como jogar</button>
+            <button class="btn btn-small rules-link"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Como jogar</button>
           </header>
 
           <div class="table lobby-table">
@@ -90,7 +133,7 @@
             </div>
 
             <div id="hostControls" class="host-controls">
-              <button id="addBotBtn" class="btn btn-big">Adicionar bot</button>
+              <button id="addBotBtn" class="btn btn-big"><svg class="icon" aria-hidden="true"><use href="#i-bot"/></svg>Adicionar bot</button>
               <button id="startBtn" class="btn btn-primary btn-big" aria-describedby="startHint">Começar partida</button>
               <p id="startHint" class="start-hint hidden">Precisa de pelo menos 2 jogadores</p>
             </div>

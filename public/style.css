@@ -354,7 +354,7 @@ select:focus {
 
 /* menu de jogo: logo grande, você e os botões, tudo solto sobre o fundo */
 .home-wrap {
-  max-width: 960px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: max(32px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
     max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
@@ -405,11 +405,12 @@ select:focus {
   font-weight: 500;
 }
 
+/* três colunas soltas: você, os botões e o passo a passo */
 .home-stage {
   display: grid;
-  grid-template-columns: auto minmax(0, 360px);
+  grid-template-columns: auto minmax(0, 340px) 300px;
   align-items: center;
-  gap: 64px;
+  gap: 56px;
 }
 
 .profile {
@@ -474,38 +475,228 @@ input[aria-invalid="true"] {
   font-size: var(--fs-xl);
 }
 
-/* link de texto: a terceira opção, abaixo dos botões */
-.text-link {
-  justify-self: center;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 0;
-  background: none;
-  color: var(--silver);
-  font: inherit;
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  text-decoration-thickness: 2px;
-  text-decoration-color: rgba(194, 193, 194, 0.4);
-  cursor: pointer;
-}
-
-.text-link:hover {
-  color: var(--ink);
-  text-decoration-color: currentColor;
-}
-
-.text-link:focus-visible {
-  outline: 2px solid var(--silver);
-  outline-offset: 2px;
-  border-radius: var(--r-sm);
-}
-
 .rooms-box .room-list {
   text-align: left;
   max-height: 50dvh;
+}
+
+/* ---------- como jogar ---------- */
+
+.howto-section {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.howto-title {
+  margin: 0;
+  font-size: var(--fs-2xl);
+}
+
+.howto {
+  display: grid;
+  width: 100%;
+}
+
+/* todos os passos ocupam a mesma célula, então a altura é a do maior */
+.howto-slide {
+  grid-area: 1 / 1;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(16px);
+  transition:
+    opacity 0.3s,
+    transform 0.3s,
+    visibility 0.3s;
+}
+
+.howto-slide.active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.howto-card {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 128px;
+  margin: 4px 0 10px;
+  border-radius: var(--r-md);
+  background: #fff;
+  color: var(--black);
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  transform: rotate(-6deg);
+  box-shadow:
+    0 6px 0 var(--silver),
+    0 10px 22px rgba(0, 0, 0, 0.5);
+}
+
+.howto-card .howto-suit {
+  width: 0.9em;
+  height: 0.9em;
+  fill: currentColor;
+}
+
+.howto-card.red {
+  color: var(--racing-red);
+  box-shadow:
+    0 6px 0 var(--red-700),
+    0 10px 22px rgba(0, 0, 0, 0.5);
+}
+
+.howto-slide h3 {
+  margin: 0;
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.howto-slide p {
+  margin: 0;
+  color: var(--silver);
+  max-width: 280px;
+}
+
+/* setas de anterior/próximo em volta das bolinhas */
+.howto-nav {
+  display: flex;
+  align-items: center;
+  margin: -12px 0;
+}
+
+.howto-dots {
+  display: flex;
+}
+
+.howto-arrow {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--silver);
+  cursor: pointer;
+}
+
+.howto-arrow:hover {
+  color: var(--ink);
+}
+
+.howto-arrow:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: -4px;
+}
+
+/* contador "1 / 6": só no celular, onde as bolinhas não cabem junto com as setas */
+.howto-count {
+  display: none;
+  min-width: 64px;
+  font-family: var(--font-hud);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--silver);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 520px) {
+  .howto-dots {
+    display: none;
+  }
+
+  .howto-count {
+    display: block;
+  }
+}
+
+/* o chevron do sprite aponta para baixo */
+.howto-arrow.prev .icon {
+  rotate: 90deg;
+}
+
+.howto-arrow.next .icon {
+  rotate: -90deg;
+}
+
+/* deslizar para os lados chega como eventos de ponteiro; a rolagem vertical continua normal */
+.howto {
+  touch-action: pan-y;
+}
+
+/* o botão tem 44×44px de toque; a bolinha visível é o ::before */
+.howto-dots button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.howto-dots button::before,
+.howto-dots button::after {
+  content: "";
+  grid-area: 1 / 1;
+  height: 10px;
+  border-radius: var(--r-pill);
+}
+
+.howto-dots button::before {
+  width: 10px;
+  background: var(--line);
+  transition:
+    opacity 0.2s,
+    transform 0.15s;
+}
+
+.howto-dots button::after {
+  width: 26px;
+  background: var(--racing-red);
+  opacity: 0;
+  transform: scaleX(0.38);
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.howto-dots button:hover::before {
+  background: var(--silver);
+  transform: scale(1.2);
+}
+
+.howto-dots button[aria-current="true"]::before {
+  opacity: 0;
+}
+
+.howto-dots button[aria-current="true"]::after {
+  opacity: 1;
+  transform: none;
+}
+
+.howto-dots button:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: -6px;
+  border-radius: var(--r-pill);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .howto-slide {
+    transition: none;
+    transform: none;
+  }
 }
 
 /* o "Entrar" estica até a altura do campo */
