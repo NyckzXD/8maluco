@@ -644,6 +644,9 @@ input[aria-invalid="true"] {
 /* contador "1 / 6": só no celular, onde as bolinhas não cabem junto com as setas */
 .howto-count {
   display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-width: 64px;
   font-family: var(--font-hud);
   font-weight: 700;
@@ -659,7 +662,16 @@ input[aria-invalid="true"] {
   }
 
   .howto-count {
-    display: block;
+    display: inline-flex;
+  }
+
+  .howto-count::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: conic-gradient(var(--ink) calc(var(--t) * 360deg), rgba(255, 255, 255, 0.18) 0);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
   }
 }
 
@@ -705,14 +717,44 @@ input[aria-invalid="true"] {
     transform 0.15s;
 }
 
+/* Relógio do passo atual: um círculo que se enche no sentido horário enquanto o passo
+   está na tela (--t de 0 a 1, no tempo --howto-ms). Pausado, ele para onde está. */
+@property --t {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 .howto-dots button::after {
-  width: 26px;
-  background: var(--ink);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: conic-gradient(var(--ink) calc(var(--t) * 360deg), rgba(255, 255, 255, 0.18) 0);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
   opacity: 0;
-  transform: scaleX(0.38);
+  transform: scale(0.5);
   transition:
     opacity 0.2s,
-    transform 0.2s;
+    transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.howto-nav.run .howto-dots button[aria-current="true"]::after,
+.howto-nav.run .howto-count::before {
+  animation: howto-clock var(--howto-ms, 3500ms) linear forwards;
+}
+
+.howto-section.paused .howto-dots button::after,
+.howto-section.paused .howto-count::before {
+  animation-play-state: paused;
+}
+
+@keyframes howto-clock {
+  from {
+    --t: 0;
+  }
+  to {
+    --t: 1;
+  }
 }
 
 .howto-dots button:hover::before {
@@ -735,10 +777,32 @@ input[aria-invalid="true"] {
   border-radius: var(--r-pill);
 }
 
+.howto-slide.active .howto-card {
+  animation: howto-deal 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+
+@keyframes howto-deal {
+  from {
+    transform: translateY(-18px) rotate(-22deg) scale(0.9);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .howto-slide {
     transition: none;
     transform: none;
+  }
+
+  .howto-slide.active .howto-card {
+    animation: none;
+  }
+
+  /* sem troca automática: o passo atual é só uma bolinha cheia */
+  .howto-dots button::after,
+  .howto-count::before {
+    --t: 1;
+    animation: none !important;
   }
 }
 
