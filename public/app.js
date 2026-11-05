@@ -598,16 +598,35 @@ $('#avatarSave').addEventListener('click', () => {
   flash('Avatar salvo!', { info: true });
 });
 
+// Erro do apelido logo abaixo do campo (lido na hora pelo leitor de tela), com o foco nele.
+function setNameError(text) {
+  const err = $('#nameError');
+  err.textContent = text ?? '';
+  err.classList.toggle('hidden', !text);
+  if (text) nameInput.setAttribute('aria-invalid', 'true');
+  else nameInput.removeAttribute('aria-invalid');
+  if (text) speak(text, { urgent: true });
+}
+nameInput.addEventListener('input', () => setNameError(null));
+
 function askName() {
   const name = nameInput.value.trim();
   if (!name) {
-    flash('Escolha um apelido primeiro');
     closeModal('roomsModal');
+    setNameError('Escolha um apelido primeiro');
     nameInput.focus();
     return null;
   }
+  setNameError(null);
   store.set('om_name', name);
   return name;
+}
+
+// Aceita o código puro ou o link inteiro da sala (".../?sala=AB12C").
+const NOT_CODE_CHAR = /[^A-HJ-NP-Z2-9]/g; // mesmo alfabeto do servidor (sem I, O, 0 e 1)
+function extractCode(text = '') {
+  const fromLink = /[?&]sala=([a-z0-9]+)/i.exec(text);
+  return (fromLink ? fromLink[1] : text).toUpperCase().replace(NOT_CODE_CHAR, '').slice(0, 5);
 }
 
 function onJoined(res) {
@@ -621,7 +640,7 @@ function onJoined(res) {
 async function joinRoom(code) {
   const name = askName();
   if (!name) return;
-  code = code.trim().toUpperCase();
+  code = extractCode(code);
   if (!code) return flash('Digite o código da sala');
   onJoined(await emit('room:join', { code, token, name, avatar: myAvatar }));
 }
@@ -634,6 +653,13 @@ $('#createBtn').addEventListener('click', async () => {
 
 $('#joinBtn').addEventListener('click', () => joinRoom(codeInput.value));
 codeInput.addEventListener('keydown', (e) => e.key === 'Enter' && joinRoom(codeInput.value));
+// Colar o link inteiro: o maxlength cortaria antes, então o código é extraído aqui.
+codeInput.addEventListener('paste', (e) => {
+  const text = e.clipboardData?.getData('text');
+  if (!text) return;
+  e.preventDefault();
+  codeInput.value = extractCode(text);
+});
 
 async function refreshRooms() {
   if ($('#roomsModal').classList.contains('hidden')) return;
@@ -665,18 +691,61 @@ $('#roomsBtn').addEventListener('click', () => {
   refreshRooms();
 });
 
-// Passo a passo do "Como jogar": troca sozinho e pelas bolinhas.
+// Passo a passo do "Como jogar": troca sozinho, pelas bolinhas, pelas setas e deslizando.
+// Pausa com o mouse em cima ou com o foco dentro, e não anda sozinho com movimento reduzido.
 const howtoSlides = $$('#howto .howto-slide');
+const howtoSection = $('.howto-section');
+const HOWTO_MS = 5000;
 let howtoIndex = 0;
 let howtoTimer;
+let howtoHover = false;
+
+const howtoPaused = () =>
+  howtoHover || howtoSection.contains(document.activeElement) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function scheduleHowto() {
+  clearTimeout(howtoTimer);
+  if (!howtoPaused()) howtoTimer = setTimeout(() => showHowto(howtoIndex + 1), HOWTO_MS);
+}
 
 function showHowto(i) {
   howtoIndex = (i + howtoSlides.length) % howtoSlides.length;
-  howtoSlides.forEach((s, n) => s.classList.toggle('active', n === howtoIndex));
+  howtoSlides.forEach((s, n) => {
+    s.classList.toggle('active', n === howtoIndex);
+    s.setAttribute('aria-label', `Passo ${n + 1} de ${howtoSlides.length}`);
+  });
   $$('#howtoDots button').forEach((d, n) => d.setAttribute('aria-current', n === howtoIndex));
-  clearTimeout(howtoTimer);
-  howtoTimer = setTimeout(() => showHowto(howtoIndex + 1), 5000);
+  $('#howtoCount').textContent = `${howtoIndex + 1} / ${howtoSlides.length}`;
+  scheduleHowto();
 }
+
+howtoSection.addEventListener('mouseenter', () => {
+  howtoHover = true;
+  clearTimeout(howtoTimer);
+});
+howtoSection.addEventListener('mouseleave', () => {
+  howtoHover = false;
+  scheduleHowto();
+});
+howtoSection.addEventListener('focusin', () => clearTimeout(howtoTimer));
+// Espera o foco chegar no próximo elemento antes de ver se ainda está dentro.
+howtoSection.addEventListener('focusout', () => setTimeout(scheduleHowto));
+$('#howtoPrev').addEventListener('click', () => showHowto(howtoIndex - 1));
+$('#howtoNext').addEventListener('click', () => showHowto(howtoIndex + 1));
+
+// Deslizar para os lados no celular troca o passo.
+let howtoSwipe = null;
+$('#howto').addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'mouse') howtoSwipe = { x: e.clientX, y: e.clientY };
+});
+$('#howto').addEventListener('pointerup', (e) => {
+  if (!howtoSwipe) return;
+  const dx = e.clientX - howtoSwipe.x;
+  const dy = e.clientY - howtoSwipe.y;
+  howtoSwipe = null;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) showHowto(howtoIndex + (dx < 0 ? 1 : -1));
+});
+$('#howto').addEventListener('pointercancel', () => (howtoSwipe = null));
 
 howtoSlides.forEach((_, n) => {
   const dot = el('button');
@@ -698,12 +767,17 @@ function leaveRoom() {
   refreshRooms();
 }
 
+// Sair no meio da partida elimina o jogador: confirma antes, num modal do próprio jogo.
 for (const b of $$('.leave-btn')) {
   b.addEventListener('click', () => {
-    if (state?.game && state.game.phase !== 'gameOver' && !confirm('Sair da partida? Você será eliminado.')) return;
-    leaveRoom();
+    if (state?.game && state.game.phase !== 'gameOver') openModal('leaveModal');
+    else leaveRoom();
   });
 }
+$('#leaveConfirm').addEventListener('click', () => {
+  hideModal('leaveModal');
+  leaveRoom();
+});
 
 // ---------- lobby ----------
 
@@ -711,14 +785,62 @@ $('#addBotBtn').addEventListener('click', () => emit('room:addBot'));
 $('#startBtn').addEventListener('click', () => emit('room:start'));
 $('#setPublic').addEventListener('change', (e) => emit('room:settings', { isPublic: e.target.checked }));
 $('#setTurn').addEventListener('change', (e) => emit('room:settings', { turnSeconds: Number(e.target.value) }));
-$('#copyLink').addEventListener('click', async () => {
+// Convite: no celular abre o compartilhamento do sistema; no computador (ou sem ele) copia o link.
+const canShare = () => !!navigator.share && matchMedia('(pointer: coarse)').matches;
+$('#copyLink').textContent = canShare() ? 'Convidar' : 'Copiar link';
+
+// Cópia de reserva para navegadores sem a API de área de transferência (ou sem permissão).
+function copyFallback(text) {
+  const area = el('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+  document.body.append(area);
+  area.select();
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch {}
+  area.remove();
+  return ok;
+}
+
+async function inviteFriends() {
   const link = `${location.origin}${location.pathname}?sala=${roomCode}`;
+  if (canShare()) {
+    try {
+      await navigator.share({ title: '8 Maluco', text: `Bora jogar 8 Maluco! Sala ${roomCode}`, url: link });
+      return;
+    } catch (err) {
+      if (err?.name === 'AbortError') return; // fechou o compartilhamento sem escolher
+    }
+  }
+  let copied = false;
   try {
     await navigator.clipboard.writeText(link);
-    flash('Link copiado! Mande para a galera', { info: true });
+    copied = true;
   } catch {
-    prompt('Copie o link da sala:', link);
+    copied = copyFallback(link);
   }
+  if (copied) flash('Link copiado! Mande para a galera', { info: true });
+  else flash(`Não deu para copiar. O código da sala é ${roomCode}`, { info: true });
+}
+$('#copyLink').addEventListener('click', inviteFriends);
+
+// Remover uma pessoa (não bot) da sala pede confirmação.
+let pendingKick = null;
+function askKick(member) {
+  pendingKick = member.id;
+  $('#kickTitle').textContent = `Remover ${member.name}?`;
+  $('#kickDesc').textContent = `${member.name} sai da sala e pode voltar pelo link.`;
+  openModal('kickModal');
+}
+$('#kickConfirm').addEventListener('click', () => {
+  if (pendingKick) emit('room:kick', { id: pendingKick });
+  pendingKick = null;
+  hideModal('kickModal');
+  // O "×" que abriu o modal some com o jogador: o foco vai para os controles do anfitrião.
+  $('#addBotBtn').focus({ preventScroll: true });
 });
 
 function renderLobby(s) {
@@ -745,17 +867,39 @@ function renderLobby(s) {
       kick.type = 'button';
       kick.title = `Remover ${m.name}`;
       kick.setAttribute('aria-label', `Remover ${m.name}`);
-      kick.addEventListener('click', () => emit('room:kick', { id: m.id }));
+      // Bot sai na hora; pessoa pede confirmação antes.
+      kick.addEventListener('click', () => (m.isBot ? emit('room:kick', { id: m.id }) : askKick(m)));
       li.append(kick);
     }
     list.append(li);
   }
-  for (let i = s.members.length; i < s.maxPlayers; i++) list.append(el('li', 'empty', 'lugar vazio'));
+  // Quem ia ser removido já saiu: a confirmação perde o sentido.
+  if (pendingKick && !s.members.some((m) => m.id === pendingKick)) {
+    pendingKick = null;
+    hideModal('kickModal');
+  }
+  // Em vez de uma caixa por lugar vazio, uma só com o convite e as vagas que sobram.
+  const free = s.maxPlayers - s.members.length;
+  if (free > 0) {
+    const li = el('li', 'invite');
+    const text = el('div', 'invite-text');
+    text.append(el('b', null, 'Convide amigos'), el('span', 'sub', `${free} vaga${free > 1 ? 's' : ''} livre${free > 1 ? 's' : ''}`));
+    const btn = el('button', 'btn btn-small');
+    btn.type = 'button';
+    btn.append(icon('users'), canShare() ? 'Convidar' : 'Copiar link');
+    btn.addEventListener('click', inviteFriends);
+    li.append(text, btn);
+    list.append(li);
+  }
 
+  // Configurações: todos veem, só o anfitrião muda.
   $('#hostControls').classList.toggle('hidden', !isHost);
   $('#waitHost').classList.toggle('hidden', isHost);
   $('#setPublic').checked = s.settings.isPublic;
   $('#setTurn').value = String(s.settings.turnSeconds);
+  $('#setPublic').disabled = !isHost;
+  $('#setTurn').disabled = !isHost;
+  $('#settingsNote').classList.toggle('hidden', isHost);
   $('#addBotBtn').disabled = s.members.length >= s.maxPlayers;
   $('#startBtn').disabled = s.members.length < 2;
   $('#startHint').classList.toggle('hidden', s.members.length >= 2);
@@ -768,6 +912,15 @@ function seatPosition(offset, total) {
   const angle = ((90 - (offset * 360) / total) * Math.PI) / 180;
   const narrow = innerWidth < 860;
   return { x: 50 + (narrow ? 40 : 44) * Math.cos(angle), y: 50 + (narrow ? 42 : 42) * Math.sin(angle) };
+}
+
+// Botão de carteador, como no pôquer: um disco com "D" e o nome por extenso no title.
+function dealerBadge() {
+  const dealer = el('span', 'badge dealer', 'D');
+  dealer.title = 'Deu as cartas';
+  dealer.setAttribute('role', 'img');
+  dealer.setAttribute('aria-label', 'Deu as cartas');
+  return dealer;
 }
 
 function renderSeats(g, s, hit) {
@@ -785,12 +938,14 @@ function renderSeats(g, s, hit) {
     seat.style.left = `${x}%`;
     seat.style.top = `${y}%`;
     if (p.id === g.turnId) seat.classList.add('turn');
+    // Lugares do lado esquerdo põem o selo de carteador do lado de dentro (direita), para não sair da tela.
+    if (x < 45) seat.classList.add('left');
     if (p.eliminated) seat.classList.add('out');
     if (hit.has(p.id)) seat.classList.add('hit');
 
     const av = avatar(m, p.name);
     if (p.id === g.turnId) av.prepend(el('span', 'ring'));
-    if (p.id === g.dealerId) av.append(el('span', 'badge dealer', 'D'));
+    if (p.id === g.dealerId) av.append(dealerBadge());
     if (m && !m.isBot && !m.connected) {
       const off = el('span', 'badge offline');
       off.title = 'Desconectado';
@@ -1491,13 +1646,24 @@ function renderScores(g) {
   const limit = g.rules.eliminationScore;
   for (const p of [...g.players].sort((a, b) => a.eliminated - b.eliminated || a.score - b.score)) {
     const li = el('li', p.eliminated ? 'out' : '');
+    // Destaca você e quem está jogando agora.
+    const isMe = p.id === state?.me;
+    const playing = g.phase === 'playing' && p.id === g.turnId && !p.eliminated;
+    if (isMe) li.classList.add('me');
+    if (playing) li.classList.add('turn');
     const bar = el('div', 'bar');
     const fill = el('i');
     const pct = Math.min(100, (p.score / limit) * 100);
     fill.style.width = `${pct}%`;
     fill.style.setProperty('--full', `${(100 / Math.max(pct, 1)) * 100}%`);
     bar.append(fill);
-    li.append(avatar(memberOf(p.id), p.name), el('span', 'nm', p.name), el('b', null, p.score), bar);
+    const nm = el('span', 'nm', p.name);
+    if (isMe) nm.append(el('small', 'you', ' (você)'));
+    // Quanto falta para chegar ao limite (e ser eliminado).
+    const left = Math.max(0, limit - p.score);
+    const rest = el('span', 'left', p.eliminated ? 'fora' : `faltam ${left}`);
+    li.append(avatar(memberOf(p.id), p.name), nm, el('b', null, p.score), bar, rest);
+    if (playing) li.title = 'Jogando agora';
     list.append(li);
   }
 }
@@ -1507,7 +1673,10 @@ function renderMe(g, s, myTurn) {
   const info = $('#meInfo');
   info.replaceChildren();
   info.classList.toggle('turn', myTurn);
-  if (me) info.append(avatar(memberOf(me.id), me.name), el('span', null, `Você · ${me.score} pts`));
+  if (me) {
+    info.append(avatar(memberOf(me.id), me.name), el('span', null, `Você · ${me.score} pts`));
+    if (me.id === g.dealerId) info.append(dealerBadge());
+  }
   else info.append(el('span', null, 'Assistindo'));
 
   renderBanner(g, myTurn);
@@ -1551,12 +1720,16 @@ function renderRoundModal(g, s) {
     const who = el('td');
     const whoBox = el('div', 'who');
     whoBox.append(avatar(memberOf(r.playerId), nameOf(r.playerId)), el('span', null, nameOf(r.playerId) + (out ? ' (fora)' : '')));
-    who.append(whoBox);
-    const handTd = el('td');
-    const mini = el('div', 'mini-hand');
-    if (r.hand.length) mini.append(...sortHand(r.hand).map(renderCard));
-    else mini.append(el('span', 'muted', 'bateu!'));
-    handTd.append(mini);
+    // A mão que sobrou: numa coluna própria na tela larga e embaixo do nome no celular.
+    const miniHand = (className) => {
+      const mini = el('div', className);
+      if (r.hand.length) mini.append(...sortHand(r.hand).map(renderCard));
+      else mini.append(el('span', 'muted', 'bateu!'));
+      return mini;
+    };
+    who.append(whoBox, miniHand('mini-hand show-sm'));
+    const handTd = el('td', 'hide-sm');
+    handTd.append(miniHand('mini-hand'));
     if (s.ready.includes(r.playerId)) {
       const tag = el('span', 'ready-tag');
       tag.append(icon('check'), ' pronto');
@@ -1678,6 +1851,7 @@ function render(prev, s) {
     renderLobby(s);
   } else {
     const entering = $('#game').classList.contains('hidden');
+    hideModal('kickModal');
     show('game');
     if (entering) $('#discardPile').dataset.top = '';
     renderGame(prev, s);
