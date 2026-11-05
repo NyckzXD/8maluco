@@ -1451,6 +1451,23 @@ input[aria-invalid="true"] {
   pointer-events: none;
 }
 
+/* nos últimos segundos o seu anel pisca */
+.me-info .ring.low {
+  animation: ring-low 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes ring-low {
+  to {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .me-info .ring.low {
+    animation: none;
+  }
+}
+
 /* quantas cartas o jogador comprou */
 .gain {
   position: absolute;
@@ -1625,7 +1642,8 @@ input[aria-invalid="true"] {
   filter: grayscale(1);
 }
 
-.seat .ring {
+.seat .ring,
+.me-info .ring {
   position: absolute;
   inset: -6px;
   border-radius: 50%;
@@ -1727,19 +1745,7 @@ input[aria-invalid="true"] {
   max-width: 90%;
 }
 
-.toast {
-  background: var(--silver-300);
-  color: var(--black);
-  border-radius: var(--r-pill);
-  padding: 6px 14px;
-  font-weight: 600;
-  box-shadow: var(--shadow);
-  animation:
-    toast-in 0.25s ease-out,
-    toast-out 0.4s ease-in 2.6s forwards;
-  text-align: center;
-}
-
+/* entrada e saída dos avisos de rodapé (.flash) */
 @keyframes toast-in {
   from {
     transform: translateY(-10px);
@@ -1754,6 +1760,123 @@ input[aria-invalid="true"] {
   }
 }
 
+/* letreiro dos eventos grandes: placa escura sobre o feltro, título grande e uma linha embaixo */
+.table-callout {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 10px 26px 12px;
+  border-radius: var(--r-md);
+  background: rgba(6, 18, 12, 0.82);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  animation:
+    callout-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3),
+    callout-out 0.4s ease-in 2.1s forwards;
+}
+
+.table-callout strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-3xl);
+  line-height: 1.1;
+}
+
+.table-callout span {
+  font-weight: 600;
+  color: var(--silver-300);
+}
+
+@keyframes callout-in {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+
+@keyframes callout-out {
+  to {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+/* aviso no avatar de quem foi afetado: aparece em cima do rosto e sobe sumindo */
+.callout {
+  position: absolute;
+  left: 50%;
+  top: 26px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  color: #fff;
+  font-family: var(--font-hud);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  translate: -50% -50%;
+  animation: callout-seat 2.2s ease-out forwards;
+}
+
+/* pinta pedida: um "cartão" creme com a pinta na cor do baralho */
+.callout.suit {
+  background: var(--card-face);
+  color: var(--card-ink);
+  font-size: var(--fs-lg);
+}
+
+.callout-suit {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentColor;
+}
+
+.callout-suit.red {
+  color: var(--card-red);
+}
+
+#meInfo .avatar .callout {
+  top: 50%;
+}
+
+@keyframes callout-seat {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  12% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  20% {
+    transform: none;
+  }
+  80% {
+    transform: none;
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-callout,
+  .callout {
+    animation: none;
+  }
+}
+
 /* ---------- minha mão ---------- */
 
 .me-bar {
@@ -1765,21 +1888,20 @@ input[aria-invalid="true"] {
 
 .turn-banner {
   font-family: var(--font-display);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: min(100%, calc(100vw - 32px));
+  min-width: 0;
   background: var(--primary);
   color: var(--primary-ink);
-  font-weight: 700;
-  padding: 6px 18px;
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow);
-  text-align: center;
+  padding: 6px 16px;
+  border-radius: var(--r-pill);
   text-wrap: balance;
-  z-index: 3;
+  animation: banner-in 0.3s ease-out;
+}
+
+@keyframes banner-in {
+  from {
+    transform: translateX(-8px);
+    opacity: 0;
+  }
 }
 
 .turn-banner:empty {
@@ -1790,6 +1912,7 @@ input[aria-invalid="true"] {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 52px;
   color: #fff;
 }
 
@@ -1800,32 +1923,20 @@ input[aria-invalid="true"] {
   font-weight: 600;
 }
 
+/* a barra de tempo fica só para o leitor de tela; na tela, o tempo é o anel no seu avatar */
 .timer-bar {
-  flex: 1;
-  height: 8px;
-  border-radius: var(--r-pill);
-  background: rgba(194, 193, 194, 0.18);
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  visibility: hidden;
-}
-
-.timer-bar.on {
-  visibility: visible;
+  clip-path: inset(50%);
 }
 
 .timer-bar i {
   display: block;
-  height: 100%;
-  width: 100%;
-  background: var(--silver);
-  transform-origin: left;
 }
 
-.timer-bar.low i {
-  background: var(--primary);
-}
-
-/* segundos que faltam, ao lado da barra */
+/* segundos que faltam, logo depois do aviso de vez */
 .timer-secs {
   font-family: var(--font-hud);
   font-weight: 700;
@@ -2496,18 +2607,6 @@ body.is-dragging * {
   stroke-width: 3;
 }
 
-.toast-suit {
-  width: 1em;
-  height: 1em;
-  vertical-align: -0.12em;
-  fill: currentColor;
-  stroke: none;
-}
-
-.toast-suit.red {
-  color: var(--red-600);
-}
-
 #roundTitle .trophy {
   color: #f5c43a;
   vertical-align: -0.12em;
@@ -2819,6 +2918,25 @@ body.is-dragging * {
 
   .seat .seat-name {
     font-size: var(--fs-xs);
+  }
+
+  /* sua barra no celular: nome e pontos numa linha, aviso de vez menor */
+  .me-actions {
+    gap: 8px;
+  }
+
+  .me-info > span {
+    white-space: nowrap;
+  }
+
+  .turn-banner {
+    font-size: var(--fs-sm);
+    padding: 5px 12px;
+  }
+
+  /* no celular o avatar do assento tem 40px: o aviso fica no meio dele */
+  .seat > .callout {
+    top: 20px;
   }
 
   .direction {

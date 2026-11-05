@@ -1203,13 +1203,43 @@ function launch({ card, from, to, flip, hide, easing, onLand }) {
     });
 }
 
+// Onde cada jogador está na tela: o assento dos outros ou o seu avatar, na sua barra.
+function seatAnchor(playerId) {
+  return playerId === state?.me ? $('#meInfo .avatar') : $(`#seats .seat[data-id="${playerId}"]`);
+}
+
 // "+N" subindo do assento de quem comprou.
 function showGain(playerId, count) {
-  const seat = $(`#seats .seat[data-id="${playerId}"]`);
+  const seat = seatAnchor(playerId);
   if (!seat) return;
   const chip = el('div', 'gain', `+${count}`);
   seat.append(chip);
   chip.addEventListener('animationend', () => chip.remove());
+}
+
+// Aviso curto em cima do avatar de quem foi afetado (pulado, pinta pedida).
+// É só visual: o leitor de tela recebe a frase inteira por speak().
+function seatCallout(playerId, parts, kind = '') {
+  const anchor = seatAnchor(playerId);
+  if (!anchor) return;
+  anchor.querySelector(':scope > .callout')?.remove();
+  const chip = el('div', `callout ${kind}`.trim());
+  chip.setAttribute('aria-hidden', 'true');
+  chip.append(...parts);
+  anchor.append(chip);
+  // some no fim da animação; com movimento reduzido não há animação, então o tempo garante
+  setTimeout(() => chip.remove(), 2400);
+}
+
+// Letreiro no centro da mesa, só para os eventos grandes (rodada nova, Joker). Um por vez.
+function tableCallout(title, sub) {
+  const box = $('#toasts');
+  box.replaceChildren();
+  const plate = el('div', 'table-callout');
+  plate.append(el('strong', null, title));
+  if (sub) plate.append(el('span', null, sub));
+  box.append(plate);
+  setTimeout(() => plate.remove(), 2600);
 }
 
 // Cartas compradas saem do baralho: de costas até o avatar dos outros, virando de frente até a sua mão.
@@ -1936,7 +1966,9 @@ function renderMe(g, s, myTurn) {
   info.replaceChildren();
   info.classList.toggle('turn', myTurn);
   if (me) {
-    info.append(avatar(memberOf(me.id), me.name), el('span', null, `Você · ${me.score} pts`));
+    const av = avatar(memberOf(me.id), me.name);
+    if (myTurn) av.prepend(el('span', 'ring'));
+    info.append(av, el('span', null, `Você · ${me.score} pts`));
     if (me.id === g.dealerId) info.append(dealerBadge());
   }
   else info.append(el('span', null, 'Assistindo'));
@@ -2025,46 +2057,43 @@ function renderRoundModal(g, s) {
 $('#againBtn').addEventListener('click', () => emit('room:lobby'));
 $('#readyBtn').addEventListener('click', () => emit('game:ready'));
 
-// Mensagens curtas na mesa e no log para cada coisa que aconteceu.
+// Cada coisa que aconteceu aparece onde aconteceu: no assento de quem foi afetado
+// ou, se for grande, num letreiro no centro da mesa. Tudo também vai para o log.
 function announce(events, g, s) {
-  const toasts = $('#toasts');
-  const toast = (...parts) => {
-    const t = el('div', 'toast');
-    t.append(...parts);
-    toasts.append(t);
-    setTimeout(() => t.remove(), 3100);
-    while (toasts.children.length > 3) toasts.firstChild.remove();
-  };
   const jokerPlayed = events.some((e) => e.type === 'play' && e.card.rank === 'JOKER');
   for (const e of events) {
     const who = e.playerId === s.me ? 'Você' : nameOf(e.playerId);
     switch (e.type) {
       case 'roundStart':
-        toast(`Rodada ${e.round}! ${e.starterId === s.me ? 'Você abre o monte' : `${nameOf(e.starterId)} abre o monte`}`);
+        tableCallout(`Rodada ${e.round}`, e.starterId === s.me ? 'Você abre o monte' : `${nameOf(e.starterId)} abre o monte`);
         logLine(`— Rodada ${e.round}: ${nameOf(e.dealerId)} deu as cartas —`);
         break;
       case 'play':
         sounds.card();
-        if (e.card.rank === 'JOKER') toast('Joker! Todo mundo compra 1');
+        if (e.card.rank === 'JOKER') tableCallout('Joker!', 'Todo mundo compra 1');
         logPlay(who, `jogou ${e.card.rank === 'JOKER' ? 'o Joker' : cardName(e.card)}`);
         break;
       case 'draw':
         logPlay(who, `comprou ${cardsLabel(e.count)}`);
         break;
       case 'skip':
-        toast(`${who === 'Você' ? 'Você foi pulado' : `${who} foi pulado`}!`);
+        seatCallout(e.playerId, ['Pulou!'], 'skip');
+        speak(who === 'Você' ? 'Você foi pulado' : `${who} foi pulado`);
         logLine(`${who} foi pulado`);
         break;
       case 'penalty': {
         const qty = cardsLabel(e.count);
-        if (!(jokerPlayed && e.reason === 'JOKER')) toast(`${who} compra ${qty}`);
+        // o "+N" no assento mostra a compra (o seu sai aqui; o dos outros, quando as cartas chegam)
+        if (e.playerId === s.me && e.count) showGain(s.me, e.count);
+        if (!(jokerPlayed && e.reason === 'JOKER')) speak(`${who} compra ${qty}`);
         if (e.count) logPlay(who, `comprou ${qty}`);
         if (e.playerId === s.me) sounds.bad();
         break;
       }
       case 'suit': {
         const suit = SUIT_INFO[e.suit];
-        toast(`${who} pediu `, suitIcon(e.suit, `toast-suit ${suit.color}`), ` ${suit.name}`);
+        seatCallout(e.playerId, [suitIcon(e.suit, `callout-suit ${suit.color}`), suit.name], 'suit');
+        speak(`${who} pediu ${suit.name}`);
         logLine(`${who} pediu ${suit.name}`);
         break;
       }
@@ -2157,6 +2186,9 @@ function updateClock() {
   secs.classList.toggle('low', on && s <= TICK_FROM_S);
   secs.textContent = on ? `${s}s` : '';
   $('#seats .seat.turn .ring')?.style.setProperty('--p', p);
+  const myRing = $('#meInfo .ring');
+  myRing?.style.setProperty('--p', p);
+  myRing?.classList.toggle('low', on && s <= TICK_FROM_S);
 
   // Últimos segundos: um tique (e uma vibração) por segundo.
   if (on && s > 0 && s <= TICK_FROM_S) {
