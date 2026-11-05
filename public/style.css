@@ -37,6 +37,11 @@
   --back-line: #7d2029;
   --cream: #f4f0e6;
   --gold: #f5c43a;
+  /* frente das cartas: papel quase branco, levemente quente, e tintas de baralho */
+  --card-face: #fcfaf5;
+  --card-edge: #d9d2c2;
+  --card-ink: #16130f;
+  --card-red: #c8102e;
   --red: var(--racing-red);
   /* escala de tipografia: nenhum texto abaixo de --fs-xs (12px) */
   --fs-xs: 0.75rem; /* 12px */
@@ -556,7 +561,7 @@ input[aria-invalid="true"] {
   height: 128px;
   margin: 4px 0 10px;
   border-radius: var(--r-md);
-  background: #fff;
+  background: var(--card-face);
   color: var(--black);
   font-family: var(--font-display);
   font-size: 2.6rem;
@@ -1971,7 +1976,7 @@ body.is-dragging * {
 }
 
 .hand.my-turn .card:not(.playable) {
-  filter: brightness(0.6);
+  filter: brightness(0.82) saturate(0.75);
 }
 
 /* foco pelo teclado: a carta ganha contorno e fica por cima das vizinhas */
@@ -2013,18 +2018,18 @@ body.is-dragging * {
   width: var(--card-w);
   height: var(--card-h);
   border-radius: var(--r-card);
-  background: #fff;
+  background: var(--card-face);
   position: relative;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-  color: #111;
+  color: var(--card-ink);
   user-select: none;
   font-weight: 700;
-  border: 1px solid #cfe1ea;
+  border: 1px solid var(--card-edge);
   overflow: hidden;
 }
 
 .card.red {
-  color: #d00a0a;
+  color: var(--card-red);
 }
 
 .card .corner {
@@ -2032,11 +2037,9 @@ body.is-dragging * {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font:
-    400 calc(var(--card-w) * 0.19) / 1 Georgia,
-    "Times New Roman",
-    serif;
-  letter-spacing: -0.06em;
+  font: 700 calc(var(--card-w) * 0.23) / 0.9 var(--font-hud);
+  letter-spacing: -0.03em;
+  font-variant-numeric: lining-nums;
 }
 
 .card .corner svg {
@@ -2068,7 +2071,7 @@ body.is-dragging * {
   inset: 13% 17%;
   width: 66%;
   height: 74%;
-  border: 1px solid #3a3a3a;
+  border: 1px solid rgba(22, 19, 15, 0.45);
   object-fit: fill;
   pointer-events: none;
 }
@@ -2095,10 +2098,7 @@ body.is-dragging * {
   top: 5%;
   left: 7%;
   width: 1ch;
-  font:
-    400 calc(var(--card-w) * 0.13) / 1.05 Georgia,
-    "Times New Roman",
-    serif;
+  font: 700 calc(var(--card-w) * 0.14) / 1 var(--font-hud);
   text-align: center;
   word-break: break-all;
 }
