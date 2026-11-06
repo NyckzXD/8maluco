@@ -2021,6 +2021,86 @@ function renderBanner(g, myTurn) {
   if (banner.textContent !== text) banner.textContent = text;
 }
 
+// Números que sobem contando (pontos da rodada e total). Com movimento reduzido, ou se a
+// página estiver em segundo plano, o valor final é garantido pelo setTimeout do fim.
+function countUp(node, from, to, { delay = 0, duration = 600, prefix = '' } = {}) {
+  node.textContent = `${prefix}${from}`;
+  if (from === to || reducedMotion()) {
+    node.textContent = `${prefix}${to}`;
+    return;
+  }
+  const start = performance.now() + delay;
+  const step = (now) => {
+    const t = Math.min(1, Math.max(0, (now - start) / duration));
+    node.textContent = `${prefix}${Math.round(from + (to - from) * (1 - (1 - t) ** 3))}`;
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  setTimeout(() => (node.textContent = `${prefix}${to}`), delay + duration + 50);
+}
+
+// Linha do jogador no resultado: avatar e nome, a mão que sobrou, os pontos e a barra até o limite.
+// Os tempos de cada pedaço vêm de --i (ordem da linha) e --c (ordem da carta), no CSS.
+let shownRound = null; // rodada cujo resultado já foi animado (só anima uma vez)
+function resultRow(r, i, lr, g, s, limit) {
+  const out = r.earlier || lr.eliminated.includes(r.playerId);
+  const winner = r.playerId === lr.winnerId;
+  const li = el('li', `res-row${winner ? ' winner' : ''}${out ? ' out' : ''}${r.playerId === s.me ? ' me' : ''}`);
+  li.dataset.id = r.playerId;
+  li.style.setProperty('--i', i);
+
+  const who = el('div', 'res-who');
+  const name = el('div', 'res-name');
+  name.append(el('span', null, r.playerId === s.me ? 'Você' : nameOf(r.playerId)), el('span', 'res-tag'));
+  who.append(avatar(memberOf(r.playerId), nameOf(r.playerId)), name);
+
+  const hand = el('div', 'res-hand mini-hand');
+  const cards = sortHand(r.hand);
+  if (cards.length)
+    cards.forEach((c, n) => {
+      const card = renderCard(c);
+      card.style.setProperty('--c', n);
+      hand.append(card);
+    });
+  else if (r.earlier) hand.append(el('span', 'res-gone', 'Saiu numa rodada anterior'));
+  else hand.append(el('span', 'res-empty', 'Sem cartas'));
+
+  // os pontos entram depois que as cartas viraram
+  const flipMs = 260 + i * 220 + cards.length * 70;
+  const pts = el('b', 'res-pts');
+  // quem saiu numa rodada anterior não fez pontos nesta: só o traço
+  if (r.earlier) pts.textContent = '–';
+  else countUp(pts, 0, r.points, { delay: flipMs, duration: 450, prefix: '+' });
+
+  const before = r.total - r.points;
+  const pct = (v) => `${Math.min(100, (v / limit) * 100)}%`;
+  const bar = el('div', 'res-bar');
+  const fill = el('i');
+  fill.style.setProperty('--from', pct(before));
+  fill.style.setProperty('--to', pct(r.total));
+  bar.append(fill);
+  const total = el('b', 'res-total');
+  countUp(total, before, r.total, { delay: flipMs + 250, duration: 700 });
+  const score = el('div', 'res-score');
+  score.append(bar, total);
+  li.style.setProperty('--flip', `${flipMs}ms`);
+
+  li.append(who, hand, pts, score);
+  // carimbo embaixo do nome
+  if (out) name.append(el('span', 'res-stamp', 'Fora!'));
+  if (winner) name.append(el('span', 'res-stamp gold', 'Bateu!'));
+  syncReadyTag(li, s);
+  return li;
+}
+
+// Selo de cada linha: "pronto" entre rodadas; quem bateu ou caiu fora já tem o carimbo.
+function syncReadyTag(li, s) {
+  const tag = $('.res-tag', li);
+  const ready = s.ready.includes(li.dataset.id) && !li.classList.contains('out');
+  tag.replaceChildren(...(ready ? [icon('check'), ' pronto'] : []));
+  tag.classList.toggle('ready', ready);
+}
+
 function renderRoundModal(g, s) {
   const modal = $('#roundModal');
   const lr = g.lastRound;
@@ -2029,41 +2109,46 @@ function renderRoundModal(g, s) {
     return;
   }
   const over = g.phase === 'gameOver';
-  $('#roundTitle').replaceChildren(
-    ...(over ? [icon('trophy', 'trophy'), ` ${nameOf(g.winnerId)} venceu o jogo!`] : [`${nameOf(lr.winnerId)} bateu a rodada ${lr.round}!`]),
-  );
-
+  const limit = g.rules.eliminationScore;
+  const key = `${lr.round}:${g.phase}`;
   const rows = $('#roundRows');
-  rows.replaceChildren();
-  for (const r of [...lr.results].sort((a, b) => a.points - b.points)) {
-    const out = lr.eliminated.includes(r.playerId);
-    const tr = el('tr', r.playerId === lr.winnerId ? 'winner' : out ? 'eliminated' : '');
-    const who = el('td');
-    const whoBox = el('div', 'who');
-    whoBox.append(avatar(memberOf(r.playerId), nameOf(r.playerId)), el('span', null, nameOf(r.playerId) + (out ? ' (fora)' : '')));
-    // A mão que sobrou: numa coluna própria na tela larga e embaixo do nome no celular.
-    const miniHand = (className) => {
-      const mini = el('div', className);
-      if (r.hand.length) mini.append(...sortHand(r.hand).map(renderCard));
-      else mini.append(el('span', 'muted', 'bateu!'));
-      return mini;
-    };
-    who.append(whoBox, miniHand('mini-hand show-sm'));
-    const handTd = el('td', 'hide-sm');
-    handTd.append(miniHand('mini-hand'));
-    if (s.ready.includes(r.playerId)) {
-      const tag = el('span', 'ready-tag');
-      tag.append(icon('check'), ' pronto');
-      whoBox.append(tag);
+
+  if (key !== shownRound) {
+    // Primeira vez deste resultado: monta tudo e deixa a animação correr.
+    shownRound = key;
+    const winnerName = (id) => (id === s.me ? 'Você' : nameOf(id));
+    $('#roundTitle').replaceChildren(
+      ...(over
+        ? [icon('trophy', 'trophy'), ` ${winnerName(g.winnerId)} venceu o jogo!`]
+        : [`${winnerName(lr.winnerId)} bateu!`]),
+    );
+    $('#roundSub').textContent = over
+      ? `Fim de jogo na rodada ${lr.round}. Os outros chegaram a ${limit} pontos.`
+      : `Fim da rodada ${lr.round}. Quem chegar a ${limit} pontos está fora.`;
+    modal.classList.toggle('game-over', over);
+    rows.replaceChildren();
+    rows.classList.remove('settled');
+    const results = [...lr.results].sort(
+      (a, b) => (b.playerId === lr.winnerId) - (a.playerId === lr.winnerId) || a.points - b.points,
+    );
+    // No fim de jogo entram também os que caíram fora antes (não jogaram a última rodada).
+    if (over) {
+      const inRound = new Set(results.map((r) => r.playerId));
+      g.players
+        .filter((p) => !inRound.has(p.id))
+        .sort((a, b) => a.score - b.score)
+        .forEach((p) => results.push({ playerId: p.id, points: 0, total: p.score, hand: [], earlier: true }));
     }
-    tr.append(who, handTd, el('td', 'pts', `+${r.points}`), el('td', 'pts', r.total));
-    rows.append(tr);
+    results.forEach((r, i) => rows.append(resultRow(r, i, lr, g, s, limit)));
+  } else {
+    // O mesmo resultado de novo (alguém clicou em "pronto"): só atualiza os selos, sem repetir a animação.
+    for (const li of $$('.res-row', rows)) syncReadyTag(li, s);
   }
 
   $('#gameOverActions').classList.toggle('hidden', !over);
   $('#againBtn').classList.toggle('hidden', s.hostId !== s.me);
   $('#againWait').classList.toggle('hidden', s.hostId === s.me);
-  if (over) $('#roundFooter').textContent = `Fim de jogo! Todos os outros chegaram a ${g.rules.eliminationScore} pontos.`;
+  if (over) $('#roundFooter').textContent = '';
 
   // Entre rodadas: a próxima só começa quando todo mundo que ainda está na mesa clicar em "pronto".
   const playing = g.players.some((p) => p.id === s.me && !p.eliminated);

@@ -224,14 +224,13 @@
     </div>
 
     <div id="roundModal" class="modal hidden" data-static>
-      <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="roundTitle" tabindex="-1">
-        <h2 id="roundTitle"></h2>
-        <table class="results">
-          <thead>
-            <tr><th>Jogador</th><th class="hide-sm">Cartas na mão</th><th>Rodada</th><th>Total</th></tr>
-          </thead>
-          <tbody id="roundRows"></tbody>
-        </table>
+      <div class="modal-box wide results-box" role="dialog" aria-modal="true" aria-labelledby="roundTitle" aria-describedby="roundSub" tabindex="-1">
+        <header class="results-head">
+          <h2 id="roundTitle"></h2>
+          <p id="roundSub" class="results-sub"></p>
+        </header>
+        <!-- Um jogador por linha: as cartas que sobraram, os pontos da rodada e o total até o limite. -->
+        <ol id="roundRows" class="results-list"></ol>
         <p id="roundFooter" class="muted center"></p>
         <div id="readyActions" class="center hidden">
           <button id="readyBtn" class="btn btn-primary btn-big" data-autofocus>Estou pronto!</button>

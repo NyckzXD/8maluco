@@ -2703,108 +2703,309 @@ body.is-dragging * {
   visibility: hidden;
 }
 
-.results {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
+/* ---------- resultado da rodada ---------- */
+
+/* A caixa do resultado é a própria mesa: feltro escuro com a borda de couro. */
+.results-box {
+  max-width: 760px;
+  gap: 18px;
+  padding: 26px 26px 22px;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 0%, var(--felt) 0, var(--felt-dark) 100%);
+  border: 6px solid var(--rail);
+  box-shadow:
+    0 0 0 2px var(--rail-edge),
+    0 30px 80px rgba(0, 0, 0, 0.7);
 }
 
-.results th,
-.results td {
-  padding: 8px 6px;
-  border-bottom: 1px solid var(--line);
-  vertical-align: middle;
+.results-head {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  animation: res-title 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3);
 }
 
-.results th {
-  font-size: var(--fs-xs);
-  color: var(--muted);
+.results-head h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  line-height: 1.05;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.results-sub {
+  margin: 0;
+  color: var(--silver-300);
   font-weight: 600;
-}
-
-.results .who {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-}
-
-.results .who .avatar {
-  width: 28px;
-  height: 28px;
-  font-size: var(--fs-xs);
-  border-width: 2px;
-}
-
-.ready-tag .icon {
-  stroke-width: 3;
 }
 
 #roundTitle .trophy {
-  color: #f5c43a;
+  color: var(--gold);
   vertical-align: -0.12em;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
 }
 
-.results .ready-tag {
-  font-size: var(--fs-xs);
+.game-over .results-head h2 {
+  color: var(--gold);
+}
+
+@keyframes res-title {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+}
+
+.results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+/* uma linha por jogador: quem | cartas que sobraram | +pontos | barra até o limite e total */
+.res-row {
+  --row-delay: calc(var(--i) * 220ms);
+  position: relative;
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr) 52px 150px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: rgba(0, 0, 0, 0.32);
+  animation: res-row 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2) var(--row-delay) both;
+}
+
+.res-row.me {
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 3px 0 0 var(--silver-300);
+}
+
+.res-row.winner {
+  background: rgba(245, 196, 58, 0.14);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+@keyframes res-row {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+}
+
+.res-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.res-who .avatar {
+  width: 36px;
+  height: 36px;
+  font-size: var(--fs-sm);
+  border-width: 2px;
+}
+
+.res-name {
+  display: grid;
+  min-width: 0;
   font-weight: 700;
-  color: #fff;
-  background: var(--felt);
-  border-radius: var(--r-pill);
-  padding: 1px 7px;
+}
+
+.res-name > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.results .mini-hand {
+/* "pronto" entre rodadas */
+.res-tag {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--silver-300);
+}
+
+.res-tag:empty {
+  display: none;
+}
+
+.res-tag.ready {
+  justify-self: start;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: var(--felt);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+/* as cartas que sobraram: pequenas, viram uma a uma */
+.mini-hand {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  --card-w: 26px;
-  --card-h: 38px;
+  gap: 3px;
+  --card-w: 30px;
+  --card-h: 43px;
 }
 
-.results .mini-hand .card {
+.mini-hand .card {
   --r-card: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  animation: res-card 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3)
+    calc(var(--row-delay) + 260ms + var(--c, 0) * 70ms) both;
 }
 
-.results .mini-hand.show-sm {
+@keyframes res-card {
+  from {
+    transform: translateY(-10px) rotateY(90deg);
+    opacity: 0;
+  }
+}
+
+.mini-hand .card .corner.br,
+.mini-hand .card .pips,
+.mini-hand .card .face,
+.mini-hand .card .star,
+.mini-hand .card .label {
   display: none;
 }
 
-.results .mini-hand .card .corner.br,
-.results .mini-hand .card .pips,
-.results .mini-hand .card .face,
-.results .mini-hand .card .star,
-.results .mini-hand .card .label {
-  display: none;
-}
-
-.results .mini-hand .card .corner.tl {
+.mini-hand .card .corner.tl {
   top: 3px;
   left: 3px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
 }
 
-.results .mini-hand .card.joker .pips {
+.mini-hand .card.joker .pips {
   display: block;
   inset: 22% 12%;
   width: 76%;
   height: 56%;
 }
 
-.results tr.winner td {
-  background: rgba(194, 193, 194, 0.14);
-}
-
-.results tr.eliminated td {
-  background: rgba(237, 28, 36, 0.14);
-}
-
-.results .pts {
-  font-family: var(--font-hud);
+.res-empty {
+  color: var(--gold);
   font-weight: 700;
+}
+
+.res-gone {
+  color: var(--silver);
+  font-size: var(--fs-sm);
+}
+
+.res-pts {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xl);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  font-size: var(--fs-lg);
+  text-align: right;
+  color: var(--silver-300);
+}
+
+.res-row.winner .res-pts {
+  color: var(--gold);
+}
+
+/* barra do total até o limite (a marca vermelha no fim) e o número */
+.res-score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.res-bar {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.res-bar::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  top: -4px;
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.res-bar i {
+  display: block;
+  height: 100%;
+  width: var(--to);
+  border-radius: inherit;
+  background: var(--silver-300);
+  animation: res-fill 0.7s cubic-bezier(0.3, 0.7, 0.3, 1) calc(var(--flip) + 250ms) both;
+}
+
+.res-row.out .res-bar i {
+  background: var(--primary);
+}
+
+@keyframes res-fill {
+  from {
+    width: var(--from);
+  }
+  to {
+    width: var(--to);
+  }
+}
+
+.res-total {
+  min-width: 3ch;
+  font-family: var(--font-hud);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* carimbo "Fora!" / "Bateu!" embaixo do nome, batendo no fim da animação da linha */
+.res-stamp {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 0 7px;
+  border: 2px solid currentColor;
+  border-radius: var(--r-sm);
+  color: var(--red-400);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  rotate: -6deg;
+  pointer-events: none;
+  animation: res-stamp 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) calc(var(--flip) + 900ms) both;
+}
+
+.res-stamp.gold {
+  color: var(--gold);
+  animation-delay: calc(var(--row-delay) + 350ms);
+}
+
+@keyframes res-stamp {
+  from {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.res-row.out {
+  animation-name: res-row;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-head,
+  .res-row,
+  .mini-hand .card,
+  .res-bar i,
+  .res-stamp {
+    animation: none;
+  }
 }
 
 .rules {
@@ -3086,15 +3287,37 @@ body.is-dragging * {
     inset: 10% 2%;
   }
 
-  .results .hide-sm {
-    display: none;
+  /* resultado no celular: nome e total em cima, cartas embaixo */
+  .results-box {
+    padding: 20px 14px 16px;
+    border-width: 4px;
   }
 
-  /* no celular a mão que sobrou vai para baixo do nome */
-  .results .mini-hand.show-sm {
-    display: flex;
-    margin-top: 6px;
+  .res-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "who pts score"
+      "hand hand hand";
+    gap: 8px 10px;
   }
+
+  .res-who {
+    grid-area: who;
+  }
+
+  .res-hand {
+    grid-area: hand;
+  }
+
+  .res-pts {
+    grid-area: pts;
+  }
+
+  .res-score {
+    grid-area: score;
+    width: 110px;
+  }
+
 }
 
 @media (max-width: 520px) {
