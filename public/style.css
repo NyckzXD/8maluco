@@ -882,11 +882,12 @@ input[aria-invalid="true"] {
   overscroll-behavior: contain;
 }
 
+/* uma sala por linha: código, situação, os lugares da mesa e quem criou */
 .room-list li {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 14px;
+  padding: 12px 14px;
   border-radius: var(--r-md);
   background: var(--surface-2);
 }
@@ -894,29 +895,67 @@ input[aria-invalid="true"] {
 .room-list .room-info {
   flex: 1;
   min-width: 0;
+  display: grid;
+  gap: 6px;
 }
 
-.room-list .room-info b {
-  letter-spacing: 2px;
+.room-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.room-code-sm {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xl);
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+.room-seats {
+  display: flex;
+  gap: 4px;
+}
+
+.room-seats i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.room-seats i.on {
+  border-color: var(--silver-300);
+  background: var(--silver-300);
 }
 
 .room-list .room-info small {
-  display: block;
-  color: var(--muted);
+  color: var(--silver);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* nenhuma sala: um convite em vez de uma linha vazia */
 .room-list .empty {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 28px 16px;
   background: none;
-  color: var(--muted);
-  justify-content: center;
+  border: 2px dashed rgba(255, 255, 255, 0.14);
+  color: var(--silver);
+  text-align: center;
+}
+
+.room-list .empty b {
+  color: var(--ink);
+  font-size: var(--fs-lg);
 }
 
 .tag {
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: 700;
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: rgba(194, 193, 194, 0.16);
@@ -2550,7 +2589,7 @@ body.is-dragging * {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(10, 9, 8, 0.75);
+  background: rgba(5, 4, 4, 0.78);
   display: grid;
   place-items: center;
   padding: 16px;
@@ -2564,20 +2603,51 @@ body.is-dragging * {
   }
 }
 
+/* Modais: uma placa grafite sem contorno, com um brilho fino no topo, que sobe ao abrir.
+   Os que acontecem na mesa (pinta do 8, resultado) usam o feltro (.felt-box). */
 .modal-box {
   background: var(--surface);
-  border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  padding: 22px;
-  max-width: 420px;
+  padding: 26px;
+  max-width: 440px;
   width: 100%;
   max-height: 90dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
-  box-shadow: var(--shadow);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 30px 80px rgba(0, 0, 0, 0.7);
   text-align: center;
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  animation: modal-in 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+@keyframes modal-in {
+  from {
+    transform: translateY(16px) scale(0.96);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-box {
+    animation: none;
+  }
+}
+
+.modal-sub {
+  margin: 0;
+  color: var(--silver-300);
+}
+
+/* a mesa: feltro com a borda de couro */
+.felt-box {
+  background: radial-gradient(ellipse 80% 70% at 50% 0%, var(--felt) 0, var(--felt-dark) 100%);
+  border: 6px solid var(--rail);
+  box-shadow:
+    0 0 0 2px var(--rail-edge),
+    0 30px 80px rgba(0, 0, 0, 0.7);
 }
 
 .modal-box.wide {
@@ -2591,6 +2661,8 @@ body.is-dragging * {
 
 .modal-box h2 {
   margin: 0;
+  font-size: var(--fs-2xl);
+  line-height: 1.15;
 }
 
 /* dois botões lado a lado no fim do modal (empilham na tela estreita) */
@@ -2601,51 +2673,91 @@ body.is-dragging * {
   margin-top: 4px;
 }
 
+.suit-box {
+  max-width: 520px;
+}
+
+/* as quatro pintas são cartas: papel, a pinta grande e o nome embaixo */
 .suit-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 6px 0 4px;
 }
 
 .suit-btn {
-  font: inherit;
-  font-size: 3rem;
-  line-height: 1;
-  border: 3px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  padding: 12px;
-  cursor: pointer;
-  color: var(--silver-300);
   display: grid;
-  gap: 4px;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  align-items: center;
+  aspect-ratio: 5 / 7;
+  padding: 12% 6% 10%;
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+  background: var(--card-face);
+  color: var(--card-ink);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.4),
+    box-shadow 0.18s;
+  animation: suit-deal 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+.suit-btn:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.suit-btn:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.suit-btn:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+@keyframes suit-deal {
+  from {
+    transform: translateY(-20px) rotate(-8deg);
+    opacity: 0;
+  }
 }
 
 .suit-btn.red {
-  color: var(--red-text);
+  color: var(--card-red);
 }
 
 .suit-btn .suit-glyph {
-  width: 1em;
-  height: 1em;
-  justify-self: center;
+  width: 70%;
+  height: auto;
+  aspect-ratio: 1;
   fill: currentColor;
 }
 
 .suit-btn small {
   font-size: var(--fs-md);
-  color: var(--ink);
+  font-weight: 700;
+  color: var(--card-ink);
 }
 
 .suit-btn:hover,
 .suit-btn:focus-visible {
-  border-color: var(--primary);
-  background: var(--red-900);
+  transform: translateY(-10px) rotate(-2deg);
+  box-shadow:
+    0 0 0 3px var(--primary),
+    0 16px 26px rgba(0, 0, 0, 0.5);
 }
 
 .suit-btn:focus-visible {
   outline: 3px solid var(--silver-300);
-  outline-offset: 3px;
+  outline-offset: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suit-btn {
+    animation: none;
+  }
 }
 
 /* Janela de pintas com a mão recolhida logo abaixo. */
@@ -2710,8 +2822,7 @@ body.is-dragging * {
   max-width: 760px;
   gap: 18px;
   padding: 26px 26px 22px;
-  background:
-    radial-gradient(ellipse 80% 70% at 50% 0%, var(--felt) 0, var(--felt-dark) 100%);
+  background: radial-gradient(ellipse 80% 70% at 50% 0%, var(--felt) 0, var(--felt-dark) 100%);
   border: 6px solid var(--rail);
   box-shadow:
     0 0 0 2px var(--rail-edge),
@@ -3018,14 +3129,21 @@ body.is-dragging * {
 }
 
 .rules h3 {
-  margin: 4px 0 0;
+  margin: 8px 0 0;
+  font-size: var(--fs-lg);
+  color: var(--silver-300);
 }
 
 .rules ul {
   margin: 0;
   padding-left: 20px;
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.rules li::marker {
+  color: var(--silver);
 }
 
 .rules-link {
@@ -3414,14 +3532,8 @@ body.is-dragging * {
   gap: 16px;
   padding: 20px 14px;
   border-radius: var(--r-lg);
-  background:
-    radial-gradient(
-      circle at 50% 35%,
-      rgba(237, 28, 36, 0.22),
-      transparent 65%
-    ),
-    var(--black);
-  border: 1px solid var(--line);
+  background: radial-gradient(ellipse 90% 80% at 50% 30%, var(--felt) 0, var(--felt-dark) 100%);
+  box-shadow: inset 0 0 0 4px var(--rail);
 }
 
 .avatar-xxl {
@@ -3457,15 +3569,12 @@ body.is-dragging * {
   gap: 4px;
   padding: 9px 4px 8px;
   border-radius: var(--r-md);
-  border: 1px solid var(--line);
+  border: 0;
   background: var(--surface-2);
-  color: var(--muted);
+  color: var(--silver);
   font: inherit;
-  font-family: var(--font-hud);
   font-size: var(--fs-sm);
   font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
   cursor: pointer;
   transition:
     background 0.15s,
@@ -3488,9 +3597,7 @@ body.is-dragging * {
 
 .avatar-tab[aria-selected="true"] {
   background: var(--silver-300);
-  border-color: var(--silver-300);
-  color: #fff;
-  box-shadow: 0 3px 0 var(--primary-edge);
+  color: var(--black);
 }
 
 .avatar-options {
@@ -3587,9 +3694,9 @@ body.is-dragging * {
 }
 
 .swatch[aria-pressed="true"] {
-  border-color: #fff;
+  border-color: var(--surface);
   box-shadow:
-    0 0 0 3px var(--primary),
+    0 0 0 3px var(--silver-300),
     inset 0 -4px 0 rgba(0, 0, 0, 0.18);
 }
 

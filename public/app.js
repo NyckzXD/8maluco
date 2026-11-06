@@ -726,18 +726,27 @@ async function refreshRooms() {
   const list = $('#roomList');
   list.replaceChildren();
   if (!res.rooms?.length) {
-    list.append(el('li', 'empty', 'Nenhuma sala aberta. Crie a sua!'));
+    const empty = el('li', 'empty');
+    empty.append(el('b', null, 'Nenhuma sala aberta agora'), el('span', null, 'Crie a sua e chame a galera pelo link.'));
+    list.append(empty);
     return;
   }
   for (const r of res.rooms) {
     const li = el('li');
     const info = el('div', 'room-info');
-    info.append(el('b', null, r.code), el('small', null, `de ${r.host} · ${r.players}/${r.max} jogadores`));
-    const tag = el('span', `tag ${r.playing ? 'playing' : ''}`, r.playing ? 'jogando' : 'no lobby');
-    const btn = el('button', 'btn btn-small btn-primary', 'Entrar');
+    const head = el('div', 'room-head');
+    head.append(el('b', 'room-code-sm', r.code), el('span', `tag ${r.playing ? 'playing' : ''}`, r.playing ? 'jogando' : 'no lobby'));
+    // os lugares da mesa: cheios para quem já sentou, vazios para as vagas
+    const seats = el('span', 'room-seats');
+    seats.setAttribute('aria-hidden', 'true');
+    for (let n = 0; n < r.max; n++) seats.append(el('i', n < r.players ? 'on' : ''));
+    const sub = el('small', null, `de ${r.host} · ${r.players} de ${r.max} lugares`);
+    info.append(head, seats, sub);
+    const btn = el('button', 'btn btn-small btn-primary', r.players >= r.max ? 'Cheia' : 'Entrar');
     btn.disabled = r.players >= r.max;
+    btn.setAttribute('aria-label', `Entrar na sala ${r.code}`);
     btn.addEventListener('click', () => joinRoom(r.code));
-    li.append(info, tag, btn);
+    li.append(info, btn);
     list.append(li);
   }
 }

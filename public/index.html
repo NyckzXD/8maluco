@@ -209,9 +209,9 @@
 
     <!-- ===== Modais ===== -->
     <div id="suitModal" class="modal hidden">
-      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="suitTitle" tabindex="-1">
+      <div class="modal-box felt-box suit-box" role="dialog" aria-modal="true" aria-labelledby="suitTitle" aria-describedby="suitDesc" tabindex="-1">
         <h2 id="suitTitle">Escolha a pinta</h2>
-        <p class="muted">O próximo jogador terá que seguir essa pinta.</p>
+        <p id="suitDesc" class="modal-sub">O próximo jogador terá que seguir essa pinta.</p>
         <div class="suit-grid">
           <button class="suit-btn red" data-suit="H" data-autofocus><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg><small>Copas</small></button>
           <button class="suit-btn red" data-suit="D"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-D"/></svg><small>Ouros</small></button>
@@ -276,7 +276,7 @@
     <div id="leaveModal" class="modal hidden">
       <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="leaveTitle" aria-describedby="leaveDesc" tabindex="-1">
         <h2 id="leaveTitle">Sair da partida?</h2>
-        <p id="leaveDesc" class="muted">Você será eliminado desta partida e volta para a tela inicial.</p>
+        <p id="leaveDesc" class="modal-sub">Você será eliminado desta partida e volta para a tela inicial.</p>
         <div class="modal-actions">
           <button class="btn btn-text" data-close data-autofocus>Continuar jogando</button>
           <button id="leaveConfirm" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair da partida</button>
@@ -287,7 +287,7 @@
     <div id="kickModal" class="modal hidden">
       <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="kickTitle" aria-describedby="kickDesc" tabindex="-1">
         <h2 id="kickTitle">Remover jogador?</h2>
-        <p id="kickDesc" class="muted">Ele sai da sala e pode voltar pelo link.</p>
+        <p id="kickDesc" class="modal-sub">Ele sai da sala e pode voltar pelo link.</p>
         <div class="modal-actions">
           <button class="btn btn-text" data-close data-autofocus>Cancelar</button>
           <button id="kickConfirm" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Remover</button>
