@@ -714,6 +714,7 @@ function showJoinError(error, code) {
 }
 $('#joinErrorRooms').addEventListener('click', () => {
   hideModal('joinErrorModal');
+  $('#roomList').replaceChildren();
   openModal('roomsModal');
   refreshRooms();
 });
@@ -755,15 +756,30 @@ async function refreshRooms() {
   if ($('#roomsModal').classList.contains('hidden')) return;
   const res = await emit('room:list');
   const list = $('#roomList');
+  // As linhas entram com animação só ao abrir; a atualização a cada 5s troca sem mexer.
+  list.classList.toggle('enter', !list.children.length);
   list.replaceChildren();
   if (!res.rooms?.length) {
     const empty = el('li', 'empty');
-    empty.append(el('b', null, 'Nenhuma sala aberta agora'), el('span', null, 'Crie a sua e chame a galera pelo link.'));
+    // três versos de carta em leque, esperando alguém dar as cartas
+    const art = el('div', 'rooms-empty-art');
+    art.setAttribute('aria-hidden', 'true');
+    for (let n = 0; n < 3; n++) art.append(el('span', 'card back'));
+    const create = el('button', 'btn btn-primary btn-small', 'Criar uma sala');
+    create.type = 'button';
+    create.addEventListener('click', () => {
+      hideModal('roomsModal');
+      $('#createBtn').click();
+    });
+    empty.append(art, el('b', null, 'Nenhuma sala aberta agora'), el('span', null, 'Crie a sua e chame a galera pelo link.'), create);
     list.append(empty);
     return;
   }
   for (const r of res.rooms) {
-    const li = el('li');
+    const full = r.players >= r.max;
+    const li = el('li', full ? 'full' : '');
+    // quem criou a mesa, com o avatar dele
+    const host = avatar({ name: r.host, avatar: r.hostAvatar, color: r.hostColor });
     const info = el('div', 'room-info');
     const head = el('div', 'room-head');
     head.append(el('b', 'room-code-sm', r.code), el('span', `tag ${r.playing ? 'playing' : ''}`, r.playing ? 'jogando' : 'no lobby'));
@@ -771,13 +787,13 @@ async function refreshRooms() {
     const seats = el('span', 'room-seats');
     seats.setAttribute('aria-hidden', 'true');
     for (let n = 0; n < r.max; n++) seats.append(el('i', n < r.players ? 'on' : ''));
-    const sub = el('small', null, `de ${r.host} · ${r.players} de ${r.max} lugares`);
+    const sub = el('small', null, `Mesa de ${r.host} · ${r.players} de ${r.max} lugares`);
     info.append(head, seats, sub);
-    const btn = el('button', 'btn btn-small btn-primary', r.players >= r.max ? 'Cheia' : 'Entrar');
-    btn.disabled = r.players >= r.max;
-    btn.setAttribute('aria-label', `Entrar na sala ${r.code}`);
+    const btn = el('button', 'btn btn-small btn-primary', full ? 'Cheia' : 'Entrar');
+    btn.disabled = full;
+    btn.setAttribute('aria-label', full ? `Sala ${r.code} cheia` : `Entrar na sala ${r.code}`);
     btn.addEventListener('click', () => joinRoom(r.code));
-    li.append(info, btn);
+    li.append(host, info, btn);
     list.append(li);
   }
 }
@@ -786,6 +802,7 @@ $('#refreshRooms').addEventListener('click', refreshRooms);
 setInterval(refreshRooms, 5000);
 
 $('#roomsBtn').addEventListener('click', () => {
+  $('#roomList').replaceChildren();
   openModal('roomsModal');
   refreshRooms();
 });
@@ -979,6 +996,7 @@ function askKick(member) {
   pendingKick = member.id;
   $('#kickTitle').textContent = `Remover ${member.name}?`;
   $('#kickDesc').textContent = `${member.name} sai da sala e pode voltar pelo link.`;
+  $('#kickAvatar').replaceChildren(avatar(member));
   openModal('kickModal');
 }
 $('#kickConfirm').addEventListener('click', () => {

@@ -213,10 +213,38 @@
         <h2 id="suitTitle">Escolha a pinta</h2>
         <p id="suitDesc" class="modal-sub">O próximo jogador terá que seguir essa pinta.</p>
         <div class="suit-grid">
-          <button class="suit-btn red" data-suit="H" data-autofocus><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg><small>Copas</small></button>
-          <button class="suit-btn red" data-suit="D"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-D"/></svg><small>Ouros</small></button>
-          <button class="suit-btn" data-suit="S"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-S"/></svg><small>Espadas</small></button>
-          <button class="suit-btn" data-suit="C"><svg class="suit-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-C"/></svg><small>Paus</small></button>
+          <button class="suit-btn red" data-suit="H" aria-label="Copas" data-autofocus>
+            <span class="suit-face" aria-hidden="true">
+              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-H"/></svg>
+              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span>
+            </span>
+            <small>Copas</small>
+          </button>
+          <button class="suit-btn red" data-suit="D" aria-label="Ouros">
+            <span class="suit-face" aria-hidden="true">
+              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-D"/></svg></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-D"/></svg>
+              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-D"/></svg></span>
+            </span>
+            <small>Ouros</small>
+          </button>
+          <button class="suit-btn" data-suit="S" aria-label="Espadas">
+            <span class="suit-face" aria-hidden="true">
+              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-S"/></svg></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-S"/></svg>
+              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-S"/></svg></span>
+            </span>
+            <small>Espadas</small>
+          </button>
+          <button class="suit-btn" data-suit="C" aria-label="Paus">
+            <span class="suit-face" aria-hidden="true">
+              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-C"/></svg></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-C"/></svg>
+              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-C"/></svg></span>
+            </span>
+            <small>Paus</small>
+          </button>
         </div>
         <button class="btn btn-text" data-close>Cancelar</button>
       </div>
@@ -243,23 +271,26 @@
     </div>
 
     <div id="roomsModal" class="modal hidden">
-      <div class="modal-box wide rooms-box" role="dialog" aria-modal="true" aria-labelledby="roomsTitle" tabindex="-1">
-        <div class="panel-head">
-          <h2 id="roomsTitle">Salas públicas</h2>
-          <button id="refreshRooms" class="btn btn-small" title="Atualizar" aria-label="Atualizar"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
-        </div>
+      <div class="modal-box wide felt-box rooms-box" role="dialog" aria-modal="true" aria-labelledby="roomsTitle" aria-describedby="roomsDesc" tabindex="-1">
+        <header class="rooms-head">
+          <div>
+            <h2 id="roomsTitle">Salas públicas</h2>
+            <p id="roomsDesc" class="modal-sub">Escolha uma mesa e puxe uma cadeira.</p>
+          </div>
+          <button id="refreshRooms" class="btn btn-small btn-felt" title="Atualizar" aria-label="Atualizar lista de salas"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+        </header>
         <ul id="roomList" class="room-list"></ul>
         <button class="btn btn-text" data-close>Fechar</button>
       </div>
     </div>
 
     <div id="avatarModal" class="modal hidden">
-      <div class="modal-box avatar-box" role="dialog" aria-modal="true" aria-labelledby="avatarTitle" tabindex="-1">
+      <div class="modal-box felt-box avatar-box" role="dialog" aria-modal="true" aria-labelledby="avatarTitle" tabindex="-1">
         <h2 id="avatarTitle">Crie seu avatar</h2>
         <div class="avatar-editor">
           <div class="avatar-stage">
             <div id="avatarPreview" class="avatar avatar-xxl"></div>
-            <button id="avatarRandom" type="button" class="btn btn-small"><svg class="icon" aria-hidden="true"><use href="#i-dice"/></svg>Aleatório</button>
+            <button id="avatarRandom" type="button" class="btn btn-small btn-felt"><svg class="icon" aria-hidden="true"><use href="#i-dice"/></svg>Aleatório</button>
           </div>
           <div class="avatar-panel">
             <div id="avatarTabs" class="avatar-tabs" role="tablist" aria-label="Partes do avatar"></div>
@@ -274,7 +305,11 @@
     </div>
 
     <div id="leaveModal" class="modal hidden">
-      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="leaveTitle" aria-describedby="leaveDesc" tabindex="-1">
+      <div class="modal-box felt-box confirm-box" role="dialog" aria-modal="true" aria-labelledby="leaveTitle" aria-describedby="leaveDesc" tabindex="-1">
+        <div class="modal-art leave-art" aria-hidden="true">
+          <span class="card back"></span><span class="card back"></span><span class="card back"></span>
+          <span class="modal-art-badge"><svg class="icon"><use href="#i-back"/></svg></span>
+        </div>
         <h2 id="leaveTitle">Sair da partida?</h2>
         <p id="leaveDesc" class="modal-sub">Você será eliminado desta partida e volta para a tela inicial.</p>
         <div class="modal-actions">
@@ -285,7 +320,11 @@
     </div>
 
     <div id="kickModal" class="modal hidden">
-      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="kickTitle" aria-describedby="kickDesc" tabindex="-1">
+      <div class="modal-box felt-box confirm-box" role="dialog" aria-modal="true" aria-labelledby="kickTitle" aria-describedby="kickDesc" tabindex="-1">
+        <div class="modal-art kick-art" aria-hidden="true">
+          <div id="kickAvatar" class="kick-avatar"></div>
+          <span class="modal-art-badge"><svg class="icon"><use href="#i-x"/></svg></span>
+        </div>
         <h2 id="kickTitle">Remover jogador?</h2>
         <p id="kickDesc" class="modal-sub">Ele sai da sala e pode voltar pelo link.</p>
         <div class="modal-actions">
@@ -348,15 +387,15 @@
 
     <!-- Não deu para entrar na sala (código errado, sala cheia ou fechada). -->
     <div id="joinErrorModal" class="modal hidden">
-      <div class="modal-box join-error" role="dialog" aria-modal="true" aria-labelledby="joinErrorTitle" aria-describedby="joinErrorDesc" tabindex="-1">
-        <div class="join-error-art" aria-hidden="true">
+      <div class="modal-box felt-box confirm-box join-error" role="dialog" aria-modal="true" aria-labelledby="joinErrorTitle" aria-describedby="joinErrorDesc" tabindex="-1">
+        <div class="modal-art join-error-art" aria-hidden="true">
           <span class="card back"></span>
-          <span class="join-error-x"><svg class="icon"><use href="#i-x"/></svg></span>
+          <span class="modal-art-badge"><svg class="icon"><use href="#i-x"/></svg></span>
         </div>
         <h2 id="joinErrorTitle">Sala não encontrada</h2>
         <p id="joinErrorDesc" class="modal-sub"></p>
         <div class="modal-actions">
-          <button id="joinErrorRooms" type="button" class="btn"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Ver salas abertas</button>
+          <button id="joinErrorRooms" type="button" class="btn btn-felt"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Ver salas abertas</button>
           <button id="joinErrorCreate" type="button" class="btn btn-primary" data-autofocus><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar uma sala</button>
         </div>
       </div>

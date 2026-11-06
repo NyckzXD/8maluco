@@ -85,13 +85,18 @@ export class RoomManager {
         (r) =>
           r.settings.isPublic && r.members.some((m) => !m.isBot && m.connected),
       )
-      .map((r) => ({
-        code: r.code,
-        host: r.members.find((m) => m.id === r.hostId)?.name ?? "?",
-        players: r.members.length,
-        max: MAX_PLAYERS,
-        playing: !!r.game && r.game.phase !== "gameOver",
-      }))
+      .map((r) => {
+        const host = r.members.find((m) => m.id === r.hostId);
+        return {
+          code: r.code,
+          host: host?.name ?? "?",
+          hostAvatar: host?.avatar ?? null,
+          hostColor: host?.color ?? null,
+          players: r.members.length,
+          max: MAX_PLAYERS,
+          playing: !!r.game && r.game.phase !== "gameOver",
+        };
+      })
       .sort((a, b) => a.playing - b.playing || b.players - a.players);
   }
 }
