@@ -1479,6 +1479,17 @@ input[aria-invalid="true"] {
   animation: glow 1.2s ease-in-out infinite;
 }
 
+/* sem jogada: o baralho "respira" junto com o brilho, chamando para comprar */
+.draw-pile.can-draw .card {
+  animation: breathe 1.2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    scale: 1.06;
+  }
+}
+
 .draw-pile .card {
   transition: transform 0.15s;
 }
@@ -1543,6 +1554,153 @@ input[aria-invalid="true"] {
   from {
     transform: translateY(-60px) scale(1.3) rotate(var(--rot, 0deg));
     opacity: 0;
+  }
+}
+
+/* ---------- efeitos das cartas especiais no monte ---------- */
+
+/* Ás: a carta dá dois pulinhos */
+.discard-pile .card.fx-hop {
+  animation: fx-hop 0.7s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+@keyframes fx-hop {
+  25% {
+    translate: 0 -30px;
+  }
+  50% {
+    translate: 0 0;
+  }
+  70% {
+    translate: 0 -12px;
+  }
+}
+
+/* 8: a carta gira e a pinta pedida salta do monte */
+.discard-pile .card.fx-spin {
+  animation: fx-spin 0.6s cubic-bezier(0.3, 0.7, 0.3, 1.2);
+}
+
+@keyframes fx-spin {
+  from {
+    rotate: y 0deg;
+  }
+  to {
+    rotate: y 360deg;
+  }
+}
+
+.fx-suit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: calc(var(--card-w) * 0.9);
+  height: calc(var(--card-w) * 0.9);
+  fill: currentColor;
+  color: var(--card-face);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+  translate: -50% -50%;
+  animation: fx-suit 1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.fx-suit.red {
+  color: var(--card-red);
+}
+
+@keyframes fx-suit {
+  from {
+    scale: 0.3;
+    opacity: 0;
+  }
+  30% {
+    scale: 1.5;
+    opacity: 1;
+  }
+  to {
+    scale: 2.4;
+    opacity: 0;
+  }
+}
+
+/* 7 e 9: a carta bate no monte e solta uma onda vermelha */
+.discard-pile .card.fx-thump {
+  animation: fx-thump 0.4s ease-out;
+}
+
+@keyframes fx-thump {
+  30% {
+    scale: 1.14;
+  }
+}
+
+/* Joker: a carta balança e solta uma onda dourada */
+.discard-pile .card.fx-wobble {
+  animation: fx-wobble 0.7s ease-in-out;
+}
+
+@keyframes fx-wobble {
+  20% {
+    rotate: -12deg;
+  }
+  45% {
+    rotate: 10deg;
+  }
+  70% {
+    rotate: -5deg;
+  }
+}
+
+.fx-ring {
+  position: absolute;
+  inset: -6px;
+  z-index: 3;
+  border: 4px solid var(--primary);
+  border-radius: var(--r-md);
+  pointer-events: none;
+  animation: fx-ring 0.8s ease-out forwards;
+}
+
+.fx-ring.gold {
+  border-color: var(--gold);
+}
+
+@keyframes fx-ring {
+  from {
+    scale: 0.9;
+    opacity: 1;
+  }
+  to {
+    scale: 2;
+    opacity: 0;
+  }
+}
+
+/* ---------- sua vez: a mão faz uma onda ---------- */
+.hand.wave .card {
+  animation: hand-wave 0.55s ease-in-out calc(var(--wave, 0) * 45ms);
+}
+
+@keyframes hand-wave {
+  40% {
+    translate: 0 -14px;
+    rotate: -3deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-pile.can-draw .card,
+  .discard-pile .card[class*="fx-"],
+  .hand.wave .card,
+  .fx-suit,
+  .fx-ring {
+    animation: none;
+  }
+
+  .fx-suit,
+  .fx-ring {
+    display: none;
   }
 }
 

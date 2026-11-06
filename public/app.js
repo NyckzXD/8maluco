@@ -1312,6 +1312,28 @@ function animateDraws(events, g, s) {
   fresh.forEach(toHand);
 }
 
+// Efeito da carta especial quando ela pousa no monte: o Ás pula, o 8 gira e solta a pinta
+// pedida, o 7 e o 9 batem com uma onda vermelha, o Joker balança com uma onda dourada.
+const CARD_FX = { A: 'fx-hop', 8: 'fx-spin', 7: 'fx-thump', 9: 'fx-thump', JOKER: 'fx-wobble' };
+function cardFx(card, top, g) {
+  const fx = CARD_FX[top.rank];
+  if (!fx || !card.isConnected || reducedMotion()) return;
+  const pile = $('#discardPile');
+  card.classList.remove('new');
+  card.classList.add(fx);
+  card.addEventListener('animationend', () => card.classList.remove(fx), { once: true });
+  const burst = (node) => {
+    pile.append(node);
+    setTimeout(() => node.remove(), 1200);
+  };
+  if (top.rank === '7' || top.rank === '9') burst(el('span', 'fx-ring'));
+  if (top.rank === 'JOKER') burst(el('span', 'fx-ring gold'));
+  if (top.rank === '8' && SUIT_INFO[g.activeSuit]) {
+    const glyph = suitIcon(g.activeSuit, `fx-suit ${SUIT_INFO[g.activeSuit].color}`);
+    burst(glyph);
+  }
+}
+
 function renderCenter(prev, g, myTurn, origin) {
   const drawPile = $('#drawPile');
   $('#drawCount').textContent = g.drawCount;
@@ -1339,8 +1361,20 @@ function renderCenter(prev, g, myTurn, origin) {
       discard.append(card);
     } else discard.replaceChildren(card);
     discard.dataset.top = g.top.id;
-    if (origin) fly({ card: g.top, from: origin, to: centerOf(discard, { rot: cardRotation(g.top.id) }), flip: origin.flip, hide: card });
-    else if (prevTop && prevTop !== g.top.id) card.classList.add('new');
+    const top = g.top;
+    if (origin)
+      fly({
+        card: top,
+        from: origin,
+        to: centerOf(discard, { rot: cardRotation(top.id) }),
+        flip: origin.flip,
+        hide: card,
+        onLand: () => cardFx(card, top, g),
+      });
+    else if (prevTop && prevTop !== top.id) {
+      card.classList.add('new');
+      setTimeout(() => cardFx(card, top, g), 350);
+    }
   }
 
   const badge = $('#activeSuit');
@@ -1361,6 +1395,16 @@ function renderCenter(prev, g, myTurn, origin) {
   }
   badge.classList.toggle('changed', g.activeRank === '8' || g.activeRank === 'JOKER');
   syncDiscardTarget();
+}
+
+// Chegou a sua vez: as cartas da mão sobem uma depois da outra, numa onda.
+function waveHand() {
+  const hand = $('#hand');
+  $$('.card', hand).forEach((c, i) => c.style.setProperty('--wave', i));
+  hand.classList.remove('wave');
+  void hand.offsetWidth;
+  hand.classList.add('wave');
+  setTimeout(() => hand.classList.remove('wave'), 1400);
 }
 
 // Quanto de cada carta precisa aparecer para dar para tocar nela (área mínima de toque).
@@ -2252,6 +2296,7 @@ function renderGame(prev, s) {
   if (myTurn && !wasMyTurn) {
     sounds.turn();
     navigator.vibrate?.(60);
+    waveHand();
   }
   if (!myTurn) closeSuitModal({ animate: false });
 }
