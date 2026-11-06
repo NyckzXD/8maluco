@@ -71,18 +71,21 @@ function speak(text, { urgent = false } = {}) {
 function flash(text, { info = false } = {}) {
   const el = document.createElement('div');
   // na partida o aviso vai para o topo, longe da mão
-  el.className = $('#game').classList.contains('hidden') ? 'flash' : 'flash in-game';
+  el.className = `flash ${info ? 'info' : 'error'}${$('#game').classList.contains('hidden') ? '' : ' in-game'}`;
   el.setAttribute('aria-hidden', 'true');
-  el.textContent = text;
+  const mark = document.createElement('span');
+  mark.className = 'flash-mark';
+  mark.textContent = info ? 'i' : '!';
+  el.append(mark, text);
   document.body.append(el);
   setTimeout(() => el.remove(), 3100);
   speak(text, { urgent: !info });
 }
 
-function emit(event, data = {}) {
+function emit(event, data = {}, { quiet = false } = {}) {
   return new Promise((resolve) => {
     socket.emit(event, data, (res) => {
-      if (res && !res.ok && res.error) flash(res.error);
+      if (res && !res.ok && res.error && !quiet) flash(res.error);
       resolve(res ?? { ok: true });
     });
   });
@@ -696,12 +699,40 @@ function onJoined(res) {
   return true;
 }
 
+// Não deu para entrar: em vez de um aviso que some, um modal que diz o que houve e oferece o caminho.
+const JOIN_ERRORS = {
+  'Sala não encontrada': ['Sala não encontrada', (c) => `Não existe nenhuma sala ${c} aberta agora. Ela pode ter acabado, ou o código está diferente.`],
+  'A sala está cheia': ['A sala está cheia', (c) => `A sala ${c} já tem todos os lugares ocupados.`],
+  'A sala fechou': ['A sala fechou', (c) => `A sala ${c} acabou enquanto você estava fora.`],
+};
+function showJoinError(error, code) {
+  const known = JOIN_ERRORS[error];
+  if (!known) return flash(error);
+  $('#joinErrorTitle').textContent = known[0];
+  $('#joinErrorDesc').textContent = known[1](code);
+  openModal('joinErrorModal');
+}
+$('#joinErrorRooms').addEventListener('click', () => {
+  hideModal('joinErrorModal');
+  openModal('roomsModal');
+  refreshRooms();
+});
+$('#joinErrorCreate').addEventListener('click', () => {
+  hideModal('joinErrorModal');
+  $('#createBtn').click();
+});
+
 async function joinRoom(code) {
   const name = askName();
   if (!name) return;
   code = extractCode(code);
   if (!code) return flash('Digite o código da sala');
-  onJoined(await emit('room:join', { code, token, name, avatar: myAvatar }));
+  const res = await emit('room:join', { code, token, name, avatar: myAvatar }, { quiet: true });
+  if (!res.ok) {
+    setUrl(null);
+    return showJoinError(res.error, code);
+  }
+  onJoined(res);
 }
 
 $('#createBtn').addEventListener('click', async () => {
@@ -1014,6 +1045,7 @@ function renderLobby(s) {
   // Configurações: todos veem, só o anfitrião muda.
   $('#hostControls').classList.toggle('hidden', !isHost);
   $('#waitHost').classList.toggle('hidden', isHost);
+  $('#waitHostText').textContent = `Esperando ${nameOf(s.hostId)} começar a partida`;
   $('#setPublic').checked = s.settings.isPublic;
   $('#setTurn').value = String(s.settings.turnSeconds);
   $('#setPublic').disabled = !isHost;
@@ -1472,18 +1504,25 @@ addEventListener('resize', () => {
   });
 });
 
+// Placa no lugar da mão para quem não está jogando: um selo e uma linha.
+function sideline(title, sub, kind) {
+  const box = el('div', `spectator ${kind}`);
+  box.append(el('span', 'spectator-stamp', kind === 'out' ? 'Fora!' : 'Plateia'), el('b', null, title), el('span', null, sub));
+  return box;
+}
+
 function renderHand(prev, g, s, myTurn) {
   const hand = $('#hand');
   hand.classList.toggle('my-turn', myTurn);
   const me = g.players.find((p) => p.id === s.me);
   if (!me) {
     hideCardTip();
-    hand.replaceChildren(el('p', 'spectator', 'Você está assistindo. Entra na próxima partida!'));
+    hand.replaceChildren(sideline('Você está assistindo', 'Entra na próxima partida!', 'watch'));
     return;
   }
   if (me.eliminated) {
     hideCardTip();
-    hand.replaceChildren(el('p', 'spectator', 'Você está fora. Assista até o fim!'));
+    hand.replaceChildren(sideline('Você está fora', 'Assista até o fim e torça!', 'out'));
     return;
   }
   const sameRound = prev?.game?.round === g.round;
@@ -2051,7 +2090,7 @@ function renderMe(g, s, myTurn) {
     info.append(av, el('span', null, `Você · ${me.score} pts`));
     if (me.id === g.dealerId) info.append(dealerBadge());
   }
-  else info.append(el('span', null, 'Assistindo'));
+  // quem só assiste não tem barra própria: a placa "Plateia" fica no lugar da mão
 
   renderBanner(g, myTurn);
   $('#passBtn').classList.toggle('hidden', !(myTurn && g.hasDrawn));
@@ -2154,6 +2193,14 @@ function syncReadyTag(li, s) {
   tag.classList.toggle('ready', ready);
 }
 
+// Três pontinhos que pulam, para os textos de espera.
+function waitDots() {
+  const dots = el('span', 'dots');
+  dots.setAttribute('aria-hidden', 'true');
+  dots.append(el('i'), el('i'), el('i'));
+  return dots;
+}
+
 function renderRoundModal(g, s) {
   const modal = $('#roundModal');
   const lr = g.lastRound;
@@ -2201,7 +2248,10 @@ function renderRoundModal(g, s) {
   $('#gameOverActions').classList.toggle('hidden', !over);
   $('#againBtn').classList.toggle('hidden', s.hostId !== s.me);
   $('#againWait').classList.toggle('hidden', s.hostId === s.me);
-  if (over) $('#roundFooter').textContent = '';
+  if (over) {
+    $('#roundFooter').replaceChildren();
+    $('#roundFooter').dataset.text = '';
+  }
 
   // Entre rodadas: a próxima só começa quando todo mundo que ainda está na mesa clicar em "pronto".
   const playing = g.players.some((p) => p.id === s.me && !p.eliminated);
@@ -2211,9 +2261,16 @@ function renderRoundModal(g, s) {
   $('#readyBtn').replaceChildren(...(imReady ? [icon('check'), 'Pronto!'] : ['Estou pronto!']));
   if (!over) {
     const waiting = s.waitingOn.filter((id) => id !== s.me).map(nameOf);
-    $('#roundFooter').textContent = !waiting.length
-      ? imReady || !playing ? 'Começando a próxima rodada…' : 'Só falta você!'
-      : `Esperando ${waiting.join(', ')} ficar${waiting.length > 1 ? 'em' : ''} pronto${waiting.length > 1 ? 's' : ''}…`;
+    const text = !waiting.length
+      ? imReady || !playing ? 'Começando a próxima rodada' : 'Só falta você!'
+      : `Esperando ${waiting.join(', ')} ficar${waiting.length > 1 ? 'em' : ''} pronto${waiting.length > 1 ? 's' : ''}`;
+    const footer = $('#roundFooter');
+    // só troca quando o texto muda, para as reticências não recomeçarem a cada atualização
+    if (footer.dataset.text !== text) {
+      footer.dataset.text = text;
+      footer.replaceChildren(text);
+      if (text !== 'Só falta você!') footer.append(waitDots());
+    }
   }
   // Abre só depois de montar, para o foco cair no botão certo (pronto / voltar para a sala).
   openModal('roundModal');
@@ -2446,8 +2503,12 @@ socket.on('room:kicked', () => {
 socket.on('connect', async () => {
   $('#netStatus').classList.add('hidden');
   if (roomCode) {
-    const res = await emit('room:join', { code: roomCode, token, name: store.get('om_name') ?? 'Jogador', avatar: myAvatar });
-    if (!res.ok) leaveRoom();
+    const code = roomCode;
+    const res = await emit('room:join', { code, token, name: store.get('om_name') ?? 'Jogador', avatar: myAvatar }, { quiet: true });
+    if (!res.ok) {
+      leaveRoom();
+      showJoinError(res.error === 'Sala não encontrada' ? 'A sala fechou' : res.error, code);
+    }
   } else {
     refreshRooms();
   }

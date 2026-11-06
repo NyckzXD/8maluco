@@ -137,7 +137,7 @@
               <button id="startBtn" class="btn btn-primary btn-big" aria-describedby="startHint">Começar partida</button>
               <p id="startHint" class="start-hint hidden">Precisa de pelo menos 2 jogadores</p>
             </div>
-            <p id="waitHost" class="wait-host">Esperando o anfitrião começar a partida…</p>
+            <p id="waitHost" class="wait-host"><span id="waitHostText">Esperando o anfitrião começar a partida</span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></p>
           </div>
         </div>
         <aside class="panel chat-panel" data-chat></aside>
@@ -231,13 +231,13 @@
         </header>
         <!-- Um jogador por linha: as cartas que sobraram, os pontos da rodada e o total até o limite. -->
         <ol id="roundRows" class="results-list"></ol>
-        <p id="roundFooter" class="muted center"></p>
+        <p id="roundFooter" class="wait-line"></p>
         <div id="readyActions" class="center hidden">
           <button id="readyBtn" class="btn btn-primary btn-big" data-autofocus>Estou pronto!</button>
         </div>
         <div id="gameOverActions" class="center hidden">
           <button id="againBtn" class="btn btn-primary btn-big" data-autofocus>Voltar para a sala</button>
-          <p id="againWait" class="muted">Esperando o anfitrião…</p>
+          <p id="againWait" class="wait-line">Esperando o anfitrião<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></p>
         </div>
       </div>
     </div>
@@ -336,7 +336,31 @@
       </form>
     </template>
 
-    <div id="netStatus" class="net-status hidden" role="status">Reconectando…</div>
+    <!-- Conexão caiu: a mesa escurece e um verso de carta gira até voltar. Só aparece depois de
+         um instante (CSS), para não piscar numa queda rápida. -->
+    <div id="netStatus" class="net-status hidden" role="status">
+      <div class="net-box">
+        <span class="card back net-card" aria-hidden="true"></span>
+        <b>Reconectando<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></b>
+        <span>A partida continua de onde parou.</span>
+      </div>
+    </div>
+
+    <!-- Não deu para entrar na sala (código errado, sala cheia ou fechada). -->
+    <div id="joinErrorModal" class="modal hidden">
+      <div class="modal-box join-error" role="dialog" aria-modal="true" aria-labelledby="joinErrorTitle" aria-describedby="joinErrorDesc" tabindex="-1">
+        <div class="join-error-art" aria-hidden="true">
+          <span class="card back"></span>
+          <span class="join-error-x"><svg class="icon"><use href="#i-x"/></svg></span>
+        </div>
+        <h2 id="joinErrorTitle">Sala não encontrada</h2>
+        <p id="joinErrorDesc" class="modal-sub"></p>
+        <div class="modal-actions">
+          <button id="joinErrorRooms" type="button" class="btn"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Ver salas abertas</button>
+          <button id="joinErrorCreate" type="button" class="btn btn-primary" data-autofocus><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar uma sala</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Avisos para leitores de tela: os flashes visuais escrevem aqui também. -->
     <div id="srStatus" class="sr-only" role="status" aria-live="polite"></div>
