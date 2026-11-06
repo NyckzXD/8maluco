@@ -1442,8 +1442,7 @@ function renderLobby(s) {
   for (let i = 0; i < total; i++) {
     const { x, y } = seatPosition(i, total);
     const li = el("li", "seat lobby-seat");
-    li.style.left = `${x}%`;
-    li.style.top = `${y}%`;
+    placeSeat(li, { x, y });
     if (i >= s.members.length) {
       // lugar livre
       const btn = el("button", "seat-invite");
@@ -1522,6 +1521,13 @@ function seatPosition(offset, total) {
   };
 }
 
+// Põe o assento no lugar. Na vertical ele fica sempre inteiro dentro da mesa (--seat-half é
+// meia altura do assento): em mesas baixas o de cima não sobe por cima da barra do topo.
+function placeSeat(seat, { x, y }) {
+  seat.style.left = `${x}%`;
+  seat.style.top = `clamp(var(--seat-half), ${y}%, 100% - var(--seat-half))`;
+}
+
 // Botão de carteador, como no pôquer: um disco com "D" e o nome por extenso no title.
 function dealerBadge() {
   const dealer = el("span", "badge dealer", "D");
@@ -1543,8 +1549,7 @@ function renderSeats(g, s, hit) {
     const { x, y } = seatPosition((i - base + n) % n, n);
     const seat = el("div", "seat");
     seat.dataset.id = p.id;
-    seat.style.left = `${x}%`;
-    seat.style.top = `${y}%`;
+    placeSeat(seat, { x, y });
     if (p.id === g.turnId) seat.classList.add("turn");
     // Lugares do lado esquerdo põem o selo de carteador do lado de dentro (direita), para não sair da tela.
     if (x < 45) seat.classList.add("left");

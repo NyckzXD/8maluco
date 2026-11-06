@@ -523,8 +523,11 @@ input[aria-invalid="true"] {
 }
 
 /* a pilha de botões do menu */
+/* minmax(0, 1fr): sem isso o campo de código (largura intrínseca do <input>) alarga a coluna
+   e os botões vazam pela direita no celular */
 .home-menu {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   width: 100%;
   min-width: 0;
@@ -1123,13 +1126,15 @@ input[aria-invalid="true"] {
 
 /* ---------- lobby ---------- */
 
+/* Mesa e chat lado a lado até 700px de largura: a mesa, as configurações e o "Começar partida"
+   cabem na primeira tela (a mesa é quem cede altura). Abaixo disso, tudo empilha. */
 .lobby-layout {
   max-width: 1280px;
   margin: 0 auto;
   padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
     max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) clamp(240px, 28vw, 300px);
   gap: 16px;
   height: 100dvh;
 }
@@ -1157,7 +1162,7 @@ input[aria-invalid="true"] {
 }
 
 .table.lobby-table {
-  min-height: 380px;
+  min-height: 280px;
 }
 
 .lobby-seats {
@@ -1290,6 +1295,36 @@ input[aria-invalid="true"] {
   color: var(--silver);
 }
 
+/* Mesa baixa: o centro fica compacto (sem o rótulo "Sala", código menor) e no meio exato,
+   entre o assento de cima e o seu, embaixo. */
+@container table (max-height: 420px) {
+  .lobby-center {
+    top: 50%;
+    gap: 4px;
+  }
+
+  .room-code span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .room-code strong {
+    font-size: 2rem;
+  }
+
+  .lobby-count {
+    margin: 0 0 2px;
+  }
+
+  /* a marca do feltro ficaria atrás do seu assento */
+  .lobby-table .felt-logo {
+    display: none;
+  }
+}
+
 /* embaixo da mesa, como a sua barra na partida: configurações e os botões do anfitrião */
 .lobby-bar {
   display: flex;
@@ -1341,6 +1376,44 @@ input[aria-invalid="true"] {
   margin: 0;
   color: var(--muted);
   font-size: var(--fs-sm);
+}
+
+@media (max-width: 700px) {
+  .lobby-layout {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  /* a mesa encolhe em celulares baixos para o "Começar partida" aparecer sem rolar */
+  .table.lobby-table {
+    min-height: clamp(300px, 100dvh - 300px, 460px);
+  }
+
+  .lobby-bar {
+    display: grid;
+  }
+
+  .host-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* menos respiro nas laterais para "Começar partida" caber numa linha em 360px */
+  .host-controls .btn-big {
+    padding-inline: 10px;
+  }
+
+  .host-controls .start-hint {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+
+  /* o chat cresce com as mensagens, em vez de reservar um bloco vazio */
+  .lobby-layout .chat-log {
+    max-height: 40dvh;
+  }
 }
 
 /* ---------- chat ---------- */
@@ -1465,10 +1538,20 @@ input[aria-invalid="true"] {
   background: var(--accent);
 }
 
+/* A mesa ocupa o que sobra (flex: 1) e é ela que cede altura em telas baixas, para a mão
+   caber inteira. O mínimo é o que o assento de cima e os montes precisam empilhados. */
 .table {
   position: relative;
   flex: 1;
-  min-height: 300px;
+  min-height: calc(var(--seat-half) * 2 + var(--card-h) + 10px);
+}
+
+/* desktop baixo (notebook com a janela curta): cartas um pouco menores para mesa e mão caberem */
+@media (min-width: 861px) and (max-height: 580px) {
+  :root {
+    --card-w: 64px;
+    --card-h: 92px;
+  }
 }
 
 /* Mesa de carteado: feltro verde com a trama do tecido (ruído), a luz de um lustre
@@ -1516,14 +1599,26 @@ input[aria-invalid="true"] {
   user-select: none;
 }
 
+/* Os montes ficam no meio da mesa, mas nunca acima da base do assento de cima: em mesas
+   baixas eles descem (embaixo não há assento, a sua vez fica na barra abaixo da mesa). */
 .table-center {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: max(50%, calc(var(--seat-half) * 2 + var(--card-h) / 2 + 6px));
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   gap: 18px;
+}
+
+/* Mesa baixa demais para o selo da pinta caber embaixo dos montes: ele vai para o lado. */
+@container table (max-height: 262px) {
+  .table-center .active-suit {
+    --suit-shift: translateY(-50%);
+    top: 50%;
+    left: calc(100% + 14px);
+    max-width: 170px;
+  }
 }
 
 /* anel de setas "impresso" no feltro em volta dos montes: mostra o sentido do jogo */
@@ -1965,10 +2060,11 @@ input[aria-invalid="true"] {
 }
 
 .active-suit {
+  --suit-shift: translateX(-50%);
   position: absolute;
   top: calc(100% + 14px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: var(--suit-shift);
   width: max-content;
   max-width: min(320px, calc(100vw - 48px));
   text-align: center;
@@ -2011,7 +2107,7 @@ input[aria-invalid="true"] {
 
 @keyframes pulse {
   50% {
-    transform: translateX(-50%) scale(1.15);
+    transform: var(--suit-shift) scale(1.15);
   }
 }
 
@@ -2022,6 +2118,13 @@ input[aria-invalid="true"] {
 }
 
 /* assentos */
+/* --seat-half: meia altura do assento (avatar, anel de tempo, nome e cartas), usada em
+   placeSeat() para o assento não sair da mesa */
+.table {
+  --seat-half: 50px;
+  container: table / size;
+}
+
 .seat {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -2741,6 +2844,13 @@ body.is-dragging * {
 
 .side .chat-panel {
   flex: 1;
+}
+
+/* em telas baixas o chat da lateral encolhe para o placar e o campo caberem sem rolar a página */
+@media (max-height: 560px) {
+  .side .chat-log {
+    min-height: 72px;
+  }
 }
 
 .side .chat-panel .panel-head {
@@ -3913,34 +4023,6 @@ body.is-dragging * {
     justify-self: center;
   }
 
-  .lobby-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-    min-height: 100dvh;
-  }
-
-  .table.lobby-table {
-    min-height: 460px;
-  }
-
-  .lobby-bar {
-    display: grid;
-  }
-
-  .host-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .host-controls .start-hint {
-    grid-column: 1 / -1;
-    text-align: center;
-  }
-
-  .lobby-layout .chat-panel {
-    height: 320px;
-  }
-
   .game-layout {
     grid-template-columns: 1fr;
     padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
@@ -3956,10 +4038,6 @@ body.is-dragging * {
     --card-w: 74px;
     --card-h: 107px;
     padding-inline: 0;
-  }
-
-  .table {
-    min-height: 220px;
   }
 
   .side-toggle {
@@ -4015,6 +4093,10 @@ body.is-dragging * {
 
   .seat {
     width: 78px;
+  }
+
+  .table {
+    --seat-half: 44px;
   }
 
   .seat .avatar {
