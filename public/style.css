@@ -4455,3 +4455,8 @@ body.is-dragging * {
     opacity: 1;
   }
 }
+
+/* distribuição das cartas no começo da rodada: a mão só fica clicável quando todas chegam */
+.hand.dealing .card {
+  pointer-events: none;
+}

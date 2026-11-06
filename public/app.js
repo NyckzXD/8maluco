@@ -1125,8 +1125,8 @@ function renderSeats(g, s, hit) {
     const info = el('div', 'seat-info');
     if (p.eliminated) info.textContent = 'fora';
     else {
-      const cards = el('span');
-      cards.append(el('i', 'mini-card'), document.createTextNode(p.cardCount));
+      const cards = el('span', 'seat-count');
+      cards.append(el('i', 'mini-card'), document.createTextNode(deal?.counts.get(p.id) ?? p.cardCount));
       info.append(cards, el('span', null, `${p.score} pts`));
     }
     seat.append(av, name, info);
@@ -1227,17 +1227,17 @@ function playOrigin(play, s) {
 const EASE_OUT = 'cubic-bezier(0.25, 0.8, 0.25, 1)';
 const EASE_IN_OUT = 'cubic-bezier(0.45, 0, 0.2, 1)';
 
-function fly({ card, from, to, flip = false, hide, delay = 0, easing = EASE_OUT, onLand }) {
+function fly({ card, from, to, flip = false, hide, delay = 0, easing = EASE_OUT, duration = FLIGHT_MS, onLand }) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     onLand?.();
     return false;
   }
   hide?.classList.add('incoming');
-  setTimeout(() => launch({ card, from, to, flip, hide, easing, onLand }), delay);
+  setTimeout(() => launch({ card, from, to, flip, hide, easing, duration, onLand }), delay);
   return true;
 }
 
-function launch({ card, from, to, flip, hide, easing, onLand }) {
+function launch({ card, from, to, flip, hide, easing, duration, onLand }) {
   const size = $('#discardPile').getBoundingClientRect();
   const flyer = el('div', 'flyer');
   const inner = el('div', 'flyer-inner');
@@ -1251,7 +1251,7 @@ function launch({ card, from, to, flip, hide, easing, onLand }) {
   });
   document.body.append(flyer);
 
-  const timing = { duration: FLIGHT_MS, fill: 'both' };
+  const timing = { duration, fill: 'both' };
   const move = flyer.animate(
     [
       { transform: `translate(${from.x - to.x}px, ${from.y - to.y}px) scale(${from.scale}) rotate(${from.rot ?? 0}deg)` },
@@ -1328,6 +1328,128 @@ function tableCallout(title, sub) {
   setTimeout(() => plate.remove(), 2600);
 }
 
+// ---------- distribuição das cartas no começo da rodada ----------
+// As cartas saem do baralho uma a uma, em roda, começando por quem está depois do carteador
+// (como no engine). Enquanto isso a mão e os contadores dos assentos vão enchendo; no fim
+// aparece quem abre o monte. O servidor segura a primeira vez da rodada por esse tempo (DEAL_MS).
+const DEAL_FLIGHT_MS = 520;
+const DEAL_SPREAD_MS = 2400; // tempo entre a primeira e a última carta sair do baralho
+let deal = null; // { round, pending: ids da sua mão ainda no ar, counts: cartas já entregues por jogador, draw, timers }
+
+// Monta o estado da distribuição antes de desenhar a mesa (para a mão e os assentos já nascerem vazios).
+function prepareDeal(g, s) {
+  cancelDeal();
+  if (reducedMotion()) return;
+  const players = g.players.filter((p) => !p.eliminated);
+  const total = players.reduce((n, p) => n + (p.id === s.me ? g.hand.length : p.cardCount), 0);
+  if (!total) return;
+  deal = {
+    round: g.round,
+    pending: new Set(g.hand.map((c) => c.id)),
+    counts: new Map(players.map((p) => [p.id, 0])),
+    draw: g.drawCount + total,
+    timers: [],
+  };
+}
+
+function cancelDeal() {
+  if (!deal) return;
+  deal.timers.forEach(clearTimeout);
+  deal = null;
+  $('#hand').classList.remove('dealing');
+  $$('#hand .card.incoming').forEach((c) => c.classList.remove('incoming'));
+}
+
+function runDeal(g, s, onDone) {
+  const pileCard = $('#drawPile .card');
+  if (!deal || !pileCard) {
+    cancelDeal();
+    return onDone();
+  }
+  const current = deal;
+  const alive = () => deal === current;
+  const pile = centerOf(pileCard);
+  $('#hand').classList.add('dealing');
+  $('#drawCount').textContent = current.draw;
+
+  // Ordem da roda: a partir de quem está depois do carteador.
+  const n = g.players.length;
+  const dealerIdx = Math.max(0, g.players.findIndex((p) => p.id === g.dealerId));
+  const order = [];
+  for (let k = 1; k <= n; k++) {
+    const p = g.players[(dealerIdx + k) % n];
+    if (!p.eliminated) order.push(p);
+  }
+  const myCards = $$('#hand .card').map((node) => node.dataset.id);
+  const countOf = (p) => (p.id === s.me ? myCards.length : p.cardCount);
+  const rounds = Math.max(0, ...order.map(countOf));
+  const total = order.reduce((t, p) => t + countOf(p), 0);
+  const gap = Math.min(110, DEAL_SPREAD_MS / Math.max(1, total));
+
+  let delay = 0;
+  for (let c = 0; c < rounds; c++) {
+    for (const p of order) {
+      if (c >= countOf(p)) continue;
+      current.timers.push(
+        setTimeout(() => {
+          if (!alive()) return;
+          current.draw -= 1;
+          $('#drawCount').textContent = current.draw;
+        }, delay),
+      );
+      if (p.id === s.me) {
+        const id = myCards[c];
+        const node = $(`#hand [data-id="${id}"]`);
+        if (node)
+          fly({
+            from: pile,
+            to: centerOf(node, { scale: pileScale(node) }),
+            delay,
+            duration: DEAL_FLIGHT_MS,
+            onLand: () => {
+              if (!alive()) return;
+              current.pending.delete(id);
+              $(`#hand [data-id="${id}"]`)?.classList.remove('incoming');
+            },
+          });
+      } else {
+        const avatar = $(`#seats .seat[data-id="${p.id}"] .avatar`);
+        if (avatar)
+          fly({
+            from: pile,
+            to: centerOf(avatar, { scale: 0.45, fade: true }),
+            delay,
+            duration: DEAL_FLIGHT_MS,
+            easing: EASE_IN_OUT,
+            onLand: () => {
+              if (!alive()) return;
+              const count = (current.counts.get(p.id) ?? 0) + 1;
+              current.counts.set(p.id, count);
+              const label = $(`#seats .seat[data-id="${p.id}"] .seat-count`);
+              if (label?.lastChild) label.lastChild.textContent = count;
+            },
+          });
+      }
+      delay += gap;
+    }
+  }
+  current.timers.push(
+    setTimeout(
+      () => {
+        if (!alive()) return;
+        cancelDeal();
+        // Acerta tudo com o estado real (contadores e baralho).
+        if (state?.game) {
+          renderSeats(state.game, state, new Set());
+          $('#drawCount').textContent = state.game.drawCount;
+        }
+        onDone();
+      },
+      Math.max(0, delay - gap) + DEAL_FLIGHT_MS + 150,
+    ),
+  );
+}
+
 // Cartas compradas saem do baralho: de costas até o avatar dos outros, virando de frente até a sua mão.
 function animateDraws(events, g, s) {
   const pileCard = $('#drawPile .card');
@@ -1386,7 +1508,7 @@ function cardFx(card, top, g) {
 
 function renderCenter(prev, g, myTurn, origin) {
   const drawPile = $('#drawPile');
-  $('#drawCount').textContent = g.drawCount;
+  $('#drawCount').textContent = deal ? deal.draw : g.drawCount;
   drawPile.setAttribute('aria-label', `Comprar carta (${g.drawCount} no baralho)`);
   const canDraw = myTurn && !g.hasDrawn;
   drawPile.disabled = !canDraw;
@@ -1562,6 +1684,7 @@ function renderHand(prev, g, s, myTurn) {
       if (confirmByTap()) node.setAttribute('aria-pressed', String(card.id === selectedId));
       if (sameRound && !before.has(card.id)) node.classList.add('fresh');
       if (liftedIds.has(card.id)) node.classList.add('lifted');
+      if (deal?.pending.has(card.id)) node.classList.add('incoming');
       // Dá para jogar pelo teclado: Tab/setas escolhem, Enter ou Espaço joga.
       node.tabIndex = 0;
       node.setAttribute('role', 'button');
@@ -2297,6 +2420,10 @@ function renderRoundModal(g, s) {
 $('#againBtn').addEventListener('click', () => emit('room:lobby'));
 $('#readyBtn').addEventListener('click', () => emit('game:ready'));
 
+function roundCallout(e, s) {
+  tableCallout(`Rodada ${e.round}`, e.starterId === s.me ? 'Você abre o monte' : `${nameOf(e.starterId)} abre o monte`);
+}
+
 // Cada coisa que aconteceu aparece onde aconteceu: no assento de quem foi afetado
 // ou, se for grande, num letreiro no centro da mesa. Tudo também vai para o log.
 function announce(events, g, s) {
@@ -2305,7 +2432,8 @@ function announce(events, g, s) {
     const who = e.playerId === s.me ? 'Você' : nameOf(e.playerId);
     switch (e.type) {
       case 'roundStart':
-        tableCallout(`Rodada ${e.round}`, e.starterId === s.me ? 'Você abre o monte' : `${nameOf(e.starterId)} abre o monte`);
+        // Com a distribuição animada, o letreiro de quem abre o monte só vem no fim dela (renderGame).
+        if (!deal) roundCallout(e, s);
         logLine(`— Rodada ${e.round}: ${nameOf(e.dealerId)} deu as cartas —`);
         break;
       case 'play':
@@ -2354,6 +2482,9 @@ function renderGame(prev, s) {
   const g = s.game;
   const myTurn = g.phase === 'playing' && g.turnId === s.me;
   const hit = new Set(s.events.filter((e) => e.type === 'penalty').map((e) => e.playerId));
+  const roundStart = s.events.find((e) => e.type === 'roundStart');
+  if (roundStart) prepareDeal(g, s);
+  else if (deal && (deal.round !== g.round || g.phase !== 'playing')) cancelDeal();
   $('#roundLabel').textContent = `Rodada ${g.round}`;
   renderSeats(g, s, hit);
   const play = prev?.game && s.events.find((e) => e.type === 'play' && e.card.id === g.top?.id);
@@ -2368,16 +2499,24 @@ function renderGame(prev, s) {
   renderRoundModal(g, s);
   if (s.events.length) announce(s.events, g, s);
   const wasMyTurn = prev?.game?.phase === 'playing' && prev.game.turnId === s.me;
-  if (myTurn && !wasMyTurn) {
+  const turnAlert = () => {
     sounds.turn();
     navigator.vibrate?.(60);
     waveHand();
-  }
+  };
+  if (roundStart && deal) {
+    // Primeiro as cartas chegam a todo mundo; depois o letreiro de quem abre o monte.
+    runDeal(g, s, () => {
+      roundCallout(roundStart, s);
+      if (state?.game?.phase === 'playing' && state.game.turnId === s.me) turnAlert();
+    });
+  } else if (myTurn && !wasMyTurn) turnAlert();
   if (!myTurn) closeSuitModal({ animate: false });
 }
 
 function render(prev, s) {
   if (!s.game) {
+    cancelDeal();
     hideModal($('#roundModal'));
     show('lobby');
     renderLobby(s);

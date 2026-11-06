@@ -15,6 +15,7 @@ import { randomAvatar, sanitizeAvatar } from "../shared/avatar.js";
 export const MAX_PLAYERS = 8;
 const ROUND_BREAK_MS = 9000; // só usado quando não sobrou nenhum humano conectado para clicar em "pronto"
 const BOT_DELAY_MS = [3000, 5000]; // bots esperam pelo menos 3s para dar tempo de acompanhar
+const DEAL_MS = 3500; // tempo da animação de distribuir as cartas no começo da rodada (a primeira vez espera por ela)
 const AWAY_DELAY_MS = 1500; // jogador desconectado: joga no automático rapidinho
 const LOBBY_GRACE_MS = 30_000; // quanto tempo um desconectado segura o lugar no lobby
 const EMPTY_ROOM_MS = 5 * 60_000;
@@ -378,12 +379,14 @@ class Room {
             this.apply(startRound(g));
         }, ROUND_BREAK_MS);
     }
-    this.schedule(newTurn);
+    const dealing = events.some((e) => e.type === "roundStart");
+    this.schedule(newTurn, dealing ? DEAL_MS : 0);
     this.broadcast(events);
   }
 
   // Cuida do relógio da vez: bots jogam sozinhos, humanos têm um tempo limite.
-  schedule(newTurn) {
+  // `extraMs` dá um tempo a mais nesta vez (a distribuição das cartas no começo da rodada).
+  schedule(newTurn, extraMs = 0) {
     const g = this.game;
     if (!g || g.phase !== "playing") {
       if (!g || g.phase === "gameOver") this.clearTimer();
@@ -395,9 +398,10 @@ class Room {
     clearTimeout(this.timer);
     if (!m || m.isBot || !m.connected) {
       const [min, max] = BOT_DELAY_MS;
-      const delay = m?.isBot
+      let delay = m?.isBot
         ? min + Math.random() * (max - min)
         : AWAY_DELAY_MS;
+      delay += extraMs;
       // Bot e ausente também têm prazo: é quando a jogada automática acontece,
       // e o anel de tempo dos outros esvazia até lá.
       this.deadline = Date.now() + delay;
@@ -409,7 +413,7 @@ class Room {
       return;
     }
     if (newTurn || !this.deadline || !this.turnMs || this.turnMs < this.settings.turnSeconds * 1000) {
-      this.turnMs = this.settings.turnSeconds * 1000;
+      this.turnMs = this.settings.turnSeconds * 1000 + extraMs;
       this.deadline = Date.now() + this.turnMs;
     }
     const turnKey = `${g.round}:${g.turn}`;
