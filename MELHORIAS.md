@@ -61,29 +61,34 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 ## 🟡 Visual e layout
 
-- [ ] **9. Home do desktop com estrutura**
+- [x] **9. Home do desktop com estrutura**
   Logo, perfil, botões e "Como jogar" flutuam em três colunas soltas, com uns 35% da tela vazia embaixo. O perfil é pequeno para o que faz e o carrossel tem contraste e texto fracos.
   - Onde: `#home` em `public/index.html` e `public/style.css`
   - Pronto quando: em 1440×900 a home ocupa a tela com um elemento dominante, o perfil tem mais peso e o texto do "Como jogar" passa de 4.5:1 de contraste.
+  - Feito: no desktop ficam dois painéis num degrau de tom (sem contorno nem sombra): "você + jogar" (avatar de 200px, apelido e os três botões) e "Como jogar" (passo com 24px, texto com 18px). A grade da home virou `auto 1fr auto`. Em desktops com até 820px de altura o logo e os espaçamentos diminuem; entre 861 e 1100px de largura os painéis empilham. Sem rolagem e com margens iguais em 1280×720, 1366×768, 1440×900 e 1920×1080. No celular continua a coluna solta de antes.
 
-- [ ] **10. Rótulos sem caixa alta numerada**
+- [x] **10. Rótulos sem caixa alta numerada**
   "1. RECEBA AS CARTAS" e o placeholder "C Ó D I G O" com letras espaçadas.
   - Onde: `.howto-card` em `public/index.html`, `.join-row input::placeholder` em `public/style.css`
   - Pronto quando: os títulos ficam em caixa normal, sem número na frente, e o placeholder sem espaçamento extra.
+  - Feito: os passos do "Como jogar" perderam o número (a ordem já aparece nas bolinhas e no contador) e a caixa alta. O placeholder "Código" ficou em caixa normal, sem espaçamento; o código digitado continua em caixa alta e espaçado. Os rótulos "Cor" e "Estilo" do editor de avatar também saíram da caixa alta.
 
-- [ ] **11. Papel claro de cada ambiente visual**
+- [x] **11. Papel claro de cada ambiente visual**
   A home é carvão com naipes, os modais são feltro verde e os botões são cinza 3D.
   - Pronto quando: há uma regra escrita (por exemplo: feltro só onde há jogo, carvão no menu e nos modais do menu) e todos os modais a seguem.
+  - Feito: carvão é o menu (Salas públicas, Avatar, Regras, Erro ao entrar); feltro é a mesa (lobby, partida, pinta do 8, resultado, sair, remover jogador). Salas, Avatar e Erro ao entrar deixaram de usar `.felt-box`, e as áreas internas deles (linhas da lista de salas, palco e abas do avatar) usam degraus de tom (`--surface-2`, `--surface-3`) em vez de preto translúcido, sombra interna e holofote em gradiente. A regra está escrita no comentário do `.modal-box`.
 
-- [ ] **12. Sombras, cores e tamanhos em tokens**
+- [x] **12. Sombras, cores e tamanhos em tokens**
   Há 60 `box-shadow`, 10 gradientes, 101 `rgba()` soltos e 5 `font-size` fora da escala (4.2rem, 2.6rem, 2.4rem, 1.3rem, 3.2rem).
   - Onde: `public/style.css`
   - Pronto quando: sombras e véus usam tokens (`--shadow-raised`, `--scrim`…), os tamanhos de texto vêm de `--fs-*` (com um `--fs-display` para o logo e o avatar grande) e os gradientes que sobrarem têm motivo.
+  - Feito: tokens novos `--shadow-sm` / `--shadow` / `--shadow-lg` / `--shadow-float` (elevação pelo tamanho do desfoque), `--text-shadow`, `--veil-weak` / `--veil` / `--veil-strong`, `--scrim`, `--felt-surface` e `--fs-4xl` / `--fs-5xl` / `--fs-display`. As 27 sombras soltas com desfoque, as 5 sombras de texto, os 9 véus e fundos de modal e os tamanhos fora da escala passaram a usar esses tokens. `rgba()` fora dos tokens: 94 → 60; gradientes: 9 → 7, todos funcionais (anel de tempo, contador, máscara) ou do material do feltro; tamanhos de fonte soltos: 6 → 0. O relevo 3D dos botões (sombra sem desfoque) ficou como estava.
 
-- [ ] **13. Estado vazio de "Salas públicas"**
+- [x] **13. Estado vazio de "Salas públicas"**
   Caixa tracejada e o botão "Criar uma sala" pequeno demais.
   - Onde: `#roomsModal` e o render da lista em `public/app.js`
   - Pronto quando: o estado vazio não usa borda tracejada e o botão tem o tamanho do botão principal.
+  - Feito: o estado vazio está num degrau de tom (sem contorno tracejado) e o "Criar uma sala" é o mesmo botão principal da home (grande, com ícone de +, 60px de altura).
 
 ## 🟢 Recursos novos
 

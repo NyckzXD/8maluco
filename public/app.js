@@ -1133,7 +1133,9 @@ async function refreshRooms() {
     const art = el("div", "rooms-empty-art");
     art.setAttribute("aria-hidden", "true");
     for (let n = 0; n < 3; n++) art.append(el("span", "card back"));
-    const create = el("button", "btn btn-primary btn-small", "Criar uma sala");
+    // o mesmo botão principal da tela inicial (grande, com o ícone de +)
+    const create = el("button", "btn btn-primary btn-big");
+    create.append(icon("plus"), "Criar uma sala");
     create.type = "button";
     create.addEventListener("click", () => {
       hideModal("roomsModal");
