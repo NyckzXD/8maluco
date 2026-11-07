@@ -1599,25 +1599,145 @@ input[aria-invalid="true"] {
   user-select: none;
 }
 
-/* Os montes ficam no meio da mesa, mas nunca acima da base do assento de cima: em mesas
-   baixas eles descem (embaixo não há assento, a sua vez fica na barra abaixo da mesa). */
+/* Os montes ficam no meio da mesa, com a última jogada logo acima e a pinta logo abaixo,
+   mas nunca encostando no assento de cima: em mesas baixas eles descem (embaixo não há
+   assento, a sua vez fica na barra abaixo da mesa). --lm-room é o espaço da última jogada. */
 .table-center {
+  --lm-room: 54px; /* até duas linhas de 19px + o respiro de 14px */
   position: absolute;
   left: 50%;
-  top: max(50%, calc(var(--seat-half) * 2 + var(--card-h) / 2 + 6px));
+  top: max(50%, calc(var(--seat-half) * 2 + var(--lm-room) + var(--card-h) / 2 + 6px));
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   gap: 18px;
 }
 
-/* Mesa baixa demais para o selo da pinta caber embaixo dos montes: ele vai para o lado. */
-@container table (max-height: 262px) {
+/* Mesa baixa demais para empilhar tudo: a última jogada vai para a esquerda dos montes e a
+   pinta para a direita, e os montes sobem para logo abaixo do assento de cima. */
+@container table (max-height: 320px) {
+  .table-center {
+    --lm-room: 0px;
+  }
+
   .table-center .active-suit {
     --suit-shift: translateY(-50%);
     top: 50%;
     left: calc(100% + 14px);
     max-width: 170px;
+  }
+
+  .table-center .last-move {
+    --lm-shift: translateY(-50%);
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 14px);
+    max-width: 140px;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  /* coluna estreita: os trechos quebram linha em vez de vazar para o assento ao lado */
+  .table-center .last-move :is(.lm-who, .lm-fx) {
+    white-space: normal;
+  }
+}
+
+/* "Robô Cida jogou 9♠ · Você compra 2", acima dos montes */
+.last-move {
+  --lm-shift: translateX(-50%);
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: var(--lm-shift);
+  width: max-content;
+  max-width: min(420px, 86cqw);
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--silver-300);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.last-move:empty {
+  display: none;
+}
+
+.lm-line {
+  text-wrap: balance;
+  animation: lm-in 0.3s ease-out;
+}
+
+@keyframes lm-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.lm-who {
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lm-who .avatar-art {
+  position: relative;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  vertical-align: -5px;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.7);
+}
+
+/* a carta jogada como uma mini carta: fundo de carta, valor e naipe na cor dele */
+.lm-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--card-face);
+  color: var(--card-ink);
+  font-family: var(--font-hud);
+  font-weight: 800;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
+.lm-card.red {
+  color: var(--card-red);
+}
+
+.lm-card.joker {
+  color: var(--back);
+}
+
+.lm-suit {
+  width: 0.85em;
+  height: 0.85em;
+  fill: currentColor;
+}
+
+.lm-fx {
+  color: #fff;
+  white-space: nowrap;
+}
+
+.lm-sep {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-line {
+    animation: none;
   }
 }
 
@@ -1777,17 +1897,12 @@ input[aria-invalid="true"] {
   height: var(--card-h);
 }
 
+/* lugar do monte antes da primeira carta: só o contorno (o selo embaixo diz quem abre) */
 .empty-pile {
   width: 100%;
   height: 100%;
   border: 3px dashed rgba(194, 193, 194, 0.4);
   border-radius: var(--r-card);
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: var(--silver);
-  font-size: var(--fs-xs);
-  font-weight: 600;
 }
 
 .discard-pile .card {
@@ -2152,14 +2267,57 @@ input[aria-invalid="true"] {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
+/* embaixo do nome: o selo com as cartas na mão (grande) e os pontos (pequeno) */
 .seat .seat-info {
   display: flex;
+  align-items: center;
   gap: 6px;
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
-  background: rgba(0, 0, 0, 0.6);
+}
+
+.seat-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px 2px 6px;
   border-radius: var(--r-pill);
-  padding: 1px 8px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-family: var(--font-hud);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.seat-count .mini-card {
+  width: 11px;
+  height: 15px;
+  margin: 0;
+}
+
+/* uma carta só: está para bater */
+.seat-count.last {
+  background: var(--primary);
+  animation: last-card 0.5s ease-out 2;
+}
+
+@keyframes last-card {
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-count.last {
+    animation: none;
+  }
+}
+
+.seat-pts {
+  color: var(--silver-300);
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 .mini-card {
@@ -2328,7 +2486,8 @@ input[aria-invalid="true"] {
   gap: 2px;
   padding: 10px 26px 12px;
   border-radius: var(--r-md);
-  background: rgba(6, 18, 12, 0.82);
+  /* quase opaco: o que está embaixo não aparece "fantasma" através do letreiro */
+  background: rgba(6, 18, 12, 0.95);
   color: #fff;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
@@ -2515,6 +2674,72 @@ input[aria-invalid="true"] {
 
 .timer-secs.low {
   color: var(--red-text);
+}
+
+/* seus pontos até o limite, no canto direito da sua barra (só no desktop) */
+.me-score {
+  margin-left: auto;
+  display: grid;
+  gap: 5px;
+  min-width: 170px;
+  font-variant-numeric: tabular-nums;
+}
+
+.me-score:empty {
+  display: none;
+}
+
+.me-score-label {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--silver);
+  font-weight: 600;
+}
+
+.me-score-cap {
+  margin-right: auto;
+}
+
+.me-score-label b {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xl);
+  color: var(--ink);
+}
+
+.me-score-bar {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.me-score-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--silver);
+  transition: width 0.6s ease-out;
+}
+
+/* perto do limite (20 pontos ou menos): a barra fica vermelha */
+.me-score-bar.danger i {
+  background: var(--primary);
+}
+
+/* no desktop os pontos ficam no placar à direita; no celular, ao lado do "Você" */
+.me-pts {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .me-score {
+    display: none;
+  }
+
+  .me-pts {
+    display: inline;
+  }
 }
 
 .hand {
@@ -4096,7 +4321,18 @@ body.is-dragging * {
   }
 
   .table {
-    --seat-half: 44px;
+    --seat-half: 48px;
+  }
+
+  /* assento estreito: o selo de cartas em cima e os pontos embaixo */
+  .seat .seat-info {
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .seat-count {
+    font-size: var(--fs-md);
+    padding: 1px 8px 1px 5px;
   }
 
   .seat .avatar {

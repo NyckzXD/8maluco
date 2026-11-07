@@ -30,25 +30,29 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 ## 🟠 Experiência de jogo
 
-- [ ] **4. Última jogada visível na mesa**
+- [x] **4. Última jogada visível na mesa**
   A partida corre rápido e só dá para saber quem jogou o quê abrindo a gaveta.
   - Onde: `renderCenter()` em `public/app.js`
   - Pronto quando: perto do monte aparece a última ação ("Robô Cida jogou 9♠ · Você compra 2") com o avatar de quem jogou, atualizada a cada jogada e compra.
+  - Feito: `#lastMove` acima dos montes, montado por `describeMove()` a partir dos eventos. Mostra o avatar, o nome, a carta como mini carta e os efeitos: "compra 2 e perde a vez", "foi pulado", "todos compram 1" no Joker. Compras e passes também aparecem. A linha fica até a próxima jogada, é anunciada para leitor de tela (com o nome inteiro da carta) e se limpa no começo da rodada. Em mesas baixas ela vai para a esquerda dos montes. Conferido sem sobreposição com 4 e 8 jogadores, de 1440×900 a 375×812.
 
-- [ ] **5. Feltro limpo no início da rodada**
+- [x] **5. Feltro limpo no início da rodada**
   A marca "8 Maluco", o fantasma "Rodada 1" e o "monte vazio" ficam sobrepostos no centro.
   - Onde: `.felt` e o anúncio de rodada em `public/style.css` / `public/app.js`
   - Pronto quando: em nenhum momento dois textos do centro da mesa se sobrepõem.
+  - Feito: saiu a marca "8 Maluco" da mesa da partida (no lobby ela continua, e some quando a mesa é baixa). O monte vazio ficou só com o contorno, porque o selo embaixo já diz quem abre. O letreiro "Rodada N" ficou quase opaco (95%), então o que está embaixo não aparece através dele.
 
-- [ ] **6. Usar a faixa entre a mesa e a mão no desktop**
+- [x] **6. Usar a faixa entre a mesa e a mão no desktop**
   A linha "Você · 0 pts" fica solta, com uma faixa vazia à direita.
   - Onde: `#meInfo` em `public/index.html`
   - Pronto quando: a faixa mostra seu placar com a barra até 100 (ou as cartas crescem para ocupar o espaço).
+  - Feito: `#meScore` no canto direito da barra mostra "Seus pontos 12 / 100" e uma barra que fica vermelha a 20 pontos do limite, com dica de quanto falta. No desktop o "Você" perde o "· N pts" para não repetir; no celular o placar não aparece e o "Você · N pts" continua.
 
-- [ ] **7. Contagem de cartas dos adversários em destaque**
+- [x] **7. Contagem de cartas dos adversários em destaque**
   Cartas na mão e pontos aparecem a ~12px, e o número de cartas é a informação mais importante da partida.
   - Onde: `.seat` em `public/style.css` e o render dos assentos em `public/app.js`
   - Pronto quando: a quantidade de cartas aparece num selo legível (16px ou mais) e quem está com 1 carta ganha um aviso visível.
+  - Feito: selo com mini carta e número a 18px (16px no celular). Com 1 carta o selo fica vermelho e pulsa duas vezes (sem pulsar com movimento reduzido). Os pontos ficam ao lado em texto menor; no celular, embaixo do selo.
 
 - [ ] **8. Seleção de carta igual no mouse e no toque**
   No desktop o 1º clique já joga a carta; no toque o 1º toque só seleciona.

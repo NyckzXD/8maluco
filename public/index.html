@@ -158,7 +158,7 @@
           </header>
 
           <div id="table" class="table">
-            <div class="felt"><span class="felt-logo" aria-hidden="true">8 Maluco</span></div>
+            <div class="felt"></div>
             <div id="seats"></div>
             <div class="table-center">
               <svg class="direction" viewBox="0 0 200 200" role="img" aria-label="O jogo gira para a direita (anti-horário)">
@@ -176,6 +176,7 @@
               </button>
               <div id="discardPile" class="pile discard-pile" role="button" tabindex="-1" aria-disabled="true" aria-label="Monte"></div>
               <div id="activeSuit" class="active-suit"></div>
+              <p id="lastMove" class="last-move" aria-live="polite"></p>
             </div>
             <div id="toasts" class="toasts" aria-live="polite"></div>
           </div>
@@ -187,6 +188,7 @@
               <div id="meTimer" class="timer-bar" role="progressbar" aria-label="Tempo da sua vez" aria-valuemin="0" aria-valuemax="30" aria-valuenow="30"><i></i></div>
               <span id="meTimerSecs" class="timer-secs" aria-hidden="true"></span>
               <button id="passBtn" class="btn btn-small hidden">Passar a vez</button>
+              <div id="meScore" class="me-score"></div>
             </div>
             <div id="hand" class="hand" role="group" aria-label="Suas cartas"></div>
           </div>

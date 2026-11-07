@@ -1569,12 +1569,13 @@ function renderSeats(g, s, hit) {
     const info = el("div", "seat-info");
     if (p.eliminated) info.textContent = "fora";
     else {
-      const cards = el("span", "seat-count");
-      cards.append(
-        el("i", "mini-card"),
-        document.createTextNode(deal?.counts.get(p.id) ?? p.cardCount),
-      );
-      info.append(cards, el("span", null, `${p.score} pts`));
+      // Quantas cartas tem na mão: a informação mais importante do assento, num selo grande
+      // (vermelho quando só resta uma). O número é o último nó: a distribuição o atualiza.
+      const count = deal?.counts.get(p.id) ?? p.cardCount;
+      const cards = el("span", `seat-count${count === 1 ? " last" : ""}`);
+      cards.title = "Cartas na mão";
+      cards.append(el("i", "mini-card"), document.createTextNode(count));
+      info.append(cards, el("span", "seat-pts", `${p.score} pts`));
     }
     seat.append(av, name, info);
     seats.append(seat);
@@ -2061,7 +2062,8 @@ function renderCenter(prev, g, myTurn, origin) {
   const discard = $("#discardPile");
   const prevTop = prev?.game?.top?.id;
   if (!g.top) {
-    discard.replaceChildren(el("div", "empty-pile", "monte vazio"));
+    // só o contorno: o selo embaixo já diz quem abre o monte
+    discard.replaceChildren(el("div", "empty-pile"));
     discard.dataset.top = "";
   } else if (discard.dataset.top !== g.top.id) {
     const card = renderCard(g.top);
@@ -2876,13 +2878,41 @@ function renderMe(g, s, myTurn) {
   if (me) {
     const av = avatar(memberOf(me.id), me.name);
     if (myTurn) av.prepend(turnRing());
-    info.append(av, el("span", null, `Você · ${me.score} pts`));
+    // os pontos aqui só aparecem no celular; no desktop eles ficam no #meScore, à direita
+    const label = el("span", null, "Você");
+    label.append(el("span", "me-pts", ` · ${me.score} pts`));
+    info.append(av, label);
     if (me.id === g.dealerId) info.append(dealerBadge());
   }
+  renderMeScore(g, me);
   // quem só assiste não tem barra própria: a placa "Plateia" fica no lugar da mão
 
   renderBanner(g, myTurn);
   $("#passBtn").classList.toggle("hidden", !(myTurn && g.hasDrawn));
+}
+
+// Seus pontos até o limite, no canto direito da sua barra: "12 / 100" e a barra enchendo.
+function renderMeScore(g, me) {
+  const box = $("#meScore");
+  if (!me || me.eliminated) {
+    box.replaceChildren();
+    return;
+  }
+  const limit = g.rules.eliminationScore;
+  const pct = Math.min(100, (me.score / limit) * 100);
+  const label = el("span", "me-score-label");
+  label.append(
+    el("span", "me-score-cap", "Seus pontos"),
+    el("b", null, me.score),
+    ` / ${limit}`,
+  );
+  const bar = el("span", "me-score-bar");
+  const fill = el("i");
+  fill.style.width = `${pct}%`;
+  bar.append(fill);
+  bar.classList.toggle("danger", limit - me.score <= 20);
+  box.title = `Faltam ${Math.max(0, limit - me.score)} pontos para o limite`;
+  box.replaceChildren(label, bar);
 }
 
 function renderBanner(g, myTurn) {
@@ -3174,6 +3204,85 @@ function announce(events, g, s) {
   }
 }
 
+// ---------- última jogada ----------
+// Uma linha perto do monte com o que acabou de acontecer ("Robô Cida jogou 9♠ · Você compra 2").
+// Fica até a próxima jogada; atualizações sem jogada (chat, tempo) não mexem nela.
+
+// Carta em miniatura: valor e naipe, na cor do naipe.
+function cardChip(card) {
+  if (card.rank === "JOKER") return el("b", "lm-card joker", "Joker");
+  // Na tela "9♠"; para o leitor de tela, o nome inteiro ("9 de Espadas").
+  const chip = el("b", `lm-card ${SUIT_INFO[card.suit].color}`);
+  chip.append(
+    el("span", null, card.rank),
+    suitIcon(card.suit, "lm-suit"),
+    el("span", "sr-only", cardName(card)),
+  );
+  chip.firstChild.setAttribute("aria-hidden", "true");
+  return chip;
+}
+
+// O que cada jogador sofreu na jogada: compras e vez perdida.
+function moveEffects(events, s) {
+  const hits = new Map();
+  for (const e of events) {
+    if (e.type !== "penalty" && e.type !== "skip") continue;
+    const h = hits.get(e.playerId) ?? { count: 0, skipped: false, joker: false };
+    if (e.type === "penalty") {
+      h.count += e.count;
+      if (e.reason === "JOKER") h.joker = true;
+    } else h.skipped = true;
+    hits.set(e.playerId, h);
+  }
+  const all = [...hits.values()];
+  // Joker: todos os outros compram 1.
+  if (all.length > 1 && all.every((h) => h.joker && !h.skipped))
+    return [`todos compram ${all[0].count}`];
+  return [...hits].map(([id, h]) => {
+    const who = id === s.me ? "Você" : nameOf(id);
+    if (h.count && h.skipped) return `${who} compra ${h.count} e perde a vez`;
+    if (h.count) return `${who} compra ${h.count}`;
+    return `${who} foi pulado`;
+  });
+}
+
+// Monta a linha a partir dos eventos desta atualização; null quando não houve jogada.
+function describeMove(events, s) {
+  const play = events.findLast((e) => e.type === "play");
+  const act =
+    play ??
+    events.findLast(
+      (e) => (e.type === "draw" || e.type === "pass") && e.playerId,
+    );
+  if (!act) return null;
+  const line = el("span", "lm-line");
+  const who = el("span", "lm-who");
+  const m = memberOf(act.playerId);
+  if (m?.avatar) who.append(avatarArt(m.avatar, { title: m.name }));
+  who.append(
+    document.createTextNode(act.playerId === s.me ? "Você" : nameOf(act.playerId)),
+  );
+  line.append(who, " ");
+  if (act.type === "play") {
+    line.append("jogou ", cardChip(act.card));
+    const after = events.slice(events.indexOf(act) + 1);
+    for (const fx of moveEffects(after, s))
+      line.append(el("span", "lm-sep", " · "), el("span", "lm-fx", fx));
+  } else if (act.type === "draw") line.append(`comprou ${cardsLabel(act.count)}`);
+  else line.append("passou a vez");
+  return line;
+}
+
+function renderLastMove(events, s) {
+  const box = $("#lastMove");
+  if (events.some((e) => e.type === "roundStart")) {
+    box.replaceChildren();
+    return;
+  }
+  const line = describeMove(events, s);
+  if (line) box.replaceChildren(line);
+}
+
 function renderGame(prev, s) {
   const g = s.game;
   const myTurn = g.phase === "playing" && g.turnId === s.me;
@@ -3199,6 +3308,8 @@ function renderGame(prev, s) {
   renderScores(g);
   renderRoundModal(g, s);
   if (s.events.length) announce(s.events, g, s);
+  if (!prev?.game) $("#lastMove").replaceChildren();
+  renderLastMove(s.events, s);
   const wasMyTurn =
     prev?.game?.phase === "playing" && prev.game.turnId === s.me;
   const turnAlert = () => {
