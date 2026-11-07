@@ -18,9 +18,16 @@ Para jogar com amigos na mesma rede, abra `http://SEU-IP:3000` no celular. Para 
 | --- | --- |
 | `shared/engine.js` | Regras do jogo, sem rede nem tela. Funciona no servidor e pode ir para o app. |
 | `shared/bot.js` | Jogador automático (bots e jogada automática quando o tempo acaba ou alguém cai). |
-| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, tempo por vez, reconexão. |
+| `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
+| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão. |
 | `public/` | Interface web (HTML/CSS/JS puro), responsiva para celular, instalável (PWA). |
-| `test/` | Testes das regras com `node:test`. |
+| `test/` | Testes das regras, do avatar e das reações com `node:test`. |
+
+### PWA
+
+- `public/sw.js`: service worker. Página, CSS e JS vêm da rede primeiro (o cache só entra sem internet), então editar o código não exige limpar nada. Fontes, ícones, cartas e sons vêm do cache primeiro: ao trocar um desses arquivos, suba `VERSION` no `sw.js`.
+- `public/fonts/`: Russo One e Barlow Semi Condensed (só o subconjunto latino), servidas pelo próprio projeto, com as licenças OFL ao lado.
+- `public/icons/`: PNGs gerados a partir de `icon.svg` (192/512 e 32 para favicon) e de `icons/maskable.svg` (versões `maskable` com fundo até a borda e `apple-touch-icon`, de 180px, com a carta maior, porque o iOS ignora SVG e só arredonda os cantos).
 
 ## Regras implementadas
 

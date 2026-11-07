@@ -11,6 +11,7 @@ import {
   HAIR_COLORS,
   FACES,
 } from "/shared/avatar.js";
+import { REACTIONS, REACTION_MS, reactionLabel } from "/shared/reactions.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -38,6 +39,15 @@ const token =
 store.set("om_token", token);
 
 const socket = io();
+
+// Service worker (public/sw.js): deixa o app instalável e abre a casca do jogo sem internet.
+// Registra depois do carregamento para não disputar banda com a primeira tela.
+if ("serviceWorker" in navigator) {
+  addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
 let state = null;
 let roomCode = null;
 let clockOffset = 0;
@@ -272,13 +282,124 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   const top = modalStack.at(-1);
-  if (top) {
+  if (!$("#reactMenu").classList.contains("hidden")) closeReactMenu({ focus: true });
+  else if (top) {
     if (!top.hasAttribute("data-static")) closeModal(top);
   } else if ($(".side").classList.contains("open")) setSideOpen(false);
   else if (selectedId) setSelected(null);
   else return;
   e.preventDefault();
 });
+
+// ---------- reações rápidas ----------
+// O botão "Reagir" (no topo da mesa e da sala de espera) abre um menu com as reações de
+// shared/reactions.js. A escolhida vai para o servidor, que limita a frequência e repassa para
+// a sala toda; cada um vê um balão por REACTION_MS em cima do avatar de quem reagiu.
+
+const reactMenu = $("#reactMenu");
+let reactOpener = null;
+
+// Os botões são montados na primeira abertura (o svg() depende de constantes declaradas
+// mais abaixo neste arquivo).
+function buildReactMenu() {
+  if (reactMenu.children.length) return;
+  for (const r of REACTIONS) {
+    const b = el("button", "react-opt");
+    b.type = "button";
+    b.dataset.id = r.id;
+    b.append(reactionFace(r.id), el("span", null, r.label));
+    b.addEventListener("click", () => {
+      closeReactMenu({ focus: true });
+      emit("reaction", { id: r.id });
+    });
+    reactMenu.append(b);
+  }
+}
+
+function reactionFace(id, className = "react-face") {
+  const node = svg("svg", {
+    class: className,
+    viewBox: "0 0 40 40",
+    "aria-hidden": "true",
+  });
+  node.append(svg("use", { href: `#r-${id}` }));
+  return node;
+}
+
+function openReactMenu(opener) {
+  buildReactMenu();
+  reactOpener = opener;
+  reactMenu.classList.remove("hidden");
+  // embaixo do botão, alinhado pela direita dele, sem sair da tela
+  const r = opener.getBoundingClientRect();
+  const w = reactMenu.offsetWidth;
+  const left = Math.min(Math.max(8, r.right - w), innerWidth - w - 8);
+  reactMenu.style.left = `${left}px`;
+  reactMenu.style.top = `${r.bottom + 8}px`;
+  for (const b of $$(".react-btn"))
+    b.setAttribute("aria-expanded", String(b === opener));
+  reactMenu.querySelector(".react-opt")?.focus({ preventScroll: true });
+}
+
+function closeReactMenu({ focus = false } = {}) {
+  if (reactMenu.classList.contains("hidden")) return;
+  reactMenu.classList.add("hidden");
+  for (const b of $$(".react-btn")) b.setAttribute("aria-expanded", "false");
+  if (focus) reactOpener?.focus({ preventScroll: true });
+  reactOpener = null;
+}
+
+for (const b of $$(".react-btn")) {
+  b.addEventListener("click", () => {
+    if (reactOpener === b) closeReactMenu();
+    else openReactMenu(b);
+  });
+}
+
+// Clicar fora ou redimensionar a tela fecha o menu.
+document.addEventListener("pointerdown", (e) => {
+  if (
+    reactOpener &&
+    !reactMenu.contains(e.target) &&
+    !e.target.closest?.(".react-btn")
+  )
+    closeReactMenu();
+});
+addEventListener("resize", () => closeReactMenu());
+
+// Setas andam entre as reações do menu (o Tab também funciona).
+reactMenu.addEventListener("keydown", (e) => {
+  const opts = $$(".react-opt", reactMenu);
+  const i = opts.indexOf(document.activeElement);
+  const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[
+    e.key
+  ];
+  if (step == null || i < 0) return;
+  e.preventDefault();
+  opts[(i + step + opts.length) % opts.length].focus();
+});
+
+// Onde está o avatar de alguém agora: o assento na mesa (o seu fica na sua barra) ou a
+// cadeira na sala de espera.
+function reactionAnchor(memberId) {
+  if (state?.game) return seatAnchor(memberId);
+  return $(`#memberList .seat[data-id="${memberId}"]`);
+}
+
+function showReaction(from, id) {
+  const label = reactionLabel(id);
+  if (!label) return;
+  speak(`${from === state?.me ? "Você" : nameOf(from)}: ${label}`);
+  const anchor = reactionAnchor(from);
+  if (!anchor) return;
+  anchor.querySelector(":scope > .reaction")?.remove();
+  const bubble = el("div", "reaction");
+  bubble.setAttribute("aria-hidden", "true");
+  bubble.style.setProperty("--life", `${REACTION_MS}ms`);
+  bubble.append(reactionFace(id), el("span", null, label));
+  anchor.append(bubble);
+  setTimeout(() => bubble.remove(), REACTION_MS);
+}
 
 // ---------- cartas ----------
 
@@ -322,6 +443,13 @@ document.body.insertAdjacentHTML(
     <symbol id="i-scissors" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM6 14.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M20 4 8.5 15.5M14.5 14.5 20 20M8.5 8.5 12 12"/></symbol>
     <symbol id="i-smile" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zM8.8 7.8a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2zm6.4 0a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2zM7.3 13.5c.8 2.1 2.6 3.5 4.7 3.5s3.9-1.4 4.7-3.5z"/></symbol>
     <symbol id="i-crown" viewBox="0 0 24 24"><path fill="currentColor" stroke="#1d1d28" stroke-width="1.5" stroke-linejoin="round" d="M2.5 18 4 7l5 4.5L12 4l3 7.5L20 7l1.5 11z"/></symbol>
+    <!-- reações rápidas (shared/reactions.js): carinhas no traço dos avatares -->
+    <symbol id="r-boa" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ffc83d" stroke="#1d1d28" stroke-width="2.4"/><path d="M11.5 17.5Q14 14 16.5 17.5" fill="none" stroke="#1d1d28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M23.5 17.5Q26 14 28.5 17.5" fill="none" stroke="#1d1d28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 22.5H28.5Q27.5 32 20 32Q12.5 32 11.5 22.5Z" fill="#7a1a22" stroke="#1d1d28" stroke-width="2.2" stroke-linejoin="round"/><path d="M15 29.6Q20 27 25 29.6Q23 31.6 20 31.6Q17 31.6 15 29.6Z" fill="#ff6f8a"/><circle cx="10.5" cy="24" r="3" fill="#ff5a6e" opacity=".35"/><circle cx="29.5" cy="24" r="3" fill="#ff5a6e" opacity=".35"/></symbol>
+    <symbol id="r-haha" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ffc83d" stroke="#1d1d28" stroke-width="2.4"/><path d="M11 14.5L16 17L11 19.5" fill="none" stroke="#1d1d28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M29 14.5L24 17L29 19.5" fill="none" stroke="#1d1d28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 22H29.5Q28.5 33.5 20 33.5Q11.5 33.5 10.5 22Z" fill="#7a1a22" stroke="#1d1d28" stroke-width="2.2" stroke-linejoin="round"/><path d="M11 22.2H29V25H11Z" fill="#fff"/><path d="M5.5 18.5Q3 23 5.5 25Q8 23 5.5 18.5Z" fill="#59c3ff" stroke="#1d1d28" stroke-width="1.3"/><path d="M34.5 18.5Q32 23 34.5 25Q37 23 34.5 18.5Z" fill="#59c3ff" stroke="#1d1d28" stroke-width="1.3"/></symbol>
+    <symbol id="r-ops" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ffc83d" stroke="#1d1d28" stroke-width="2.4"/><circle cx="14" cy="17" r="2.4" fill="#1d1d28"/><circle cx="26" cy="17" r="2.4" fill="#1d1d28"/><path d="M15 27.5Q18 25 21 27Q23.5 28.6 26 26.5" fill="none" stroke="#1d1d28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M31.5 5.5Q28 11 31.5 13Q35 11 31.5 5.5Z" fill="#59c3ff" stroke="#1d1d28" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+    <symbol id="r-grr" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ff7a59" stroke="#1d1d28" stroke-width="2.4"/><path d="M9.5 12.5L17 16" fill="none" stroke="#1d1d28" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M30.5 12.5L23 16" fill="none" stroke="#1d1d28" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14.5" cy="19" r="2" fill="#1d1d28"/><circle cx="25.5" cy="19" r="2" fill="#1d1d28"/><rect x="12" y="24.5" width="16" height="6" rx="2" fill="#fff" stroke="#1d1d28" stroke-width="2"/><path d="M16 24.8V30.2M20 24.8V30.2M24 24.8V30.2" fill="none" stroke="#1d1d28" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="r-uau" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ffc83d" stroke="#1d1d28" stroke-width="2.4"/><path d="M10 11Q13.5 8.5 17 10.5" fill="none" stroke="#1d1d28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 10.5Q26.5 8.5 30 11" fill="none" stroke="#1d1d28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="17.5" r="4.2" fill="#fff" stroke="#1d1d28" stroke-width="1.8"/><circle cx="26" cy="17.5" r="4.2" fill="#fff" stroke="#1d1d28" stroke-width="1.8"/><circle cx="14" cy="18" r="2.1" fill="#1d1d28"/><circle cx="26" cy="18" r="2.1" fill="#1d1d28"/><ellipse cx="20" cy="28" rx="3.6" ry="4.4" fill="#7a1a22" stroke="#1d1d28" stroke-width="2"/></symbol>
+    <symbol id="r-vai" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ffc83d" stroke="#1d1d28" stroke-width="2.4"/><path d="M10.5 17.5A3.5 3.5 0 0 0 17.5 17.5Z" fill="#fff" stroke="#1d1d28" stroke-width="1.6"/><path d="M22.5 17.5A3.5 3.5 0 0 0 29.5 17.5Z" fill="#fff" stroke="#1d1d28" stroke-width="1.6"/><path d="M14.2 17.5A2 2 0 0 0 17.4 17.5Z" fill="#1d1d28"/><path d="M26.2 17.5A2 2 0 0 0 29.4 17.5Z" fill="#1d1d28"/><path d="M10 17.5H18M22 17.5H30" fill="none" stroke="#1d1d28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14.5 27H25" fill="none" stroke="#1d1d28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="32" r="6.5" fill="#fff" stroke="#1d1d28" stroke-width="2"/><path d="M32 28.8V32L34.2 33.6" fill="none" stroke="#1d1d28" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </defs></svg>`,
 );
 
@@ -1460,6 +1588,7 @@ function renderLobby(s) {
     }
     // a partir de você, na ordem da sala
     const realM = s.members[(myIdx + i) % s.members.length];
+    li.dataset.id = realM.id; // o balão das reações acha a cadeira por aqui
     const av = avatar(realM);
     if (realM.id === s.hostId) av.append(icon("crown", "crown"));
     const sub = realM.isBot
@@ -3331,6 +3460,7 @@ function renderGame(prev, s) {
 }
 
 function render(prev, s) {
+  if (!s.game !== !prev?.game) closeReactMenu();
   if (!s.game) {
     cancelDeal();
     hideModal($("#roundModal"));
@@ -3462,6 +3592,7 @@ socket.on("state", (s) => {
 });
 
 socket.on("chat", addChat);
+socket.on("reaction", ({ from, id } = {}) => showReaction(from, id));
 socket.on("chat:history", (msgs) => {
   for (const log of $$(".chat-log")) log.replaceChildren();
   msgs.forEach(addChat);

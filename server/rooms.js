@@ -11,6 +11,7 @@ import {
 } from "../shared/engine.js";
 import { chooseMove } from "../shared/bot.js";
 import { randomAvatar, sanitizeAvatar } from "../shared/avatar.js";
+import { REACTION_LIMIT, isReaction } from "../shared/reactions.js";
 
 export const MAX_PLAYERS = 8;
 const ROUND_BREAK_MS = 9000; // só usado quando não sobrou nenhum humano conectado para clicar em "pronto"
@@ -42,6 +43,14 @@ const COLORS = [
   "#a9e34b",
   "#66d9e8",
 ];
+
+// Limite de frequência por janela deslizante: guarda os horários recentes e diz se cabe mais um.
+// Devolve a lista já limpa (só os horários dentro da janela), com o novo incluído quando cabe.
+export function takeSlot(times = [], now, { max, windowMs }) {
+  const recent = times.filter((t) => now - t < windowMs);
+  if (recent.length >= max) return { ok: false, times: recent };
+  return { ok: true, times: [...recent, now] };
+}
 
 const clean = (text, max) =>
   String(text ?? "")
@@ -253,6 +262,20 @@ class Room {
     if (now - (m.lastChat ?? 0) < 400) return;
     m.lastChat = now;
     this.pushChat({ from: m.name, color: m.color, text });
+  }
+
+  // Reação rápida: vai para todos da sala (inclusive quem mandou), não entra no chat nem no
+  // estado. Só ids da lista em shared/reactions.js e no máximo REACTION_LIMIT por pessoa.
+  react(memberId, id, now = Date.now()) {
+    const m = this.member(memberId);
+    if (!m) return { ok: false, error: "Você não está nesta sala" };
+    if (!isReaction(id)) return { ok: false, error: "Reação inválida" };
+    const slot = takeSlot(m.reactTimes, now, REACTION_LIMIT);
+    m.reactTimes = slot.times;
+    if (!slot.ok)
+      return { ok: false, error: "Calma! Espere um pouquinho para reagir de novo" };
+    this.io.to(this.code).emit("reaction", { from: m.id, id });
+    return { ok: true };
   }
 
   system(text) {

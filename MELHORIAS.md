@@ -92,8 +92,9 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 ## 🟢 Recursos novos
 
-- [ ] **14. Reações rápidas**
+- [x] **14. Reações rápidas**
   - Pronto quando: há 4–6 reações ("Boa!", "Ops!", risada, bravo) que aparecem num balão em cima do avatar por 2s, com limite de frequência no servidor.
+  - Feito: 6 reações em `shared/reactions.js` (Boa!, Haha, Ops!, Grr!, Uau!, Vai logo!), cada uma com uma carinha em SVG no traço dos avatares (símbolos `#r-*` do sprite em `app.js`). O botão "Reagir" fica no topo da mesa e da sala de espera e abre um menu que fecha com Esc, clicando fora ou escolhendo, e que navega pelas setas. O servidor (`Room.react`) só aceita ids da lista e no máximo 3 reações a cada 5s por pessoa (`takeSlot`, janela deslizante); passando disso, quem mandou vê "Calma! Espere um pouquinho para reagir de novo". O balão aparece por 2s em cima do avatar de quem reagiu (assento, sua barra ou cadeira do lobby) e é lido pelo leitor de tela. Testes em `test/reactions.test.js`. Em telas de até 380px, o "Como jogar" do lobby ficou só com o ícone para tudo caber numa linha.
 
 - [ ] **15. Dificuldade dos bots**
   Hoje existe uma só heurística em `shared/bot.js`.
@@ -107,9 +108,10 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
   `shared/engine.js` e `shared/bot.js` já rodam no navegador.
   - Pronto quando: dá para jogar contra bots sem servidor (e sem internet, junto com a tarefa 18).
 
-- [ ] **18. PWA completo**
+- [x] **18. PWA completo**
   Não há service worker, o único ícone é `icon.svg` (o iOS precisa de PNG em `apple-touch-icon`) e as fontes vêm do Google Fonts.
   - Pronto quando: há service worker com cache dos arquivos estáticos, ícones PNG 192/512 (e maskable), `apple-touch-icon` e fontes servidas pelo próprio projeto.
+  - Feito: `public/sw.js` guarda a casca do jogo (página, CSS, JS, `/shared`, cliente do socket.io), as fontes, os ícones, as cartas e os sons (38 arquivos). Página, CSS e JS vêm da rede primeiro, então o código está sempre atualizado com internet; fontes, ícones, cartas e sons vêm do cache primeiro. O tempo real (`/socket.io/`) nunca passa pelo cache. As fontes ficam em `public/fonts` (6 woff2 do subconjunto latino, ~120KB, com as licenças OFL), e as três mais usadas são pré-carregadas. Os ícones PNG ficam em `public/icons`: 32, 192 e 512, `maskable` 192 e 512 e `apple-touch-icon` 180, com metas do iOS. O manifest ganhou `id`, `scope`, `lang` e os PNGs. Conferido: nenhuma requisição externa, e com o servidor desligado a página (inclusive `/?sala=…`) abre do cache com as fontes e mostra "Reconectando".
 
 - [ ] **19. Estatísticas locais**
   - Pronto quando: partidas, vitórias, maior sequência e "bateu com 9" ficam guardados no `localStorage` e aparecem no perfil da home.

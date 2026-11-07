@@ -65,6 +65,7 @@ io.on('connection', (socket) => {
   socket.on('room:start', inRoom((room, me) => room.start(me)));
   socket.on('room:lobby', inRoom((room, me) => room.backToLobby(me)));
   socket.on('chat', inRoom((room, me, d) => room.say(me, d.text)));
+  socket.on('reaction', inRoom((room, me, d) => room.react(me, d?.id)));
   socket.on('game:play', inRoom((room, me, d) => room.act(me, { type: 'play', cardId: d.cardId, suit: d.suit })));
   socket.on('game:draw', inRoom((room, me) => room.act(me, { type: 'draw' })));
   socket.on('game:pass', inRoom((room, me) => room.act(me, { type: 'pass' })));
