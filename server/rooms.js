@@ -12,6 +12,7 @@ import {
 import { chooseMove } from "../shared/bot.js";
 import { randomAvatar, sanitizeAvatar } from "../shared/avatar.js";
 import { REACTION_LIMIT, isReaction } from "../shared/reactions.js";
+import { BOT_NAME_ERROR, isBotName } from "../shared/names.js";
 
 export const MAX_PLAYERS = 8;
 const ROUND_BREAK_MS = 9000; // só usado quando não sobrou nenhum humano conectado para clicar em "pronto"
@@ -22,6 +23,7 @@ const LOBBY_GRACE_MS = 30_000; // quanto tempo um desconectado segura o lugar no
 const HOST_GRACE_MS = 5000; // quanto tempo o anfitrião desconectado segura o cargo
 const DROP_GRACE_MS = 10_000; // quem cai na própria vez tem pelo menos isso para voltar
 const IDLE_TIMEOUTS = 2; // vezes seguidas com o tempo esgotado até o jogador ficar ausente
+const SEAT_GRACE_MS = 3 * 60_000; // desconectado na partida por mais que isso sai da mesa
 const EMPTY_ROOM_MS = 5 * 60_000;
 
 const BOT_NAMES = [
@@ -142,10 +144,13 @@ class Room {
     name = clean(name, 16) || "Jogador";
     avatar = sanitizeAvatar(avatar);
     if (!token) return { ok: false, error: "Sessão inválida" };
+    if (isBotName(name)) return { ok: false, error: BOT_NAME_ERROR };
 
     let m = this.members.find((x) => !x.isBot && x.token === token);
     if (m) {
-      m.name = name;
+      // voltando com o mesmo apelido, mantém o nome que já tinha na sala (o "Ana 2" continua "Ana 2")
+      if (name !== m.askedName) m.name = this.uniqueName(name, m.id);
+      m.askedName = name;
       m.avatar = avatar;
       // Mesmo token por outra conexão (outra aba): a nova assume o lugar e a antiga perde
       // o acesso à sala de vez, não só o canal (senão ela ainda conseguiria jogar e falar).
@@ -164,17 +169,19 @@ class Room {
       m = {
         id: randomUUID().slice(0, 8),
         token,
-        name,
+        name: this.uniqueName(name),
+        askedName: name,
         avatar,
         color: this.freeColor(),
         isBot: false,
       };
       this.members.push(m);
-      this.system(`${name} entrou na sala`);
+      this.system(`${m.name} entrou na sala`);
     }
     m.socketId = socket.id;
     m.connected = true;
     clearTimeout(m.graceTimer);
+    clearTimeout(m.seatTimer);
     clearTimeout(this.emptyTimer);
     if (m.id === this.hostId) {
       // o anfitrião voltou a tempo: continua com o cargo
@@ -231,7 +238,7 @@ class Room {
       this.game.players.some((p) => p.id === memberId);
     if (!seated) {
       m.graceTimer = setTimeout(() => this.leave(memberId), LOBBY_GRACE_MS);
-    }
+    } else this.armSeatTimer(m);
     if (memberId === this.hostId) {
       clearTimeout(this.hostTimer);
       this.hostTimer = setTimeout(() => this.passHost(), HOST_GRACE_MS);
@@ -248,6 +255,33 @@ class Room {
     }
     this.schedule(false);
     if (!this.checkReady() && !this.checkRematch()) this.broadcast();
+  }
+
+  // Desconectado na partida por SEAT_GRACE_MS: sai da mesa como quem clica em sair (as cartas
+  // voltam para o baralho e a vez passa). Continua na sala até a partida acabar; se voltar
+  // antes, o join() desarma o timer e nada muda.
+  armSeatTimer(m) {
+    clearTimeout(m.seatTimer);
+    m.seatTimer = setTimeout(() => {
+      const g = this.game;
+      const p = g?.players.find((x) => x.id === m.id);
+      if (m.connected || !p || p.eliminated || g.phase === "gameOver") return;
+      this.system(`${m.name} ficou 3 minutos desconectado`);
+      this.apply(removePlayer(g, m.id));
+    }, SEAT_GRACE_MS);
+  }
+
+  // Apelido único na sala (sem diferenciar maiúsculas): "Ana", "Ana 2", "Ana 3"...
+  uniqueName(name, selfId) {
+    const taken = new Set(
+      this.members.filter((x) => x.id !== selfId).map((x) => x.name.toLowerCase()),
+    );
+    if (!taken.has(name.toLowerCase())) return name;
+    for (let n = 2; ; n++) {
+      const suffix = ` ${n}`;
+      const candidate = name.slice(0, 16 - suffix.length).trimEnd() + suffix;
+      if (!taken.has(candidate.toLowerCase())) return candidate;
+    }
   }
 
   // Qualquer ação do jogador (jogar, falar, reagir, pronto, ou só tocar na tela) mostra que ele
@@ -351,7 +385,7 @@ class Room {
     const now = Date.now();
     if (now - (m.lastChat ?? 0) < 400) return;
     m.lastChat = now;
-    this.pushChat({ from: m.name, color: m.color, text });
+    this.pushChat({ from: m.name, fromId: m.id, color: m.color, text });
   }
 
   // Reação rápida: vai para todos da sala (inclusive quem mandou), não entra no chat nem no
@@ -646,7 +680,10 @@ class Room {
     this.clearTimer();
     clearTimeout(this.emptyTimer);
     clearTimeout(this.hostTimer);
-    for (const m of this.members) clearTimeout(m.graceTimer);
+    for (const m of this.members) {
+      clearTimeout(m.graceTimer);
+      clearTimeout(m.seatTimer);
+    }
   }
 
   // ---------- envio de estado ----------

@@ -12,6 +12,7 @@ import {
   FACES,
 } from "/shared/avatar.js";
 import { REACTIONS, REACTION_MS, reactionLabel } from "/shared/reactions.js";
+import { BOT_NAME_ERROR, isBotName } from "/shared/names.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -909,6 +910,8 @@ function addChat(msg) {
     // jogadas e compras: só o nome de quem agiu fica em vermelho
     if (msg.who) li.append(el("b", "log-who", msg.who), " ");
     if (msg.from) {
+      // o id de quem mandou: com nomes iguais fora da sala (ou trocados), a linha ainda acha a pessoa
+      if (msg.fromId) li.dataset.from = msg.fromId;
       const who = el("b", null, `${msg.from}: `);
       who.style.color = msg.color;
       li.append(who);
@@ -1152,6 +1155,12 @@ function askName() {
   if (!name) {
     closeModal("roomsModal");
     setNameError("Escolha um apelido primeiro");
+    nameInput.focus();
+    return null;
+  }
+  if (isBotName(name)) {
+    closeModal("roomsModal");
+    setNameError(BOT_NAME_ERROR);
     nameInput.focus();
     return null;
   }

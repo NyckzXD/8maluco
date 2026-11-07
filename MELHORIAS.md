@@ -182,20 +182,22 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
   - Pronto quando: depois de 2 vezes seguidas por tempo esgotado, o jogador fica "ausente": joga no automático rápido como um desconectado, com selo "Ausente" no assento, e as rodadas não esperam o "pronto" dele. Qualquer ação dele tira o estado. Ausente também não segura a revanche.
   - Feito: `idleTimeouts` conta os tempos esgotados seguidos. No segundo (`IDLE_TIMEOUTS`), o jogador fica `away`, o chat avisa "Fulano está ausente, jogadas automáticas até voltar" e `schedule()` passa a jogar por ele em 1,5s. `waitingOn()` e `rematchWaitingOn()` não esperam por ele. Todo evento da sala passa por `Room.touch()` (em `inRoom`, no `server/index.js`), que zera a contagem e tira o ausente; se for a vez dele, o prazo volta cheio, e o chat avisa "Fulano voltou". No cliente: o assento mostra o selo "Ausente" em dourado (e a cadeira do lobby diz "ausente"). Na sua própria barra aparece "Ausente · toque na tela para voltar", com um aviso quando o estado começa. Qualquer toque ou tecla manda `presence` (no máximo uma vez por segundo). Conferido no navegador: dois tempos esgotados deixam o jogador ausente, o aviso aparece na barra, e um toque na mesa tira o estado. O selo no assento de outro jogador só foi conferido no código, porque isso pedia um segundo humano com outro navegador. Testes em `test/away.test.js`.
 
-- [ ] **31. Quem sumiu de vez sai da mesa**
+- [x] **31. Quem sumiu de vez sai da mesa**
       Um jogador desconectado continua sentado e jogando no automático até a partida acabar, por mais longa que seja.
   - Onde: `Room.disconnect()` em `server/rooms.js`
   - Pronto quando: depois de uns 3 minutos desconectado, o jogador sai da mesa (`removePlayer`, como quem clica em sair) com aviso no chat. Se ele voltar antes, nada muda.
+  - Feito: quando quem está na partida cai, `disconnect()` arma o `seatTimer` (`armSeatTimer()`, `SEAT_GRACE_MS` = 3 minutos), e o `join()` desarma esse timer quando a pessoa volta. Se o timer chega ao fim, o chat avisa "Fulano ficou 3 minutos desconectado" e depois "Fulano saiu da mesa". O `removePlayer` devolve as cartas dele para o baralho e passa a vez (se sobrar um só jogador, a partida acaba). A pessoa continua na sala até a partida acabar: se voltar depois, aparece como "Você está fora", e a volta para a sala ou a revanche tiram quem ainda estiver desconectado, como já acontecia. Teste em `test/names.test.js`.
 
 - [ ] **32. Mesa sem nenhum humano fica parada**
       Se todos os humanos caem, os bots e as jogadas automáticas continuam jogando por até 5 minutos (`EMPTY_ROOM_MS`), e quem volta pode encontrar a partida decidida.
   - Onde: `Room.schedule()` / `disconnect()` / `join()` em `server/rooms.js`
   - Pronto quando: sem nenhum humano conectado o relógio para (sem timers rodando); quando alguém volta, a vez recomeça com o prazo cheio.
 
-- [ ] **33. Nomes repetidos na mesma sala**
+- [x] **33. Nomes repetidos na mesma sala**
       Dois "Jogador" (o padrão) ou dois "Ana" ficam iguais no chat, no placar e no "Fulano jogou", e o chat manda só o nome (`from`), sem o id. Também dá para se chamar "Robô Zeca".
   - Onde: `Room.join()` e `Room.say()` em `server/rooms.js`, `addChat()` em `public/app.js`
   - Pronto quando: o servidor acrescenta um número a nomes repetidos ("Ana 2"), não aceita nomes começando com "Robô", e as mensagens do chat levam o `id` de quem mandou (o cliente pode mostrar o avatar).
+  - Feito: `Room.uniqueName()` compara os nomes sem diferenciar maiúsculas e minúsculas e acrescenta " 2", " 3"… Quando o nome passa de 16 caracteres, ele é cortado para o número caber. Quem reconecta com o mesmo apelido continua com o nome que tinha na sala (o "Ana 2" não vira "Ana" porque a outra Ana saiu). A regra do "Robô" ficou em `shared/names.js` (`isBotName`, que aceita "Robo"/"Robô" em qualquer caixa e deixa "Roberto" passar), e o servidor e a home usam a mesma regra. Na home, o aviso aparece embaixo do campo de apelido antes de criar ou entrar numa sala (conferido no navegador). O `names.js` foi adicionado ao cache do `sw.js`. O chat agora leva `fromId`, e o `addChat()` grava esse id em `data-from` na linha. O avatar no chat ficou de fora. Testes em `test/names.test.js`.
 
 - [ ] **34. Plateia com regras claras**
       Quem entra no meio da partida vira plateia e entra na próxima partida (inclusive na revanche, via `newGame`), mas: a plateia conta no limite de 8, então uma mesa cheia não aceita nem quem só quer assistir; a lista de salas mostra "jogando" sem dizer que dá para assistir; e quem entra não recebe aviso de que é plateia.

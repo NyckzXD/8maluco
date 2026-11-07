@@ -20,6 +20,7 @@ const SHELL = [
   "/shared/engine.js",
   "/shared/avatar.js",
   "/shared/reactions.js",
+  "/shared/names.js",
   "/socket.io/socket.io.js",
 ];
 
