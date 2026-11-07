@@ -1184,6 +1184,10 @@ function onJoined(res) {
   closeModal("roomsModal");
   roomCode = res.code;
   setUrl(res.code);
+  if (res.spectator)
+    flash("Você entrou na plateia: assiste agora e senta na próxima partida, se tiver lugar.", {
+      info: true,
+    });
   return true;
 }
 
@@ -1197,6 +1201,10 @@ const JOIN_ERRORS = {
   "A sala está cheia": [
     "A sala está cheia",
     (c) => `A sala ${c} já tem todos os lugares ocupados.`,
+  ],
+  "Você foi removido desta sala": [
+    "Você foi removido",
+    (c) => `O anfitrião da sala ${c} tirou você da mesa. Dá para entrar em outra sala ou criar a sua.`,
   ],
   "A sala fechou": [
     "A sala fechou",
@@ -1288,7 +1296,9 @@ async function refreshRooms() {
     return;
   }
   for (const r of res.rooms) {
-    const full = r.players >= r.max;
+    // em jogo ou com a mesa cheia, quem entra vai para a plateia; "cheia" só sem vaga nem para assistir
+    const full = r.full ?? r.players >= r.max;
+    const watch = !full && (r.playing || r.players >= r.max);
     const li = el("li", full ? "full" : "");
     // quem criou a mesa, com o avatar dele
     const host = avatar({
@@ -1303,7 +1313,7 @@ async function refreshRooms() {
       el(
         "span",
         `tag ${r.playing ? "playing" : ""}`,
-        r.playing ? "jogando" : "no lobby",
+        r.playing ? "em jogo" : "no lobby",
       ),
     );
     // os lugares da mesa: cheios para quem já sentou, vazios para as vagas
@@ -1311,21 +1321,28 @@ async function refreshRooms() {
     seats.setAttribute("aria-hidden", "true");
     for (let n = 0; n < r.max; n++)
       seats.append(el("i", n < r.players ? "on" : ""));
+    const watching = r.watching ? ` · ${r.watching} na plateia` : "";
     const sub = el(
       "small",
       null,
-      `Mesa de ${r.host} · ${r.players} de ${r.max} lugares`,
+      watch
+        ? `${r.playing ? "Em jogo" : "Mesa cheia"} · entrar como plateia${watching}`
+        : `Mesa de ${r.host} · ${r.players} de ${r.max} lugares${watching}`,
     );
     info.append(head, seats, sub);
     const btn = el(
       "button",
-      "btn btn-small btn-primary",
-      full ? "Cheia" : "Entrar",
+      `btn btn-small ${watch ? "btn-felt" : "btn-primary"}`,
+      full ? "Cheia" : watch ? "Assistir" : "Entrar",
     );
     btn.disabled = full;
     btn.setAttribute(
       "aria-label",
-      full ? `Sala ${r.code} cheia` : `Entrar na sala ${r.code}`,
+      full
+        ? `Sala ${r.code} cheia`
+        : watch
+          ? `Entrar como plateia na sala ${r.code}`
+          : `Entrar na sala ${r.code}`,
     );
     btn.addEventListener("click", () => joinRoom(r.code));
     li.append(host, info, btn);
@@ -1551,7 +1568,7 @@ function askKick(member) {
   pendingKick = member.id;
   $("#kickTitle").textContent = `Remover ${member.name}?`;
   $("#kickDesc").textContent =
-    `${member.name} sai da sala e pode voltar pelo link.`;
+    `${member.name} sai da sala e não consegue voltar enquanto ela estiver aberta.`;
   $("#kickAvatar").replaceChildren(avatar(member));
   openModal("kickModal");
 }
@@ -1566,8 +1583,11 @@ $("#kickConfirm").addEventListener("click", () => {
 function renderLobby(s) {
   const isHost = s.hostId === s.me;
   $("#lobbyCode").textContent = s.code;
-  $("#lobbyCount").textContent =
-    `${s.members.length} de ${s.maxPlayers} jogadores`;
+  // na mesa só cabem maxPlayers; quem chegou depois espera na plateia (s.spectators)
+  const bench = new Set(s.spectators ?? []);
+  const seated = s.members.filter((m) => !bench.has(m.id));
+  $("#lobbyCount").textContent = `${seated.length} de ${s.maxPlayers} jogadores`;
+  renderBench(s, s.members.filter((m) => bench.has(m.id)), isHost);
 
   // Cada jogador sentado no lugar dele em volta da mesa, você embaixo, como na partida.
   // As cadeiras que sobram viram convite.
@@ -1576,13 +1596,13 @@ function renderLobby(s) {
   const total = s.maxPlayers;
   const myIdx = Math.max(
     0,
-    s.members.findIndex((m) => m.id === s.me),
+    seated.findIndex((m) => m.id === s.me),
   );
   for (let i = 0; i < total; i++) {
     const { x, y } = seatPosition(i, total);
     const li = el("li", "seat lobby-seat");
     placeSeat(li, { x, y });
-    if (i >= s.members.length) {
+    if (i >= seated.length) {
       // lugar livre
       const btn = el("button", "seat-invite");
       btn.type = "button";
@@ -1596,7 +1616,7 @@ function renderLobby(s) {
       continue;
     }
     // a partir de você, na ordem da sala
-    const realM = s.members[(myIdx + i) % s.members.length];
+    const realM = seated[(myIdx + i) % seated.length];
     li.dataset.id = realM.id; // o balão das reações acha a cadeira por aqui
     const av = avatar(realM);
     if (realM.id === s.hostId) av.append(icon("crown", "crown"));
@@ -1649,6 +1669,30 @@ function renderLobby(s) {
   $("#addBotBtn").disabled = s.members.length >= s.maxPlayers;
   $("#startBtn").disabled = s.members.length < 2;
   $("#startHint").classList.toggle("hidden", s.members.length >= 2);
+}
+
+// Plateia do lobby: quem entrou com a mesa cheia. Senta quando abrir lugar, pela ordem de chegada.
+function renderBench(s, people, isHost) {
+  const box = $("#lobbyBench");
+  box.classList.toggle("hidden", !people.length);
+  const list = $("#benchList");
+  list.replaceChildren();
+  $("#benchTitle").textContent = `Plateia · ${people.length} de ${s.maxSpectators}`;
+  for (const m of people) {
+    const li = el("li", "bench-chip");
+    li.dataset.id = m.id; // o balão das reações acha a pessoa por aqui
+    li.append(avatar(m), el("span", null, m.id === s.me ? `${m.name} (você)` : m.name));
+    if (isHost && m.id !== s.me) {
+      const kick = el("button", "kick");
+      kick.append(icon("x"));
+      kick.type = "button";
+      kick.title = `Remover ${m.name}`;
+      kick.setAttribute("aria-label", `Remover ${m.name}`);
+      kick.addEventListener("click", () => askKick(m));
+      li.append(kick);
+    }
+    list.append(li);
+  }
 }
 
 // ---------- mesa ----------

@@ -131,6 +131,13 @@
             </div>
           </div>
 
+          <!-- Quem entrou com a mesa cheia: espera aqui e senta quando abrir lugar. -->
+          <div id="lobbyBench" class="lobby-bench hidden">
+            <h3 id="benchTitle">Plateia</h3>
+            <ul id="benchList" aria-labelledby="benchTitle"></ul>
+            <p>Sentam na mesa quando abrir lugar, pela ordem de chegada.</p>
+          </div>
+
           <div class="lobby-bar">
             <!-- Todo mundo vê as configurações; só o anfitrião muda (para os outros ficam desabilitadas). -->
             <div class="settings">
@@ -347,7 +354,7 @@
           <span class="modal-art-badge"><svg class="icon"><use href="#i-x"/></svg></span>
         </div>
         <h2 id="kickTitle">Remover jogador?</h2>
-        <p id="kickDesc" class="modal-sub">Ele sai da sala e pode voltar pelo link.</p>
+        <p id="kickDesc" class="modal-sub">Ele sai da sala e não consegue voltar enquanto ela estiver aberta.</p>
         <div class="modal-actions">
           <button class="btn btn-text" data-close data-autofocus>Cancelar</button>
           <button id="kickConfirm" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Remover</button>

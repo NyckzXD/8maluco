@@ -14,7 +14,8 @@ import { randomAvatar, sanitizeAvatar } from "../shared/avatar.js";
 import { REACTION_LIMIT, isReaction } from "../shared/reactions.js";
 import { BOT_NAME_ERROR, isBotName } from "../shared/names.js";
 
-export const MAX_PLAYERS = 8;
+export const MAX_PLAYERS = 8; // lugares na mesa
+export const MAX_SPECTATORS = 4; // e mais estes na plateia (só assistem até abrir lugar)
 const ROUND_BREAK_MS = 9000; // só usado quando não sobrou nenhum humano conectado para clicar em "pronto"
 const BOT_DELAY_MS = [3000, 5000]; // bots esperam pelo menos 3s para dar tempo de acompanhar
 const DEAL_MS = 3500; // tempo da animação de distribuir as cartas no começo da rodada (a primeira vez espera por ela)
@@ -107,8 +108,11 @@ export class RoomManager {
           host: host?.name ?? "?",
           hostAvatar: host?.avatar ?? null,
           hostColor: host?.color ?? null,
-          players: r.members.length,
+          players: r.seated().length,
           max: MAX_PLAYERS,
+          watching: r.members.length - r.seated().length,
+          // cheia de verdade só quando nem a plateia tem vaga
+          full: r.members.length >= MAX_PLAYERS + MAX_SPECTATORS,
           playing: !!r.game && r.game.phase !== "gameOver",
         };
       })
@@ -131,6 +135,7 @@ class Room {
     this.turnMs = null; // duração total do prazo atual (o anel de tempo do cliente mede contra ela)
     this.ready = new Set(); // quem já clicou em "pronto" no intervalo entre rodadas
     this.rematchVotes = new Set(); // quem já pediu revanche no fim da partida
+    this.banned = new Set(); // tokens de quem o anfitrião removeu (some junto com a sala)
     this.emptyTimer = null;
     this.hostTimer = null; // anfitrião desconectado: quando o cargo passa para outro
     this.hostOrphan = false; // nenhum humano conectado para assumir: o próximo que entrar assume
@@ -145,6 +150,9 @@ class Room {
     avatar = sanitizeAvatar(avatar);
     if (!token) return { ok: false, error: "Sessão inválida" };
     if (isBotName(name)) return { ok: false, error: BOT_NAME_ERROR };
+
+    if (this.banned.has(token))
+      return { ok: false, error: "Você foi removido desta sala" };
 
     let m = this.members.find((x) => !x.isBot && x.token === token);
     if (m) {
@@ -164,7 +172,7 @@ class Room {
         }
       }
     } else {
-      if (this.members.length >= MAX_PLAYERS)
+      if (this.members.length >= MAX_PLAYERS + MAX_SPECTATORS)
         return { ok: false, error: "A sala está cheia" };
       m = {
         id: randomUUID().slice(0, 8),
@@ -196,7 +204,20 @@ class Room {
     socket.emit("chat:history", this.chat);
     this.schedule(false);
     this.broadcast();
-    return { ok: true, code: this.code };
+    return { ok: true, code: this.code, spectator: this.spectating(m.id) };
+  }
+
+  // Quem senta na mesa: na partida, quem está nela; fora dela, os MAX_PLAYERS primeiros a chegar.
+  seated() {
+    const g = this.game;
+    if (g && g.phase !== "gameOver")
+      return this.members.filter((m) => g.players.some((p) => p.id === m.id));
+    return this.members.slice(0, MAX_PLAYERS);
+  }
+
+  // Na plateia: assiste a partida atual (ou espera lugar na mesa) e entra na próxima se couber.
+  spectating(memberId) {
+    return !this.seated().some((m) => m.id === memberId);
   }
 
   leave(memberId) {
@@ -362,6 +383,8 @@ class Room {
     if (memberId === byId) return { ok: false, error: "Use o botão de sair" };
     const m = this.member(memberId);
     if (!m) return { ok: false, error: "Jogador não encontrado" };
+    // pessoa removida não volta pelo mesmo link: o token fica barrado enquanto a sala existir
+    if (!m.isBot) this.banned.add(m.token);
     if (m.socketId) this.io.to(m.socketId).emit("room:kicked");
     this.leave(memberId);
     return { ok: true };
@@ -433,8 +456,9 @@ class Room {
   newGame(message) {
     this.rematchVotes.clear();
     this.ready.clear();
+    // na mesa entra quem couber, pela ordem de chegada; o resto continua na plateia
     this.game = createGame(
-      this.members.map((m) => ({ id: m.id, name: m.name })),
+      this.members.slice(0, MAX_PLAYERS).map((m) => ({ id: m.id, name: m.name })),
     );
     this.system(message);
     this.apply(startRound(this.game));
@@ -462,11 +486,14 @@ class Room {
     return { ok: true };
   }
 
-  // Humanos conectados que ainda não pediram revanche.
+  // Humanos conectados que vão sentar na revanche e ainda não pediram. Quem caiu sai da mesa
+  // nova, e quem fica na plateia (não coube) não segura ninguém.
   rematchWaitingOn() {
     if (this.game?.phase !== "gameOver") return [];
     return this.members
-      .filter((m) => !m.isBot && m.connected && !m.away && !this.rematchVotes.has(m.id))
+      .filter((m) => m.isBot || m.connected)
+      .slice(0, MAX_PLAYERS)
+      .filter((m) => !m.isBot && !m.away && !this.rematchVotes.has(m.id))
       .map((m) => m.id);
   }
 
@@ -702,6 +729,8 @@ class Room {
       hostId: this.hostId,
       settings: this.settings,
       maxPlayers: MAX_PLAYERS,
+      maxSpectators: MAX_SPECTATORS,
+      spectators: this.members.filter((m) => this.spectating(m.id)).map((m) => m.id),
       members: this.members.map((m) => ({
         id: m.id,
         name: m.name,
