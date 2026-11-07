@@ -144,7 +144,7 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
     - tempo esgotado: 15s mais a distribuição, depois a jogada automática com aviso no chat;
     - configurações.
 
-    O resto do `rooms.js` ficou coberto pelos testes das tarefas 26–37: `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`, `server` e `production`. Rodei `rooms.test.js` 30 vezes seguidas, sem nenhuma falha.
+    O resto do `rooms.js` ficou coberto pelos testes das tarefas 26–37: `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`, `multiplayer` e `production`. Rodei `rooms.test.js` 30 vezes seguidas, sem nenhuma falha.
 
 - [x] **24. Queda do servidor**
       As salas ficam só na memória: reiniciar o servidor derruba todas as partidas.
@@ -166,13 +166,13 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
       Conferido: um único `socket.emit('room:join', null)` derruba o processo (`TypeError: Cannot read properties of null (reading 'code')` em `server/index.js:51`) e todas as salas caem juntas. O mesmo vale para `room:create` com `null`. O Socket.IO não protege os handlers, e não há `process.on('uncaughtException')`.
   - Onde: `server/index.js`
   - Pronto quando: todo handler normaliza `data` (objeto ou `{}`) e roda dentro de um `try/catch` que responde `{ ok: false, error: 'Erro no servidor' }` e registra o erro. Um teste manda `null`, número, string, array e objeto gigante para cada evento, e o servidor continua de pé.
-  - Feito: todos os eventos passam por `on()` em `server/index.js`, que pega o ack como último argumento, troca qualquer coisa que não seja objeto por `{}` e, se o handler der erro, responde "Erro no servidor" e registra no log com o código da sala. Erros que escapam (num timer de bot, por exemplo) vão para o log por `uncaughtException`/`unhandledRejection` em vez de derrubar o processo. O servidor agora é montado por `createGameServer()` e só liga a porta quando roda direto, para os testes subirem um numa porta qualquer. `test/server.test.js` manda `null`, número, string, array e objetos com tipos errados, com e sem ack, para os 16 eventos, e depois cria uma sala normalmente. O objeto gigante fica com a tarefa 36 (`maxHttpBufferSize`).
+  - Feito: todos os eventos passam por `on()` em `server/index.js`, que pega o ack como último argumento, troca qualquer coisa que não seja objeto por `{}` e, se o handler der erro, responde "Erro no servidor" e registra no log com o código da sala. Erros que escapam (num timer de bot, por exemplo) vão para o log por `uncaughtException`/`unhandledRejection` em vez de derrubar o processo. O servidor agora é montado por `createGameServer()` e só liga a porta quando roda direto, para os testes subirem um numa porta qualquer. `test/multiplayer.test.js` manda `null`, número, string, array e objetos com tipos errados, com e sem ack, para os 16 eventos, e depois cria uma sala normalmente. O objeto gigante fica com a tarefa 36 (`maxHttpBufferSize`).
 
 - [x] **27. Duas abas controlam o mesmo jogador**
       O token fica no `localStorage`, então duas abas do mesmo navegador são o mesmo jogador. Quando a segunda entra, `join()` só tira a primeira do canal da sala: o `socket.data` dela continua apontando para o mesmo `memberId`, então a aba antiga para de receber o estado, mas ainda consegue jogar, comprar e mandar chat.
   - Onde: `Room.join()` em `server/rooms.js`, `socket.on(...)` em `public/app.js`
   - Pronto quando: a conexão antiga recebe `room:replaced`, tem `socket.data.code`/`memberId` limpos, e a aba antiga mostra "Você abriu esta sala em outra aba" com um botão "Jogar aqui" (que reentra e passa a outra aba para esse estado).
-  - Feito: `Room.join()` faz isso com a conexão antiga. A aba antiga fecha os modais abertos, volta para a home sem `?sala=` na URL, não reentra sozinha quando reconecta e abre o modal `#replacedModal` (carvão, como o "Erro ao entrar"): "Sala aberta em outra aba", com "Ficar no início" e "Jogar aqui". Conferido no navegador com duas abas, nos dois sentidos. Em `test/server.test.js`: com clientes reais, a aba antiga não consegue mandar chat nem adicionar bot, a nova consegue, e a queda da antiga não marca o jogador como desconectado.
+  - Feito: `Room.join()` faz isso com a conexão antiga. A aba antiga fecha os modais abertos, volta para a home sem `?sala=` na URL, não reentra sozinha quando reconecta e abre o modal `#replacedModal` (carvão, como o "Erro ao entrar"): "Sala aberta em outra aba", com "Ficar no início" e "Jogar aqui". Conferido no navegador com duas abas, nos dois sentidos. Em `test/multiplayer.test.js`: com clientes reais, a aba antiga não consegue mandar chat nem adicionar bot, a nova consegue, e a queda da antiga não marca o jogador como desconectado.
 
 - [x] **28. Anfitrião que cai trava a sala**
       O `hostId` só muda em `leave()`. Se o anfitrião cai no lobby, ninguém consegue começar, adicionar bot ou remover jogador por 30s; se cai na partida, ninguém volta para a sala até ele voltar. Em `leave()`, o novo anfitrião é o primeiro humano da lista, mesmo desconectado.
@@ -238,10 +238,23 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
   - Pronto quando: as origens permitidas vêm de uma variável (`ALLOWED_ORIGINS`, com o app Capacitor incluído) e o padrão é só a própria origem; `trust proxy` ligado para pegar o IP certo atrás do Render/Railway/Fly; `pingInterval`/`pingTimeout` ajustados para celular; no `SIGTERM` o servidor avisa as salas ("O servidor vai reiniciar"), para os timers e fecha; `/health` mostra salas, partidas e conexões; erros vão para o log com o código da sala.
   - Feito: a configuração vem de `configFromEnv()`, e as variáveis estão no README, na seção "Publicando". **Origens:** `allowRequest` só aceita a própria origem e as de `ALLOWED_ORIGINS` (para o Capacitor: `capacitor://localhost,http://localhost`). Isso vale também para WebSocket, que o CORS sozinho não barra. Conexões sem `Origin` (app nativo, curl) passam. **Proxy:** `TRUST_PROXY` vale 1 em produção e 0 fora dela. O IP sai do `X-Forwarded-For` contando da direita (`clientIp()`), então sem proxy não dá para inventar o IP. **Ping:** `pingInterval` 20s e `pingTimeout` 30s. **Desligamento:** no `SIGTERM` e no Ctrl+C, `shutdown()` avisa as salas no chat e com o evento `server:restart` (o cliente mostra o aviso), para os timers, fecha as conexões e a porta, e sai em até 5s de qualquer jeito. **`/health`:** `rooms`, `games`, `players`, `connections` e `uptime`. **Log:** os timers da sala passam por `Room.later()`, então um erro de bot ou de prazo sai no log com o código da sala em vez de derrubar o processo. Conferido no navegador: a partida continua funcionando na mesma origem e o `/health` responde. O `SIGTERM` foi testado só pelo `shutdown()` em `test/production.test.js`, porque o Windows não manda esse sinal.
 
-- [ ] **38. Reiniciar o servidor sem perder as partidas**
+- [x] **38. Reiniciar o servidor sem perder as partidas**
       As salas vivem só na memória: todo deploy derruba todas as partidas. O cliente já tenta reconectar e mostra "A sala fechou" (parte da 24), mas a partida se perde.
   - Onde: `RoomManager` em `server/rooms.js`
   - Pronto quando: no `SIGTERM` (tarefa 37) o servidor grava as salas (membros com token, configurações, estado do motor com `seed`, chat) num arquivo ou Redis e lê de volta ao subir; os jogadores reconectam pelo token e a partida continua da mesma vez, com o prazo cheio.
+  - Feito (em arquivo):
+    - **Gravar:** `RoomManager.snapshot()` e `Room.toJSON()` gravam membros com token, apelido, avatar e cor, além de configurações, anfitrião, chat, estado do motor (com a `seed`), quem está pronto, os pedidos de revanche e os removidos. O estado do motor é só dados simples, então volta idêntico.
+    - **Arquivo:** `server/snapshot.js` grava em `SNAPSHOT_FILE` (padrão `data/rooms.json`, `off` desliga). Escreve num arquivo ao lado e troca de uma vez, para não ficar pela metade. Na leitura, o arquivo é apagado, e cada gravação volta uma vez só. Gravações com mais de 10 minutos são ignoradas. A pasta `data/` entrou no `.gitignore`, porque o arquivo tem os tokens.
+    - **Desligar:** no `SIGTERM` ou Ctrl+C, `shutdown({ snapshotFile })` avisa "A partida continua quando ele voltar!" e grava as salas.
+    - **Subir:** o servidor lê o arquivo antes de abrir a porta. `Room.fromJSON()` recria as salas com todos os humanos desconectados, com os mesmos prazos de uma queda (`armAbsence()`: 30s no lobby, 3 minutos na mesa, 5 minutos de sala vazia, 15s para o anfitrião voltar), e escreve "O servidor reiniciou" no chat.
+    - **Retomar:** com `resumePending`, o relógio fica parado e nenhum bot joga sozinho até a primeira pessoa voltar. Aí `resume()` recomeça a vez de quem estava jogando com o prazo cheio, mesmo que essa pessoa ainda não tenha voltado.
+
+    Testes em `test/restart.test.js`, entre eles um reinício de ponta a ponta: o servidor A grava, o servidor B lê, Ana e Bia reconectam pelo token e recebem o mesmo lugar, as mesmas cartas, a mesma vez e um prazo de 30s.
+  - Fica de fora:
+    - Nas plataformas, o arquivo precisa de um disco persistente (Render *Disk*, Railway *Volume*, Fly *volume*; o README explica). Sem ele, cada deploy começa vazio.
+    - Uma queda sem aviso (falta de memória, `kill -9`) não grava nada.
+    - O `SIGTERM` real não foi testado aqui, porque no Windows o processo morre sem rodar o handler. O caminho do `shutdown()` é o que o teste de ponta a ponta usa.
+    - Não há versão com Redis.
 
 - [x] **39. Um processo só (documentar ou escalar)**
       Tudo depende de um único processo: duas instâncias não enxergam as salas uma da outra, e o polling do Socket.IO quebra sem sessão fixa.
@@ -249,7 +262,17 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
   - Pronto quando: o README diz que o servidor roda em uma instância só (e como configurar isso no Render/Railway/Fly). Só se o jogo crescer: estado das salas em Redis, `@socket.io/redis-adapter` e sessão fixa no balanceador.
   - Feito (documentar): a seção "Uma instância só" do README, dentro de "Publicando", explica por que o servidor precisa de uma instância só e dá três regras: uma instância sem autoscaling (para crescer, aumente a máquina), sempre ligada (serviço que dorme apaga as salas) e deploy derruba as partidas (publique quando o `/health` mostrar pouca gente). Também diz como configurar cada plataforma: Render (Web Service com 1 instância, sem o plano gratuito que dorme, health check em `/health`), Railway (*Replicas* = 1) e Fly.io (`fly scale count 1`, e `auto_stop_machines = "off"` com `min_machines_running = 1` no `fly.toml`). Por fim, resume o caminho se um dia precisar escalar: Redis, `@socket.io/redis-adapter`, sessão fixa e um dono para os timers de cada sala. A parte de escalar ficou de fora, como a tarefa permite. Os nomes das telas e opções de cada plataforma vieram do que conheço delas e não foram conferidos agora nos painéis.
 
-- [ ] **40. Testes de multiplayer de ponta a ponta**
+- [x] **40. Testes de multiplayer de ponta a ponta**
       Os testes de hoje chamam o motor e o `Room` direto; nada passa por conexões reais. A tarefa 23 cobre as regras de sala; esta cobre a rede.
   - Onde: `server/index.js` (exportar uma função que cria o servidor numa porta qualquer, sem `listen` ao importar), `test/multiplayer.test.js` com `socket.io-client`
   - Pronto quando: com 2 ou 3 clientes reais, há testes para: criar e entrar pelo código; todos recebem o estado e ninguém recebe a mão do outro; reconectar com o mesmo token mantém o lugar e as cartas; segunda aba substitui a primeira (27); anfitrião cai e o cargo passa (28); entrar no meio vira plateia (34); payload malformado não derruba o servidor (26).
+  - Feito: o `createGameServer()` já existia desde a 26 e agora também aceita `timing`. O `RoomManager` recebe os tempos de espera, e os testes usam 200ms para o anfitrião em vez de 5s. Em `test/multiplayer.test.js` há 7 testes com 2 ou 3 clientes `socket.io-client` reais contra um servidor numa porta qualquer:
+    - criar e entrar pelo código (inclusive em minúsculas), com o estado e o chat chegando para todos;
+    - cada um recebe só a própria mão: as três mãos são diferentes, nenhuma carta de um aparece em nada que chegou pela rede para os outros, dos outros só vem `cardCount`, e só quem tem a vez recebe `playable`. Há um controle positivo para a busca não passar à toa;
+    - reconectar com o mesmo token mantém o lugar e as mesmas cartas;
+    - a segunda aba assume o lugar (27);
+    - o anfitrião cai e o cargo passa, com aviso no chat, e só o novo anfitrião consegue adicionar bot (28);
+    - quem entra no meio vira plateia, sem mão, sem poder jogar e aparecendo na lista (34);
+    - payloads malformados em todos os 17 eventos, depois disso uma sala nova funciona (26).
+
+    O `test/server.test.js` foi absorvido aqui, e as referências a ele nas tarefas 26 e 27 foram atualizadas. Rodei o arquivo 10 vezes seguidas, sem nenhuma falha.

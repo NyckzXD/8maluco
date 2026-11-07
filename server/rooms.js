@@ -26,6 +26,9 @@ const DROP_GRACE_MS = 10_000; // quem cai na própria vez tem pelo menos isso pa
 const IDLE_TIMEOUTS = 2; // vezes seguidas com o tempo esgotado até o jogador ficar ausente
 const SEAT_GRACE_MS = 3 * 60_000; // desconectado na partida por mais que isso sai da mesa
 const EMPTY_ROOM_MS = 5 * 60_000;
+const SNAPSHOT_VERSION = 1;
+const SNAPSHOT_MAX_AGE_MS = 10 * 60_000; // salas gravadas há mais que isso não voltam
+const RESTORE_HOST_GRACE_MS = 15_000; // depois de reiniciar, o anfitrião tem mais tempo para voltar
 
 const BOT_NAMES = [
   "Robô Zeca",
@@ -65,9 +68,11 @@ const clean = (text, max) =>
     .slice(0, max);
 
 export class RoomManager {
-  constructor(io) {
+  // `timing` troca os tempos de espera (os testes de rede não querem esperar 5s de verdade)
+  constructor(io, { timing = {} } = {}) {
     this.io = io;
     this.rooms = new Map();
+    this.timing = { hostGraceMs: HOST_GRACE_MS, ...timing };
   }
 
   create({ isPublic = true } = {}) {
@@ -99,6 +104,38 @@ export class RoomManager {
         0,
       ),
     };
+  }
+
+  // ---------- reinício ----------
+  // No desligamento, snapshot() vira um JSON com tudo o que precisa para continuar (membros com
+  // token, configurações, estado do motor com a seed, chat). Na subida, restore() recria as
+  // salas com todo mundo desconectado; a partida fica parada até alguém voltar.
+
+  snapshot(now = Date.now()) {
+    return {
+      version: SNAPSHOT_VERSION,
+      savedAt: now,
+      rooms: [...this.rooms.values()]
+        .filter((r) => r.members.some((m) => !m.isBot))
+        .map((r) => r.toJSON()),
+    };
+  }
+
+  // Devolve quantas salas voltaram. Snapshot velho (ninguém mais está esperando) é ignorado.
+  restore(data, now = Date.now()) {
+    if (data?.version !== SNAPSHOT_VERSION || !Array.isArray(data.rooms)) return 0;
+    if (!(now - data.savedAt <= SNAPSHOT_MAX_AGE_MS)) return 0;
+    let count = 0;
+    for (const raw of data.rooms) {
+      if (!raw?.code || this.rooms.has(raw.code)) continue;
+      try {
+        this.rooms.set(raw.code, Room.fromJSON(this, raw));
+        count++;
+      } catch (err) {
+        console.error(`[restore] sala ${raw.code}:`, err);
+      }
+    }
+    return count;
   }
 
   // Desligamento: avisa todas as salas e para os timers (ninguém joga sozinho enquanto fecha).
@@ -224,9 +261,68 @@ class Room {
     socket.data.code = this.code;
     socket.data.memberId = m.id;
     socket.emit("chat:history", this.chat);
-    this.schedule(false);
+    if (this.resumePending) this.resume();
+    else this.schedule(false);
     this.broadcast();
     return { ok: true, code: this.code, spectator: this.spectating(m.id) };
+  }
+
+  // ---------- reinício ----------
+
+  toJSON() {
+    return {
+      code: this.code,
+      settings: this.settings,
+      hostId: this.hostId,
+      members: this.members.map((m) => ({
+        id: m.id,
+        token: m.token,
+        name: m.name,
+        askedName: m.askedName,
+        avatar: m.avatar,
+        color: m.color,
+        isBot: m.isBot,
+      })),
+      chat: this.chat,
+      game: this.game,
+      ready: [...this.ready],
+      rematchVotes: [...this.rematchVotes],
+      banned: [...this.banned],
+    };
+  }
+
+  // Sala que voltou de um reinício: todo mundo começa desconectado, com os mesmos prazos de uma
+  // queda (lugar no lobby, lugar na mesa, sala vazia), e a partida espera o primeiro voltar.
+  static fromJSON(manager, d) {
+    const room = new Room(manager, d.code, d.settings?.isPublic !== false);
+    room.settings = { ...room.settings, ...d.settings };
+    room.members = d.members.map((m) => ({ ...m, connected: !!m.isBot, socketId: null }));
+    room.hostId = d.hostId;
+    room.chat = Array.isArray(d.chat) ? d.chat : [];
+    room.game = d.game ?? null;
+    room.ready = new Set(d.ready ?? []);
+    room.rematchVotes = new Set(d.rematchVotes ?? []);
+    room.banned = new Set(d.banned ?? []);
+    room.resumePending = room.game?.phase === "playing";
+    for (const m of room.members) if (!m.isBot) room.armAbsence(m);
+    room.hostTimer = room.later(() => room.passHost(), RESTORE_HOST_GRACE_MS);
+    room.emptyTimer = room.later(() => manager.delete(room.code), EMPTY_ROOM_MS);
+    room.system("O servidor reiniciou. A partida continua de onde parou!");
+    return room;
+  }
+
+  // Primeira pessoa de volta depois do reinício: a vez de quem estava jogando recomeça com o
+  // prazo cheio (mesmo que essa pessoa ainda não tenha voltado).
+  resume() {
+    this.resumePending = false;
+    const g = this.game;
+    if (g?.phase !== "playing") return this.schedule(false);
+    this.turnSeq++;
+    this.turnMs = this.settings.turnSeconds * 1000;
+    this.deadline = Date.now() + this.turnMs;
+    const m = this.member(g.players[g.turn].id);
+    if (m && !m.isBot && !m.connected) m.droppedTurn = this.turnSeq;
+    this.schedule(false);
   }
 
   // Quem senta na mesa: na partida, quem está nela; fora dela, os MAX_PLAYERS primeiros a chegar.
@@ -275,16 +371,10 @@ class Room {
     if (!m || m.socketId !== socketId) return;
     m.connected = false;
     m.socketId = null;
-    const seated =
-      this.game &&
-      this.game.phase !== "gameOver" &&
-      this.game.players.some((p) => p.id === memberId);
-    if (!seated) {
-      m.graceTimer = this.later(() => this.leave(memberId), LOBBY_GRACE_MS);
-    } else this.armSeatTimer(m);
+    this.armAbsence(m);
     if (memberId === this.hostId) {
       clearTimeout(this.hostTimer);
-      this.hostTimer = this.later(() => this.passHost(), HOST_GRACE_MS);
+      this.hostTimer = this.later(() => this.passHost(), this.manager.timing.hostGraceMs);
     }
     // caiu na própria vez: schedule() mantém o prazo desta vez
     const g = this.game;
@@ -298,6 +388,14 @@ class Room {
     }
     this.schedule(false);
     if (!this.checkReady() && !this.checkRematch()) this.broadcast();
+  }
+
+  // Quanto tempo quem está desconectado segura o lugar: no lobby, LOBBY_GRACE_MS; na mesa, SEAT_GRACE_MS.
+  armAbsence(m) {
+    const g = this.game;
+    const seated = g && g.phase !== "gameOver" && g.players.some((p) => p.id === m.id);
+    if (seated) this.armSeatTimer(m);
+    else m.graceTimer = this.later(() => this.leave(m.id), LOBBY_GRACE_MS);
   }
 
   // Desconectado na partida por SEAT_GRACE_MS: sai da mesa como quem clica em sair (as cartas
@@ -641,6 +739,12 @@ class Room {
     const g = this.game;
     if (!g || g.phase !== "playing") {
       if (!g || g.phase === "gameOver") this.clearTimer();
+      this.deadline = null;
+      return;
+    }
+    // voltou de um reinício e ninguém reconectou ainda: o relógio fica parado (resume() solta)
+    if (this.resumePending) {
+      clearTimeout(this.timer);
       this.deadline = null;
       return;
     }

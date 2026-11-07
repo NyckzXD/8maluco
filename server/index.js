@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Server } from 'socket.io';
 import { RoomManager, takeSlot } from './rooms.js';
+import { loadSnapshot, saveSnapshot } from './snapshot.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -33,6 +34,9 @@ export function configFromEnv(env = process.env) {
     trustProxy: Number(env.TRUST_PROXY ?? (production ? 1 : 0)) || 0,
     maxRooms: Number(env.MAX_ROOMS) || 500,
     maxConnectionsPerIp: Number(env.MAX_CONNECTIONS_PER_IP) || 20,
+    // onde as salas ficam entre um processo e outro; "off" desliga (o reinício perde as partidas)
+    snapshotFile:
+      env.SNAPSHOT_FILE === 'off' ? null : (env.SNAPSHOT_FILE || `${root}data/rooms.json`),
   };
 }
 
@@ -81,7 +85,7 @@ export function createGameServer(options = {}) {
     pingInterval: 20_000,
     pingTimeout: 30_000,
   });
-  const rooms = new RoomManager(io);
+  const rooms = new RoomManager(io, { timing: config.timing });
 
   app.get('/health', (_req, res) =>
     res.json({ ok: true, ...rooms.stats(), connections: io.engine.clientsCount, uptime: Math.round(process.uptime()) }),
@@ -189,11 +193,24 @@ export function createGameServer(options = {}) {
     });
   });
 
-  // Desligamento limpo: avisa as salas, para os timers, fecha as conexões e a porta.
+  // Desligamento limpo: avisa as salas, para os timers, grava as salas (com `snapshotFile`),
+  // fecha as conexões e a porta.
   let closing = null;
-  const shutdown = (message = 'O servidor vai reiniciar. Volte em instantes!') =>
+  const shutdown = ({ snapshotFile = null } = {}) =>
     (closing ??= new Promise((resolve) => {
-      rooms.shutdown(message);
+      rooms.shutdown(
+        snapshotFile
+          ? 'O servidor vai reiniciar. A partida continua quando ele voltar!'
+          : 'O servidor vai reiniciar. Volte em instantes!',
+      );
+      if (snapshotFile) {
+        try {
+          const saved = saveSnapshot(rooms, snapshotFile);
+          console.log(`${saved} sala(s) gravada(s) em ${snapshotFile}`);
+        } catch (err) {
+          console.error('[snapshot] não deu para gravar as salas:', err);
+        }
+      }
       // um instante para o aviso chegar antes de cortar as conexões
       setTimeout(() => {
         io.close();
@@ -211,6 +228,11 @@ if (isMain) {
   process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));
   process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err));
   const game = createGameServer();
+  // salas gravadas no último desligamento: voltam antes de abrir a porta
+  if (game.config.snapshotFile) {
+    const restored = loadSnapshot(game.rooms, game.config.snapshotFile);
+    if (restored) console.log(`${restored} sala(s) de volta do último desligamento`);
+  }
   game.server.listen(PORT, () => {
     console.log(`8 Maluco rodando em http://localhost:${PORT}`);
   });
@@ -219,7 +241,7 @@ if (isMain) {
       console.log(`${signal}: avisando as salas e desligando`);
       // se algo travar, sai mesmo assim (as plataformas matam o processo uns 10s depois do SIGTERM)
       setTimeout(() => process.exit(0), 5000).unref();
-      await game.shutdown();
+      await game.shutdown({ snapshotFile: game.config.snapshotFile });
       process.exit(0);
     });
   }

@@ -24,9 +24,10 @@ Tudo vem de variáveis de ambiente:
 | `ALLOWED_ORIGINS` | vazio | Outras origens que podem conectar, separadas por vírgula. O site servido pelo próprio servidor sempre pode. Para o app Capacitor: `capacitor://localhost,http://localhost`. |
 | `MAX_ROOMS` | `500` | Teto de salas abertas. Acima disso, "Servidor cheio, tente daqui a pouco". |
 | `MAX_CONNECTIONS_PER_IP` | `20` | Conexões simultâneas por IP. Uma família na mesma rede de casa cabe com folga. |
+| `SNAPSHOT_FILE` | `data/rooms.json` | Onde as salas ficam gravadas entre um processo e outro. Precisa estar num disco que sobreviva ao deploy (veja abaixo). `off` desliga. |
 
 - **Limites por conexão** (`RATE_LIMITS` em `server/index.js`): 5 salas criadas por minuto, 12 tentativas de entrar por minuto, 30 pedidos da lista de salas por minuto, 10 jogadas, compras ou passes a cada 5s, e 20 a cada 10s nos outros eventos. Mensagens maiores que 16KB derrubam a conexão de quem mandou.
-- **Desligamento**: no `SIGTERM` (o que as plataformas mandam no deploy) e no Ctrl+C, o servidor avisa todas as salas ("O servidor vai reiniciar"), para os timers dos bots e fecha. Os clientes reconectam sozinhos quando ele volta. As partidas em andamento ainda se perdem, porque as salas vivem na memória (tarefa 38 do `MELHORIAS.md`).
+- **Desligamento e volta**: no `SIGTERM` (o que as plataformas mandam no deploy) e no Ctrl+C, o servidor avisa todas as salas ("O servidor vai reiniciar. A partida continua quando ele voltar!"), para os timers dos bots, grava as salas em `SNAPSHOT_FILE` e fecha. Ao subir, ele lê o arquivo, apaga-o e recria as salas com todo mundo desconectado. A partida fica parada até a primeira pessoa voltar; aí a vez de quem estava jogando recomeça com o prazo cheio. Os clientes reconectam sozinhos e voltam pelo token para o mesmo lugar, com as mesmas cartas. Gravações com mais de 10 minutos são ignoradas. O arquivo tem os tokens dos jogadores, por isso a pasta `data/` fica fora do git. Uma queda sem aviso (falta de memória, `kill -9`) não grava nada, e aí as partidas se perdem.
 - **Uma instância só**: veja abaixo.
 - **`/health`**: `{ ok, rooms, games, players, connections, uptime }`. Serve para o health check da plataforma e para ver quantas pessoas estão jogando.
 - **Log**: erros em eventos e timers saem no log com o código da sala (`[game:play] sala AB12C: ...`).
@@ -37,15 +38,15 @@ As salas, as partidas e os timers dos bots vivem na memória de **um** processo 
 
 - **Uma instância**, sem autoscaling. Para aguentar mais gente, aumente a máquina (CPU e memória), não o número de instâncias. Um processo dá conta de bem mais salas que o teto padrão de `MAX_ROOMS` (500).
 - **Sempre ligada.** Serviço que "dorme" quando ninguém acessa apaga todas as salas ao dormir.
-- **Deploy derruba as partidas.** A instância nova sobe vazia. O servidor avisa antes ("O servidor vai reiniciar") e os jogadores reconectam sozinhos, mas voltam para uma sala que não existe mais (tarefa 38 do `MELHORIAS.md`). Prefira publicar quando houver pouca gente jogando: o `/health` mostra quantas partidas estão rolando.
+- **Disco que sobrevive ao deploy.** Nas três plataformas, cada deploy sobe um contêiner novo e o disco comum dele começa vazio. Para as partidas continuarem depois de um deploy, monte um disco persistente (volume) e aponte `SNAPSHOT_FILE` para ele. Sem volume, o deploy derruba as partidas: o servidor avisa antes e os jogadores reconectam, mas voltam para uma sala que não existe mais. Nesse caso, prefira publicar quando houver pouca gente jogando (o `/health` mostra quantas partidas estão rolando).
 
 Em cada plataforma:
 
-- **Render**: crie um *Web Service* (aceita WebSocket) e deixe a contagem de instâncias em 1, sem autoscaling. O plano gratuito dorme depois de um tempo sem acesso, então use um plano pago para manter as salas vivas. Coloque `/health` como *Health Check Path*.
-- **Railway**: nas configurações do serviço, deixe *Replicas* em 1 (o padrão). O Railway já entrega `PORT` e passa o WebSocket direto.
-- **Fly.io**: o `fly launch` costuma criar duas máquinas, então rode `fly scale count 1` depois dele. No `fly.toml`, dentro de `[http_service]`, use `auto_stop_machines = "off"` e `min_machines_running = 1` para a máquina não desligar quando a mesa esvazia, e aponte o health check para `/health`.
+- **Render**: crie um *Web Service* (aceita WebSocket) e deixe a contagem de instâncias em 1, sem autoscaling. O plano gratuito dorme depois de um tempo sem acesso, então use um plano pago para manter as salas vivas. Coloque `/health` como *Health Check Path*. Para guardar as partidas, adicione um *Disk* (por exemplo em `/var/data`) e defina `SNAPSHOT_FILE=/var/data/rooms.json`.
+- **Railway**: nas configurações do serviço, deixe *Replicas* em 1 (o padrão). O Railway já entrega `PORT` e passa o WebSocket direto. Para guardar as partidas, crie um *Volume* montado no serviço (por exemplo em `/data`) e defina `SNAPSHOT_FILE=/data/rooms.json`.
+- **Fly.io**: o `fly launch` costuma criar duas máquinas, então rode `fly scale count 1` depois dele. No `fly.toml`, dentro de `[http_service]`, use `auto_stop_machines = "off"` e `min_machines_running = 1` para a máquina não desligar quando a mesa esvazia, e aponte o health check para `/health`. Para guardar as partidas, crie um volume (`fly volumes create data --size 1`), monte-o com `[mounts]` (`source = "data"`, `destination = "/data"`) e defina `SNAPSHOT_FILE=/data/rooms.json`.
 
-Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for usar o app, `ALLOWED_ORIGINS`.
+Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for usar o app, `ALLOWED_ORIGINS`. Em casa, ou num servidor próprio com o disco de sempre, o padrão `data/rooms.json` já funciona.
 
 **Se um dia precisar de mais de uma instância:** as salas teriam que sair da memória para um lugar compartilhado (Redis), os eventos teriam que passar entre as instâncias com o `@socket.io/redis-adapter`, e o balanceador precisaria de sessão fixa (*sticky sessions*). Os timers dos bots também precisariam de um dono por sala. É uma mudança grande, que só vale a pena se uma máquina grande não der mais conta.
 
@@ -57,9 +58,9 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 | `shared/bot.js` | Jogador automático (bots e jogada automática quando o tempo acaba ou alguém cai). |
 | `shared/names.js` | Regras de apelido que valem no servidor e na tela (nomes "Robô …" são só dos bots). |
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
-| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão. |
+| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). |
 | `public/` | Interface web (HTML/CSS/JS puro), responsiva para celular, instalável (PWA). |
-| `test/` | Testes das regras, do avatar, das reações, da revanche, do anfitrião e do servidor (com clientes socket.io reais) com `node:test`. |
+| `test/` | Testes com `node:test`: regras (`engine`), salas (`rooms`, `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`), avatar, e rede de ponta a ponta com clientes socket.io reais (`multiplayer`, `production`, `restart`). |
 
 ### PWA
 

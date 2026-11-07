@@ -1,7 +1,8 @@
 // Salas (23): entrar, sair, remover, reconectar, bots e jogada automática por tempo.
 // Outros arquivos cobrem o resto do server/rooms.js: host.test.js (anfitrião), away.test.js
 // (queda na vez e ausente), names.test.js (apelidos e saída da mesa), kick.test.js (barreira),
-// spectators.test.js (plateia), rematch.test.js (revanche) e reactions.test.js.
+// spectators.test.js (plateia), rematch.test.js (revanche) e reactions.test.js;
+// multiplayer.test.js passa pela rede de verdade.
 import { test, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { RoomManager, MAX_PLAYERS } from '../server/rooms.js';
