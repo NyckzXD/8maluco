@@ -125,6 +125,7 @@ class Room {
     this.deadline = null;
     this.turnMs = null; // duração total do prazo atual (o anel de tempo do cliente mede contra ela)
     this.ready = new Set(); // quem já clicou em "pronto" no intervalo entre rodadas
+    this.rematchVotes = new Set(); // quem já pediu revanche no fim da partida
     this.emptyTimer = null;
   }
 
@@ -184,7 +185,9 @@ class Room {
       this.hostId = this.members.find((x) => !x.isBot)?.id ?? null;
     if (!this.members.some((x) => !x.isBot))
       return this.manager.delete(this.code);
-    if (!this.checkReady()) this.broadcast();
+    // quem saiu não segura a próxima rodada nem a revanche
+    this.rematchVotes.delete(memberId);
+    if (!this.checkReady() && !this.checkRematch()) this.broadcast();
   }
 
   disconnect(memberId, socketId) {
@@ -207,7 +210,7 @@ class Room {
       );
     }
     this.schedule(false);
-    if (!this.checkReady()) this.broadcast();
+    if (!this.checkReady() && !this.checkRematch()) this.broadcast();
   }
 
   addBot(byId) {
@@ -301,12 +304,64 @@ class Room {
         ok: false,
         error: "Precisa de pelo menos 2 jogadores (adicione um bot!)",
       };
+    this.newGame("A partida começou! Boa sorte!");
+    return { ok: true };
+  }
+
+  // Partida nova com quem está na sala, na ordem dos assentos e com as configurações da sala.
+  newGame(message) {
+    this.rematchVotes.clear();
+    this.ready.clear();
     this.game = createGame(
       this.members.map((m) => ({ id: m.id, name: m.name })),
     );
-    this.system("A partida começou! Boa sorte!");
+    this.system(message);
     this.apply(startRound(this.game));
+  }
+
+  // ---------- revanche ----------
+  // No fim da partida cada humano pede revanche ("Jogar de novo" / "pronto"). Quando todos os
+  // humanos conectados pediram, começa uma partida nova com a mesma mesa. Bots e desconectados
+  // não seguram; jogando sozinho com bots, o seu pedido já basta.
+
+  rematch(memberId) {
+    const g = this.game;
+    if (!g || g.phase !== "gameOver")
+      return { ok: false, error: "A partida ainda não acabou" };
+    const m = this.member(memberId);
+    if (!m || m.isBot) return { ok: false, error: "Você não está nesta sala" };
+    // quem caiu sai da mesa na revanche: contam só bots e quem está conectado
+    if (this.members.filter((x) => x.isBot || x.connected).length < 2)
+      return {
+        ok: false,
+        error: "Precisa de pelo menos 2 jogadores (volte para a sala e adicione um bot!)",
+      };
+    this.rematchVotes.add(memberId);
+    if (!this.checkRematch()) this.broadcast();
     return { ok: true };
+  }
+
+  // Humanos conectados que ainda não pediram revanche.
+  rematchWaitingOn() {
+    if (this.game?.phase !== "gameOver") return [];
+    return this.members
+      .filter((m) => !m.isBot && m.connected && !this.rematchVotes.has(m.id))
+      .map((m) => m.id);
+  }
+
+  // Começa a revanche se todo mundo pediu. Retorna true se começou (e já avisou todos).
+  checkRematch() {
+    if (this.game?.phase !== "gameOver" || !this.rematchVotes.size) return false;
+    if (this.rematchWaitingOn().length) return false;
+    // quem caiu não entra na revanche (como na volta para a sala)
+    for (const m of this.members.filter((x) => !x.isBot && !x.connected)) {
+      clearTimeout(m.graceTimer);
+      this.members = this.members.filter((x) => x.id !== m.id);
+      this.system(`${m.name} saiu da sala`);
+    }
+    if (this.members.length < 2) return false;
+    this.newGame("Revanche! Mesma mesa, partida nova. Boa sorte!");
+    return true;
   }
 
   backToLobby(byId) {
@@ -314,6 +369,7 @@ class Room {
       return { ok: false, error: "Só o anfitrião pode fazer isso" };
     if (this.game && this.game.phase !== "gameOver")
       return { ok: false, error: "A partida ainda está rolando" };
+    this.rematchVotes.clear();
     this.game = null;
     this.clearTimer();
     for (const m of this.members.filter((x) => !x.isBot && !x.connected))
@@ -389,8 +445,10 @@ class Room {
       if (e.type === "left" && g.phase !== "gameOver")
         this.system(`${this.nameOf(e.playerId)} saiu da mesa`);
     const over = events.find((e) => e.type === "gameOver");
-    if (over)
+    if (over) {
       this.system(`${this.nameOf(over.winnerId)} é o grande vencedor!`);
+      this.rematchVotes.clear();
+    }
 
     if (end && g.phase === "roundOver") {
       this.clearTimer();
@@ -513,6 +571,8 @@ class Room {
       turnMs: this.turnMs,
       ready: [...this.ready],
       waitingOn: this.waitingOn(),
+      rematch: [...this.rematchVotes],
+      rematchWaitingOn: this.rematchWaitingOn(),
       serverNow: Date.now(),
       events,
     };

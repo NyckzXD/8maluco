@@ -100,9 +100,10 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
   Hoje existe uma só heurística em `shared/bot.js`.
   - Pronto quando: o anfitrião escolhe Fácil (joga aleatório), Normal (atual) ou Difícil (conta cartas, segura 8 e 9 para o fim), e há testes para os três.
 
-- [ ] **16. Revanche em um clique**
+- [x] **16. Revanche em um clique**
   Ao fim da partida só existe "Voltar para a sala".
-  - Pronto quando: há "Jogar de novo", que reinicia direto com a mesma mesa e as mesmas configurações.
+  - Pronto quando: há "Jogar de novo", que reinicia direto com a mesma mesa e as mesmas configurações. Com mais jogadores (multiplayer), o botão vira um "pronto" e a partida nova começa quando todos estiverem prontos.
+  - Feito: no fim da partida, quem é o único humano da sala vê "Jogar de novo", que recomeça na hora com a mesma mesa (ordem dos assentos, bots, tempo por vez). Com mais humanos o botão vira "Pronto para a revanche": vira "Pronto!" depois do clique, a linha embaixo diz quem falta e a partida nova começa quando todos os humanos conectados estiverem prontos. Quem caiu ou saiu não segura a revanche e fica fora da mesa nova. "Voltar para a sala" continua para o anfitrião, como opção secundária, e apaga os pedidos. No servidor: `Room.rematch`, `rematchWaitingOn` e `checkRematch`, com o início de partida reunido em `newGame`. O estado leva `rematch` e `rematchWaitingOn`. Testes em `test/rematch.test.js`.
 
 - [ ] **17. Modo solo offline contra bots**
   `shared/engine.js` e `shared/bot.js` já rodam no navegador.

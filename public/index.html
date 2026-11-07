@@ -281,9 +281,12 @@
         <div id="readyActions" class="center hidden">
           <button id="readyBtn" class="btn btn-primary btn-big" data-autofocus>Estou pronto!</button>
         </div>
-        <div id="gameOverActions" class="center hidden">
-          <button id="againBtn" class="btn btn-primary btn-big" data-autofocus>Voltar para a sala</button>
-          <p id="againWait" class="wait-line">Esperando o anfitrião<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></p>
+        <!-- Fim da partida: revanche com a mesma mesa. Sozinho com bots é "Jogar de novo" (começa na
+             hora); com mais gente vira um "pronto" e começa quando todos estiverem prontos. -->
+        <div id="gameOverActions" class="game-over-actions hidden">
+          <button id="rematchBtn" class="btn btn-primary btn-big" data-autofocus>Jogar de novo</button>
+          <p id="rematchWait" class="wait-line" aria-live="polite"></p>
+          <button id="againBtn" class="btn btn-text">Voltar para a sala</button>
         </div>
       </div>
     </div>

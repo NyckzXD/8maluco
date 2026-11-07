@@ -3171,6 +3171,9 @@ function renderRoundModal(g, s) {
   const modal = $("#roundModal");
   const lr = g.lastRound;
   if (!lr || (g.phase !== "roundOver" && g.phase !== "gameOver")) {
+    // partida nova (revanche) ainda sem resultado: o próximo resultado anima de novo,
+    // mesmo que caia na mesma rodada em que a partida anterior terminou
+    if (!lr) shownRound = null;
     hideModal(modal);
     return;
   }
@@ -3225,11 +3228,12 @@ function renderRoundModal(g, s) {
   }
 
   $("#gameOverActions").classList.toggle("hidden", !over);
+  // voltar para a sala continua com o anfitrião, como opção secundária
   $("#againBtn").classList.toggle("hidden", s.hostId !== s.me);
-  $("#againWait").classList.toggle("hidden", s.hostId === s.me);
   if (over) {
     $("#roundFooter").replaceChildren();
     $("#roundFooter").dataset.text = "";
+    renderRematch(s);
   }
 
   // Entre rodadas: a próxima só começa quando todo mundo que ainda está na mesa clicar em "pronto".
@@ -3259,6 +3263,42 @@ function renderRoundModal(g, s) {
   openModal("roundModal");
 }
 
+// Revanche: sozinho com bots, "Jogar de novo" recomeça na hora; com mais humanos na sala o
+// botão vira um "pronto" e a partida nova começa quando todos estiverem prontos (o servidor
+// decide, em Room.rematch). Quem caiu não segura.
+function renderRematch(s) {
+  const humans = s.members.filter((m) => !m.isBot && m.connected);
+  const solo = humans.length <= 1;
+  const imReady = s.rematch?.includes(s.me);
+  const btn = $("#rematchBtn");
+  btn.disabled = !!imReady;
+  btn.replaceChildren(
+    ...(solo
+      ? [icon("refresh"), "Jogar de novo"]
+      : imReady
+        ? [icon("check"), "Pronto!"]
+        : [icon("refresh"), "Pronto para a revanche"]),
+  );
+  const waiting = (s.rematchWaitingOn ?? []).filter((id) => id !== s.me).map(nameOf);
+  const text = solo
+    ? ""
+    : !imReady
+      ? waiting.length && s.rematch?.length
+        ? `${s.rematch.length} de ${humans.length} prontos para a revanche`
+        : "Mesma mesa, partida nova: começa quando todos estiverem prontos"
+      : waiting.length
+        ? `Esperando ${waiting.join(", ")} ficar${waiting.length > 1 ? "em" : ""} pronto${waiting.length > 1 ? "s" : ""}`
+        : "Começando a revanche";
+  const line = $("#rematchWait");
+  // só troca quando o texto muda, para as reticências não recomeçarem a cada atualização
+  if (line.dataset.text !== text) {
+    line.dataset.text = text;
+    line.replaceChildren(text);
+    if (imReady && text) line.append(waitDots());
+  }
+}
+
+$("#rematchBtn").addEventListener("click", () => emit("game:rematch"));
 $("#againBtn").addEventListener("click", () => emit("room:lobby"));
 $("#readyBtn").addEventListener("click", () => emit("game:ready"));
 

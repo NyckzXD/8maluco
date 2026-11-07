@@ -64,6 +64,7 @@ io.on('connection', (socket) => {
   socket.on('room:settings', inRoom((room, me, d) => room.updateSettings(me, d)));
   socket.on('room:start', inRoom((room, me) => room.start(me)));
   socket.on('room:lobby', inRoom((room, me) => room.backToLobby(me)));
+  socket.on('game:rematch', inRoom((room, me) => room.rematch(me)));
   socket.on('chat', inRoom((room, me, d) => room.say(me, d.text)));
   socket.on('reaction', inRoom((room, me, d) => room.react(me, d?.id)));
   socket.on('game:play', inRoom((room, me, d) => room.act(me, { type: 'play', cardId: d.cardId, suit: d.suit })));

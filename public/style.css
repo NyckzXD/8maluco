@@ -219,6 +219,17 @@ label,
   text-align: center;
 }
 
+/* fim da partida: revanche em destaque, a linha de quem falta e "voltar para a sala" embaixo */
+.game-over-actions {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.game-over-actions .btn-primary {
+  min-width: min(100%, 300px);
+}
+
 .screen {
   min-height: 100dvh;
 }
