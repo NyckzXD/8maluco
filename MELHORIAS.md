@@ -132,13 +132,24 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
       `app.js` tem 3.397 linhas e `style.css` 4.462.
   - Pronto quando: o cliente é dividido em módulos ES sem build (rede, mesa, animações, modais, editor de avatar) e o CSS por tela, sem mudar o comportamento.
 
-- [ ] **23. Testes do servidor**
+- [x] **23. Testes do servidor**
       Só o motor e o avatar têm testes.
   - Pronto quando: `server/rooms.js` tem testes para entrar, sair, remover jogador, reconectar, adicionar bot e jogada automática por tempo.
+  - Feito: `test/rooms.test.js` (16 testes, com relógio simulado) cobre:
+    - entrar: o primeiro vira anfitrião, sem token não entra, apelido vazio vira "Jogador" e quem entra recebe o histórico do chat;
+    - sair: no lobby e no meio da partida (a vez passa); o último humano fecha a sala, e quem cai no lobby perde o lugar em 30s;
+    - remover: só o anfitrião remove, ninguém remove a si mesmo, e o removido recebe `room:kicked`;
+    - reconectar: o mesmo lugar e as mesmas cartas, o lugar guardado por 30s no lobby, e a queda de uma conexão velha não derruba a nova;
+    - bots: só o anfitrião adiciona, fora da partida, até encher a mesa e com nomes diferentes; o bot joga sozinho em 3 a 5s (mais 3,5s se abre a rodada);
+    - tempo esgotado: 15s mais a distribuição, depois a jogada automática com aviso no chat;
+    - configurações.
 
-- [ ] **24. Queda do servidor**
+    O resto do `rooms.js` ficou coberto pelos testes das tarefas 26–37: `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`, `server` e `production`. Rodei `rooms.test.js` 30 vezes seguidas, sem nenhuma falha.
+
+- [x] **24. Queda do servidor**
       As salas ficam só na memória: reiniciar o servidor derruba todas as partidas.
   - Pronto quando: o cliente avisa que a conexão caiu, tenta reconectar sozinho e volta para a home com uma mensagem clara se a sala sumiu.
+  - Feito: o cliente já fazia quase tudo; faltava conferir e acertar dois detalhes. Conferido no navegador derrubando o processo do servidor à força no meio de uma partida, sem recarregar a página. A faixa "Reconectando" aparece na hora. Com o servidor de volta (vazio), o Socket.IO reconecta sozinho, o cliente tenta voltar para a sala, volta para a home e abre o modal "A sala fechou". **Acertos:** (1) o texto do modal agora explica o que houve: "A conexão caiu e, quando voltou, a sala X não existia mais. Isso acontece quando o servidor reinicia ou quando a sala fica vazia por muito tempo." (2) Quando a queda acontecia durante a distribuição, as cartas continuavam voando por cima da home. Agora `show()` chama `stopFlights()` ao sair da mesa, o que cancela os voos agendados e a distribuição, e isso também vale para quem é removido ou sai no meio da animação. O aviso antes de um reinício planejado veio com a 37 (`server:restart`). Manter as partidas depois de reiniciar é a tarefa 38.
 
 - [x] **25. Limites no servidor**
       O chat já tem 400ms entre mensagens.

@@ -93,6 +93,7 @@ const SPECIAL_TIPS = {
 function show(id) {
   for (const s of ["home", "lobby", "game"])
     $(`#${s}`).classList.toggle("hidden", s !== id);
+  if (id !== "game") stopFlights();
 }
 
 // Escreve num aviso fixo para leitores de tela. Limpa antes, para repetir a mesma frase também ser lida.
@@ -1208,7 +1209,8 @@ const JOIN_ERRORS = {
   ],
   "A sala fechou": [
     "A sala fechou",
-    (c) => `A sala ${c} acabou enquanto você estava fora.`,
+    (c) =>
+      `A conexão caiu e, quando voltou, a sala ${c} não existia mais. Isso acontece quando o servidor reinicia ou quando a sala fica vazia por muito tempo.`,
   ],
 };
 function showJoinError(error, code) {
@@ -1908,11 +1910,22 @@ function fly({
     return false;
   }
   hide?.classList.add("incoming");
-  setTimeout(
-    () => launch({ card, from, to, flip, hide, easing, duration, onLand }),
-    delay,
-  );
+  const timer = setTimeout(() => {
+    flightTimers.delete(timer);
+    launch({ card, from, to, flip, hide, easing, duration, onLand });
+  }, delay);
+  flightTimers.add(timer);
   return true;
+}
+
+// Cartas voando que ainda vão sair (a distribuição agenda dezenas). Saindo da mesa (sala fechou,
+// foi removido, voltou para o início), nenhuma pode continuar voando por cima da outra tela.
+const flightTimers = new Set();
+function stopFlights() {
+  flightTimers.forEach(clearTimeout);
+  flightTimers.clear();
+  cancelDeal();
+  $$(".flyer").forEach((node) => node.remove());
 }
 
 function launch({ card, from, to, flip, hide, easing, duration, onLand }) {
