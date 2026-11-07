@@ -2573,6 +2573,28 @@ input[aria-invalid="true"] {
   stroke-width: 2.5;
 }
 
+/* ausente: deixou o tempo acabar duas vezes; o jogo joga por ele até ele voltar */
+.badge.away {
+  left: 50%;
+  right: auto;
+  bottom: -8px;
+  transform: translateX(-50%);
+  background: var(--gold);
+  white-space: nowrap;
+}
+
+/* o mesmo aviso na sua barra, ao lado do "Você" */
+.away-note {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  background: var(--gold);
+  color: var(--black);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
 /* botão de carteador (disco prata com "D", como no pôquer): à esquerda do avatar,
    do lado de fora do anel de tempo (que vai até 6px além do avatar) */
 .badge.dealer {

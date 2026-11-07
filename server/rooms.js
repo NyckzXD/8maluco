@@ -20,6 +20,8 @@ const DEAL_MS = 3500; // tempo da animação de distribuir as cartas no começo 
 const AWAY_DELAY_MS = 1500; // jogador desconectado: joga no automático rapidinho
 const LOBBY_GRACE_MS = 30_000; // quanto tempo um desconectado segura o lugar no lobby
 const HOST_GRACE_MS = 5000; // quanto tempo o anfitrião desconectado segura o cargo
+const DROP_GRACE_MS = 10_000; // quem cai na própria vez tem pelo menos isso para voltar
+const IDLE_TIMEOUTS = 2; // vezes seguidas com o tempo esgotado até o jogador ficar ausente
 const EMPTY_ROOM_MS = 5 * 60_000;
 
 const BOT_NAMES = [
@@ -130,6 +132,7 @@ class Room {
     this.emptyTimer = null;
     this.hostTimer = null; // anfitrião desconectado: quando o cargo passa para outro
     this.hostOrphan = false; // nenhum humano conectado para assumir: o próximo que entrar assume
+    this.turnSeq = 0; // conta as vezes: distingue "esta vez" de "a próxima vez do mesmo jogador"
   }
 
   // ---------- membros ----------
@@ -233,6 +236,10 @@ class Room {
       clearTimeout(this.hostTimer);
       this.hostTimer = setTimeout(() => this.passHost(), HOST_GRACE_MS);
     }
+    // caiu na própria vez: schedule() mantém o prazo desta vez
+    const g = this.game;
+    if (g?.phase === "playing" && g.players[g.turn]?.id === memberId)
+      m.droppedTurn = this.turnSeq;
     if (!this.members.some((x) => !x.isBot && x.connected)) {
       this.emptyTimer = setTimeout(
         () => this.manager.delete(this.code),
@@ -241,6 +248,21 @@ class Room {
     }
     this.schedule(false);
     if (!this.checkReady() && !this.checkRematch()) this.broadcast();
+  }
+
+  // Qualquer ação do jogador (jogar, falar, reagir, pronto, ou só tocar na tela) mostra que ele
+  // está ali: zera a contagem de tempo esgotado e tira o "ausente". Se for a vez dele, ganha o
+  // prazo cheio de novo.
+  touch(memberId) {
+    const m = this.member(memberId);
+    if (!m || m.isBot) return;
+    m.idleTimeouts = 0;
+    if (!m.away) return;
+    m.away = false;
+    this.system(`${m.name} voltou`);
+    const g = this.game;
+    if (g?.phase === "playing" && g.players[g.turn]?.id === m.id) this.schedule(true);
+    this.broadcast();
   }
 
   // ---------- anfitrião ----------
@@ -410,7 +432,7 @@ class Room {
   rematchWaitingOn() {
     if (this.game?.phase !== "gameOver") return [];
     return this.members
-      .filter((m) => !m.isBot && m.connected && !this.rematchVotes.has(m.id))
+      .filter((m) => !m.isBot && m.connected && !m.away && !this.rematchVotes.has(m.id))
       .map((m) => m.id);
   }
 
@@ -479,7 +501,7 @@ class Room {
     return g.players
       .filter((p) => !p.eliminated && !this.ready.has(p.id))
       .map((p) => this.member(p.id))
-      .filter((m) => m && !m.isBot && m.connected)
+      .filter((m) => m && !m.isBot && m.connected && !m.away)
       .map((m) => m.id);
   }
 
@@ -539,10 +561,26 @@ class Room {
       this.deadline = null;
       return;
     }
+    if (newTurn) this.turnSeq++;
     const current = g.players[g.turn];
     const m = this.member(current.id);
+    const seq = this.turnSeq;
     clearTimeout(this.timer);
-    if (!m || m.isBot || !m.connected) {
+    // Caiu na própria vez (bloqueou o celular, trocou de app): mantém o prazo que tinha, com
+    // pelo menos DROP_GRACE_MS, para dar tempo de voltar. A jogada rápida só vale da próxima vez.
+    if (m && !m.isBot && !m.connected && !m.away && m.droppedTurn === seq) {
+      // o mínimo vale uma vez por vez: cair e voltar várias vezes não estica o prazo
+      const floor = m.dropGraceSeq === seq ? 0 : Date.now() + DROP_GRACE_MS;
+      m.dropGraceSeq = seq;
+      this.deadline = Math.max(this.deadline ?? 0, floor);
+      this.turnMs = Math.max(this.turnMs ?? 0, DROP_GRACE_MS);
+      this.timer = setTimeout(
+        () => this.turnSeq === seq && this.autoplay(current.id, false),
+        this.deadline - Date.now(),
+      );
+      return;
+    }
+    if (!m || m.isBot || !m.connected || m.away) {
       const [min, max] = BOT_DELAY_MS;
       let delay = m?.isBot
         ? min + Math.random() * (max - min)
@@ -562,13 +600,16 @@ class Room {
       this.turnMs = this.settings.turnSeconds * 1000 + extraMs;
       this.deadline = Date.now() + this.turnMs;
     }
-    const turnKey = `${g.round}:${g.turn}`;
     this.timer = setTimeout(
       () => {
-        if (this.game === g && `${g.round}:${g.turn}` === turnKey) {
-          this.system(`O tempo de ${m.name} acabou, jogada automática`);
-          this.autoplay(current.id, false);
-        }
+        if (this.game !== g || this.turnSeq !== seq) return;
+        // Duas vezes seguidas sem jogar: fica ausente e passa a jogar no automático rápido.
+        m.idleTimeouts = (m.idleTimeouts ?? 0) + 1;
+        if (m.idleTimeouts >= IDLE_TIMEOUTS && !m.away) {
+          m.away = true;
+          this.system(`${m.name} está ausente, jogadas automáticas até voltar`);
+        } else this.system(`O tempo de ${m.name} acabou, jogada automática`);
+        this.autoplay(current.id, false);
       },
       Math.max(0, this.deadline - Date.now()),
     );
@@ -631,6 +672,7 @@ class Room {
         color: m.color,
         isBot: m.isBot,
         connected: m.connected,
+        away: !!m.away,
       })),
       game: this.game ? viewFor(this.game, memberId) : null,
       deadline: this.deadline,

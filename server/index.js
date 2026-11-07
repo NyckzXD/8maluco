@@ -51,6 +51,7 @@ export function createGameServer() {
       on(event, (data) => {
         const room = current();
         if (!room) return { ok: false, error: 'Você não está em uma sala' };
+        room.touch(socket.data.memberId); // qualquer ação tira o "ausente"
         return fn(room, socket.data.memberId, data);
       });
 
@@ -85,6 +86,8 @@ export function createGameServer() {
     inRoom('game:draw', (room, me) => room.act(me, { type: 'draw' }));
     inRoom('game:pass', (room, me) => room.act(me, { type: 'pass' }));
     inRoom('game:ready', (room, me) => room.setReady(me));
+    // o cliente avisa que a pessoa mexeu na tela enquanto estava ausente (o touch acima já resolve)
+    inRoom('presence', () => ({ ok: true }));
 
     socket.on('disconnect', () => {
       try {

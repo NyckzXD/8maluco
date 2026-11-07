@@ -36,7 +36,7 @@ test('mensagens malformadas respondem erro e não derrubam o servidor', async ()
   const events = [
     'room:list', 'room:create', 'room:join', 'room:leave', 'room:addBot', 'room:kick',
     'room:settings', 'room:start', 'room:lobby', 'game:rematch', 'chat', 'reaction',
-    'game:play', 'game:draw', 'game:pass', 'game:ready',
+    'game:play', 'game:draw', 'game:pass', 'game:ready', 'presence',
   ];
   const payloads = [null, 42, 'texto', [1, 2], { code: { a: 1 }, token: ['x'], name: 7 }, { text: null }];
   for (const event of events) {

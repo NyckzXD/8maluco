@@ -1595,6 +1595,8 @@ function renderLobby(s) {
       ? "bot"
       : !realM.connected
         ? "desconectado"
+        : realM.away
+          ? "ausente"
         : realM.id === s.me
           ? "você"
           : realM.id === s.hostId
@@ -1695,6 +1697,10 @@ function renderSeats(g, s, hit) {
       off.title = "Desconectado";
       off.append(icon("wifi-off"));
       av.append(off);
+    } else if (m?.away && !p.eliminated) {
+      const away = el("span", "badge away", "Ausente");
+      away.title = "Ausente: o jogo está jogando por ele";
+      av.append(away);
     }
     const name = nameWithBot("seat-name", p.name, m?.isBot);
     const info = el("div", "seat-info");
@@ -3018,6 +3024,9 @@ function renderMe(g, s, myTurn) {
     label.append(el("span", "me-pts", ` · ${me.score} pts`));
     info.append(av, label);
     if (me.id === g.dealerId) info.append(dealerBadge());
+    // ausente: fica à vista enquanto durar (o aviso que aparece some sozinho)
+    if (memberOf(me.id)?.away && !me.eliminated)
+      info.append(el("span", "away-note", "Ausente · toque na tela para voltar"));
   }
   renderMeScore(g, me);
   // quem só assiste não tem barra própria: a placa "Plateia" fica no lugar da mão
@@ -3633,7 +3642,28 @@ socket.on("state", (s) => {
   const prev = state;
   state = s;
   render(prev, s);
+  const wasAway = !!prev?.members.find((m) => m.id === prev.me)?.away;
+  if (amAway() && !wasAway)
+    flash("Você ficou ausente e o jogo está jogando por você. Toque na tela para voltar.", {
+      info: true,
+    });
 });
+
+// Ausente (deixou o tempo acabar duas vezes seguidas): qualquer toque ou tecla avisa o servidor
+// que a pessoa voltou. Jogar, falar ou reagir também tiram o estado, lá no servidor.
+const amAway = () => !!state?.members.find((m) => m.id === state.me)?.away;
+let presenceSent = 0;
+for (const type of ["pointerdown", "keydown"]) {
+  addEventListener(
+    type,
+    () => {
+      if (!amAway() || Date.now() - presenceSent < 1000) return;
+      presenceSent = Date.now();
+      socket.emit("presence");
+    },
+    { capture: true, passive: true },
+  );
+}
 
 socket.on("chat", addChat);
 socket.on("reaction", ({ from, id } = {}) => showReaction(from, id));

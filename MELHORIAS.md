@@ -170,15 +170,17 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
 
 ### 🟠 Partida justa com gente de verdade
 
-- [ ] **29. Queda rápida não vira jogada automática na hora**
+- [x] **29. Queda rápida não vira jogada automática na hora**
       Quem cai na própria vez (celular bloqueou, trocou de app, túnel) joga no automático em 1,5s (`AWAY_DELAY_MS`), e nas vezes seguintes também. No celular isso acontece toda hora.
   - Onde: `Room.schedule()` em `server/rooms.js`
   - Pronto quando: na vez em que cai, o jogador mantém o prazo que já tinha (ou pelo menos 10s); a jogada rápida só começa a partir da vez seguinte. Quem volta dentro do prazo joga normalmente.
+  - Feito: a sala conta as vezes (`turnSeq`) e `disconnect()` anota em qual vez o jogador caiu (`droppedTurn`). Nessa vez, `schedule()` mantém o prazo e garante pelo menos 10s (`DROP_GRACE_MS`). O mínimo vale uma vez só por vez, para que cair e voltar várias vezes não estique o prazo. Cair não conta como tempo esgotado para a tarefa 30. Quem volta dentro do prazo continua com o mesmo prazo. Da vez seguinte em diante, o desconectado joga no automático em 1,5s, como antes. Testes em `test/away.test.js`.
 
-- [ ] **30. Jogador parado (conectado, mas sem jogar)**
+- [x] **30. Jogador parado (conectado, mas sem jogar)**
       Quem deixa a aba aberta e sai segura cada vez por 30s, rodada após rodada.
   - Onde: `Room.schedule()` / `autoplay()` em `server/rooms.js`, assentos em `public/app.js`
-  - Pronto quando: depois de 2 vezes seguidas por tempo esgotado, o jogador fica "ausente": joga no automático rápido como um desconectado, com selo "Ausente" no assento, e as rodadas não esperam o "pronto" dele. Qualquer ação dele (ou um botão "Voltei!") tira o estado. Ausente também não segura a revanche.
+  - Pronto quando: depois de 2 vezes seguidas por tempo esgotado, o jogador fica "ausente": joga no automático rápido como um desconectado, com selo "Ausente" no assento, e as rodadas não esperam o "pronto" dele. Qualquer ação dele tira o estado. Ausente também não segura a revanche.
+  - Feito: `idleTimeouts` conta os tempos esgotados seguidos. No segundo (`IDLE_TIMEOUTS`), o jogador fica `away`, o chat avisa "Fulano está ausente, jogadas automáticas até voltar" e `schedule()` passa a jogar por ele em 1,5s. `waitingOn()` e `rematchWaitingOn()` não esperam por ele. Todo evento da sala passa por `Room.touch()` (em `inRoom`, no `server/index.js`), que zera a contagem e tira o ausente; se for a vez dele, o prazo volta cheio, e o chat avisa "Fulano voltou". No cliente: o assento mostra o selo "Ausente" em dourado (e a cadeira do lobby diz "ausente"). Na sua própria barra aparece "Ausente · toque na tela para voltar", com um aviso quando o estado começa. Qualquer toque ou tecla manda `presence` (no máximo uma vez por segundo). Conferido no navegador: dois tempos esgotados deixam o jogador ausente, o aviso aparece na barra, e um toque na mesa tira o estado. O selo no assento de outro jogador só foi conferido no código, porque isso pedia um segundo humano com outro navegador. Testes em `test/away.test.js`.
 
 - [ ] **31. Quem sumiu de vez sai da mesa**
       Um jogador desconectado continua sentado e jogando no automático até a partida acabar, por mais longa que seja.
