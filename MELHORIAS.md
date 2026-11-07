@@ -140,9 +140,10 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
       As salas ficam só na memória: reiniciar o servidor derruba todas as partidas.
   - Pronto quando: o cliente avisa que a conexão caiu, tenta reconectar sozinho e volta para a home com uma mensagem clara se a sala sumiu.
 
-- [ ] **25. Limites no servidor**
+- [x] **25. Limites no servidor**
       O chat já tem 400ms entre mensagens.
   - Pronto quando: há limite de tentativas de código de sala por conexão e `compression` nos arquivos estáticos.
+  - Feito: o limite de tentativas de código entrou com a 36 (12 `room:join` por minuto). O pacote `compression` está no `package.json` e roda antes do `express.static`, comprimindo HTML, CSS e JS (inclusive `/shared`). Medido no servidor local: `app.js` caiu de 131KB para 41KB, `style.css` de 97KB para 23KB e `index.html` de 27KB para 6KB. O Socket.IO não passa pelo Express, então o tempo real não é afetado. Teste em `test/production.test.js`. Conferido no navegador: a página, as fontes e a conexão carregam sem erro.
 
 ## 🌐 Pronto para multiplayer
 
@@ -214,25 +215,28 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
 
 ### 🔧 Servidor para produção
 
-- [ ] **36. Limites que faltam (junto com a 25)**
+- [x] **36. Limites que faltam (junto com a 25)**
       Hoje só o chat (400ms) e as reações têm limite. Qualquer conexão pode criar salas sem parar (cada uma fica 5 minutos na memória), mandar mensagens de até 1MB (padrão do Socket.IO) e disparar ações de jogo sem pausa.
   - Onde: `server/index.js`, `RoomManager` em `server/rooms.js`
   - Pronto quando: `maxHttpBufferSize` em uns 16KB; `room:create` com limite por conexão (e um teto geral de salas, com a mensagem "Servidor cheio, tente daqui a pouco"); ações de jogo, `room:list` e `room:join` passam por `takeSlot`; limite de conexões por IP.
+  - Feito: o `on()` do `server/index.js` aplica limite em **todo** evento, por conexão, com o `takeSlot`. Os valores ficam em `RATE_LIMITS`: 5 `room:create` por minuto, 12 `room:join` por minuto (o limite de tentativas de código da tarefa 25), 30 `room:list` por minuto (a lista se atualiza a cada 5s, ou seja, 12 por minuto), 10 jogadas, compras ou passes a cada 5s e 20 a cada 10s nos demais eventos. Cada limite tem sua mensagem ("Muitas tentativas de entrar. Espere um minuto." e outras). `maxHttpBufferSize` ficou em 16KB: uma mensagem maior derruba só a conexão de quem mandou. O teto geral de salas é `MAX_ROOMS` (500), com "Servidor cheio, tente daqui a pouco". As conexões por IP passam pelo middleware do `io.use`, com `MAX_CONNECTIONS_PER_IP` (20), e o cliente mostra o motivo da recusa. Testes em `test/production.test.js`.
 
-- [ ] **37. Configuração de produção**
+- [x] **37. Configuração de produção**
       O CORS está aberto para qualquer site (`origin: '*'`), não há desligamento limpo e o `/health` não diz nada sobre as salas.
   - Onde: `server/index.js`, `README.md`
   - Pronto quando: as origens permitidas vêm de uma variável (`ALLOWED_ORIGINS`, com o app Capacitor incluído) e o padrão é só a própria origem; `trust proxy` ligado para pegar o IP certo atrás do Render/Railway/Fly; `pingInterval`/`pingTimeout` ajustados para celular; no `SIGTERM` o servidor avisa as salas ("O servidor vai reiniciar"), para os timers e fecha; `/health` mostra salas, partidas e conexões; erros vão para o log com o código da sala.
+  - Feito: a configuração vem de `configFromEnv()`, e as variáveis estão no README, na seção "Publicando". **Origens:** `allowRequest` só aceita a própria origem e as de `ALLOWED_ORIGINS` (para o Capacitor: `capacitor://localhost,http://localhost`). Isso vale também para WebSocket, que o CORS sozinho não barra. Conexões sem `Origin` (app nativo, curl) passam. **Proxy:** `TRUST_PROXY` vale 1 em produção e 0 fora dela. O IP sai do `X-Forwarded-For` contando da direita (`clientIp()`), então sem proxy não dá para inventar o IP. **Ping:** `pingInterval` 20s e `pingTimeout` 30s. **Desligamento:** no `SIGTERM` e no Ctrl+C, `shutdown()` avisa as salas no chat e com o evento `server:restart` (o cliente mostra o aviso), para os timers, fecha as conexões e a porta, e sai em até 5s de qualquer jeito. **`/health`:** `rooms`, `games`, `players`, `connections` e `uptime`. **Log:** os timers da sala passam por `Room.later()`, então um erro de bot ou de prazo sai no log com o código da sala em vez de derrubar o processo. Conferido no navegador: a partida continua funcionando na mesma origem e o `/health` responde. O `SIGTERM` foi testado só pelo `shutdown()` em `test/production.test.js`, porque o Windows não manda esse sinal.
 
 - [ ] **38. Reiniciar o servidor sem perder as partidas**
       As salas vivem só na memória: todo deploy derruba todas as partidas. O cliente já tenta reconectar e mostra "A sala fechou" (parte da 24), mas a partida se perde.
   - Onde: `RoomManager` em `server/rooms.js`
   - Pronto quando: no `SIGTERM` (tarefa 37) o servidor grava as salas (membros com token, configurações, estado do motor com `seed`, chat) num arquivo ou Redis e lê de volta ao subir; os jogadores reconectam pelo token e a partida continua da mesma vez, com o prazo cheio.
 
-- [ ] **39. Um processo só (documentar ou escalar)**
+- [x] **39. Um processo só (documentar ou escalar)**
       Tudo depende de um único processo: duas instâncias não enxergam as salas uma da outra, e o polling do Socket.IO quebra sem sessão fixa.
   - Onde: `README.md` (e, se precisar escalar, `server/`)
   - Pronto quando: o README diz que o servidor roda em uma instância só (e como configurar isso no Render/Railway/Fly). Só se o jogo crescer: estado das salas em Redis, `@socket.io/redis-adapter` e sessão fixa no balanceador.
+  - Feito (documentar): a seção "Uma instância só" do README, dentro de "Publicando", explica por que o servidor precisa de uma instância só e dá três regras: uma instância sem autoscaling (para crescer, aumente a máquina), sempre ligada (serviço que dorme apaga as salas) e deploy derruba as partidas (publique quando o `/health` mostrar pouca gente). Também diz como configurar cada plataforma: Render (Web Service com 1 instância, sem o plano gratuito que dorme, health check em `/health`), Railway (*Replicas* = 1) e Fly.io (`fly scale count 1`, e `auto_stop_machines = "off"` com `min_machines_running = 1` no `fly.toml`). Por fim, resume o caminho se um dia precisar escalar: Redis, `@socket.io/redis-adapter`, sessão fixa e um dono para os timers de cada sala. A parte de escalar ficou de fora, como a tarefa permite. Os nomes das telas e opções de cada plataforma vieram do que conheço delas e não foram conferidos agora nos painéis.
 
 - [ ] **40. Testes de multiplayer de ponta a ponta**
       Os testes de hoje chamam o motor e o `Room` direto; nada passa por conexões reais. A tarefa 23 cobre as regras de sala; esta cobre a rede.

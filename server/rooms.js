@@ -88,6 +88,28 @@ export class RoomManager {
     return this.rooms.get(clean(code, 8).toUpperCase());
   }
 
+  // Números para o /health.
+  stats() {
+    const rooms = [...this.rooms.values()];
+    return {
+      rooms: rooms.length,
+      games: rooms.filter((r) => r.game && r.game.phase !== "gameOver").length,
+      players: rooms.reduce(
+        (n, r) => n + r.members.filter((m) => !m.isBot && m.connected).length,
+        0,
+      ),
+    };
+  }
+
+  // Desligamento: avisa todas as salas e para os timers (ninguém joga sozinho enquanto fecha).
+  shutdown(message) {
+    for (const room of this.rooms.values()) {
+      room.system(message);
+      room.dispose();
+    }
+    this.io.emit("server:restart", { message });
+  }
+
   delete(code) {
     const room = this.rooms.get(code);
     if (!room) return;
@@ -258,18 +280,18 @@ class Room {
       this.game.phase !== "gameOver" &&
       this.game.players.some((p) => p.id === memberId);
     if (!seated) {
-      m.graceTimer = setTimeout(() => this.leave(memberId), LOBBY_GRACE_MS);
+      m.graceTimer = this.later(() => this.leave(memberId), LOBBY_GRACE_MS);
     } else this.armSeatTimer(m);
     if (memberId === this.hostId) {
       clearTimeout(this.hostTimer);
-      this.hostTimer = setTimeout(() => this.passHost(), HOST_GRACE_MS);
+      this.hostTimer = this.later(() => this.passHost(), HOST_GRACE_MS);
     }
     // caiu na própria vez: schedule() mantém o prazo desta vez
     const g = this.game;
     if (g?.phase === "playing" && g.players[g.turn]?.id === memberId)
       m.droppedTurn = this.turnSeq;
     if (!this.members.some((x) => !x.isBot && x.connected)) {
-      this.emptyTimer = setTimeout(
+      this.emptyTimer = this.later(
         () => this.manager.delete(this.code),
         EMPTY_ROOM_MS,
       );
@@ -283,7 +305,7 @@ class Room {
   // antes, o join() desarma o timer e nada muda.
   armSeatTimer(m) {
     clearTimeout(m.seatTimer);
-    m.seatTimer = setTimeout(() => {
+    m.seatTimer = this.later(() => {
       const g = this.game;
       const p = g?.players.find((x) => x.id === m.id);
       if (m.connected || !p || p.eliminated || g.phase === "gameOver") return;
@@ -603,7 +625,7 @@ class Room {
       this.ready.clear();
       // Sem nenhum humano conectado na mesa não há quem clique em "pronto": segue sozinho.
       if (!this.waitingOn().length)
-        this.timer = setTimeout(() => {
+        this.timer = this.later(() => {
           if (this.game === g && g.phase === "roundOver")
             this.apply(startRound(g));
         }, ROUND_BREAK_MS);
@@ -635,7 +657,7 @@ class Room {
       m.dropGraceSeq = seq;
       this.deadline = Math.max(this.deadline ?? 0, floor);
       this.turnMs = Math.max(this.turnMs ?? 0, DROP_GRACE_MS);
-      this.timer = setTimeout(
+      this.timer = this.later(
         () => this.turnSeq === seq && this.autoplay(current.id, false),
         this.deadline - Date.now(),
       );
@@ -651,7 +673,7 @@ class Room {
       // e o anel de tempo dos outros esvazia até lá.
       this.deadline = Date.now() + delay;
       this.turnMs = delay;
-      this.timer = setTimeout(
+      this.timer = this.later(
         () => this.autoplay(current.id, !!m?.isBot),
         delay,
       );
@@ -661,7 +683,7 @@ class Room {
       this.turnMs = this.settings.turnSeconds * 1000 + extraMs;
       this.deadline = Date.now() + this.turnMs;
     }
-    this.timer = setTimeout(
+    this.timer = this.later(
       () => {
         if (this.game !== g || this.turnSeq !== seq) return;
         // Duas vezes seguidas sem jogar: fica ausente e passa a jogar no automático rápido.
@@ -695,6 +717,17 @@ class Room {
       if (singleStep) break;
     }
     if (events.length) this.apply({ events });
+  }
+
+  // setTimeout com o erro no log (com o código da sala) em vez de derrubar o processo.
+  later(fn, ms) {
+    return setTimeout(() => {
+      try {
+        fn();
+      } catch (err) {
+        console.error(`[timer] sala ${this.code}:`, err);
+      }
+    }, ms);
   }
 
   clearTimer() {

@@ -10,7 +10,44 @@ npm run dev     # servidor com recarga automática em http://localhost:3000
 npm test        # testes das regras
 ```
 
-Para jogar com amigos na mesma rede, abra `http://SEU-IP:3000` no celular. Para jogar pela internet, publique o servidor num serviço que aceite Node e WebSocket (Render, Railway, Fly.io…). A porta vem de `PORT`.
+Para jogar com amigos na mesma rede, abra `http://SEU-IP:3000` no celular. Para jogar pela internet, publique o servidor num serviço que aceite Node e WebSocket (Render, Railway, Fly.io…).
+
+## Publicando
+
+Tudo vem de variáveis de ambiente:
+
+| Variável | Padrão | Para quê |
+| --- | --- | --- |
+| `PORT` | `3000` | Porta do servidor. |
+| `NODE_ENV` | — | Com `production`, o `TRUST_PROXY` passa a valer 1. |
+| `TRUST_PROXY` | `1` em produção, `0` fora | Quantos proxies ficam na frente do servidor (Render, Railway e Fly têm 1). Serve para pegar o IP real nos limites por IP. Sem proxy, deixe `0`, senão qualquer um inventa o IP no `X-Forwarded-For`. |
+| `ALLOWED_ORIGINS` | vazio | Outras origens que podem conectar, separadas por vírgula. O site servido pelo próprio servidor sempre pode. Para o app Capacitor: `capacitor://localhost,http://localhost`. |
+| `MAX_ROOMS` | `500` | Teto de salas abertas. Acima disso, "Servidor cheio, tente daqui a pouco". |
+| `MAX_CONNECTIONS_PER_IP` | `20` | Conexões simultâneas por IP. Uma família na mesma rede de casa cabe com folga. |
+
+- **Limites por conexão** (`RATE_LIMITS` em `server/index.js`): 5 salas criadas por minuto, 12 tentativas de entrar por minuto, 30 pedidos da lista de salas por minuto, 10 jogadas, compras ou passes a cada 5s, e 20 a cada 10s nos outros eventos. Mensagens maiores que 16KB derrubam a conexão de quem mandou.
+- **Desligamento**: no `SIGTERM` (o que as plataformas mandam no deploy) e no Ctrl+C, o servidor avisa todas as salas ("O servidor vai reiniciar"), para os timers dos bots e fecha. Os clientes reconectam sozinhos quando ele volta. As partidas em andamento ainda se perdem, porque as salas vivem na memória (tarefa 38 do `MELHORIAS.md`).
+- **Uma instância só**: veja abaixo.
+- **`/health`**: `{ ok, rooms, games, players, connections, uptime }`. Serve para o health check da plataforma e para ver quantas pessoas estão jogando.
+- **Log**: erros em eventos e timers saem no log com o código da sala (`[game:play] sala AB12C: ...`).
+
+### Uma instância só
+
+As salas, as partidas e os timers dos bots vivem na memória de **um** processo Node. Com duas instâncias, cada uma tem as suas salas: quem cai na outra recebe "Sala não encontrada", e a conexão do Socket.IO quebra quando o balanceador alterna entre elas (o polling precisa voltar sempre ao mesmo processo). Então:
+
+- **Uma instância**, sem autoscaling. Para aguentar mais gente, aumente a máquina (CPU e memória), não o número de instâncias. Um processo dá conta de bem mais salas que o teto padrão de `MAX_ROOMS` (500).
+- **Sempre ligada.** Serviço que "dorme" quando ninguém acessa apaga todas as salas ao dormir.
+- **Deploy derruba as partidas.** A instância nova sobe vazia. O servidor avisa antes ("O servidor vai reiniciar") e os jogadores reconectam sozinhos, mas voltam para uma sala que não existe mais (tarefa 38 do `MELHORIAS.md`). Prefira publicar quando houver pouca gente jogando: o `/health` mostra quantas partidas estão rolando.
+
+Em cada plataforma:
+
+- **Render**: crie um *Web Service* (aceita WebSocket) e deixe a contagem de instâncias em 1, sem autoscaling. O plano gratuito dorme depois de um tempo sem acesso, então use um plano pago para manter as salas vivas. Coloque `/health` como *Health Check Path*.
+- **Railway**: nas configurações do serviço, deixe *Replicas* em 1 (o padrão). O Railway já entrega `PORT` e passa o WebSocket direto.
+- **Fly.io**: o `fly launch` costuma criar duas máquinas, então rode `fly scale count 1` depois dele. No `fly.toml`, dentro de `[http_service]`, use `auto_stop_machines = "off"` e `min_machines_running = 1` para a máquina não desligar quando a mesa esvazia, e aponte o health check para `/health`.
+
+Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for usar o app, `ALLOWED_ORIGINS`.
+
+**Se um dia precisar de mais de uma instância:** as salas teriam que sair da memória para um lugar compartilhado (Redis), os eventos teriam que passar entre as instâncias com o `@socket.io/redis-adapter`, e o balanceador precisaria de sessão fixa (*sticky sessions*). Os timers dos bots também precisariam de um dono por sala. É uma mudança grande, que só vale a pena se uma máquina grande não der mais conta.
 
 ## Estrutura
 
@@ -50,5 +87,5 @@ Para jogar com amigos na mesma rede, abra `http://SEU-IP:3000` no celular. Para 
 
 O motor (`shared/`) não depende do navegador nem do servidor, então dá para:
 
-1. **Capacitor** (o caminho mais rápido): embrulhar a pasta `public/` como app Android/iOS e apontar o `io()` do `app.js` para o servidor publicado. O servidor já aceita conexões de outras origens (CORS aberto).
+1. **Capacitor** (o caminho mais rápido): embrulhar a pasta `public/` como app Android/iOS e apontar o `io()` do `app.js` para o servidor publicado. Para o servidor aceitar o app, coloque a origem dele em `ALLOWED_ORIGINS` (veja "Publicando").
 2. **React Native / Expo**: refazer a interface nativa e reaproveitar `shared/engine.js` e `shared/bot.js`, inclusive para um modo offline contra bots.

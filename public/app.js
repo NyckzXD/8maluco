@@ -3786,6 +3786,22 @@ socket.on("connect", async () => {
 
 socket.on("disconnect", () => $("#netStatus").classList.remove("hidden"));
 
+// O servidor vai reiniciar (deploy): avisa antes da conexão cair; a reconexão cuida do resto.
+socket.on("server:restart", ({ message } = {}) =>
+  flash(message ?? "O servidor vai reiniciar. Volte em instantes!", { info: true }),
+);
+
+// Conexão recusada pelo servidor (muitas conexões do mesmo endereço, origem não liberada):
+// mostra a faixa de "Reconectando" e, na primeira vez, o motivo.
+let connectErrorShown = false;
+socket.on("connect_error", (err) => {
+  $("#netStatus").classList.remove("hidden");
+  if (!connectErrorShown && err?.message && !/xhr|websocket|timeout/i.test(err.message)) {
+    connectErrorShown = true;
+    flash(err.message);
+  }
+});
+
 // Entrou por um link de convite (?sala=CODIGO).
 const invite = new URLSearchParams(location.search).get("sala");
 if (invite) {
