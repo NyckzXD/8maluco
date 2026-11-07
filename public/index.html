@@ -2,9 +2,15 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#0a0908" />
-    <meta name="description" content="8 Maluco: jogo de cartas multiplayer online. Crie uma sala, chame a galera pelo link e complete a mesa com bots." />
+    <meta
+      name="description"
+      content="8 Maluco: jogo de cartas multiplayer online. Crie uma sala, chame a galera pelo link e complete a mesa com bots."
+    />
     <title>8 Maluco</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
@@ -14,11 +20,32 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="8 Maluco" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <!-- as fontes mais usadas na primeira tela já começam a baixar junto com o CSS -->
-    <link rel="preload" href="fonts/russo-one-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="fonts/barlow-semi-condensed-600.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="fonts/barlow-semi-condensed-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="fonts/russo-one-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/barlow-semi-condensed-600.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/barlow-semi-condensed-700.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -28,28 +55,60 @@
       <div class="home-wrap">
         <header class="home-head">
           <h1 class="logo"><span class="logo-8">8</span> Maluco</h1>
-          <p class="tagline">O jogo de cartas mais maluco da mesa, agora online</p>
+          <p class="tagline">O jogo de cartas mais maluco, agora online</p>
         </header>
 
         <!-- Dois painéis no desktop: você e os botões de jogar | o passo a passo. No celular, uma coluna. -->
         <div class="home-stage">
           <div class="play-panel">
             <div class="profile">
-              <button id="homeAvatar" type="button" class="avatar avatar-xl avatar-edit" title="Editar avatar" aria-label="Editar avatar">
-                <span class="edit-badge" aria-hidden="true"><svg class="icon"><use href="#i-pencil"/></svg></span>
+              <button
+                id="homeAvatar"
+                type="button"
+                class="avatar avatar-xl avatar-edit"
+                title="Editar avatar"
+                aria-label="Editar avatar"
+              >
+                <span class="edit-badge" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-pencil" /></svg
+                ></span>
               </button>
               <div class="name-field">
                 <label for="nameInput" class="field-label">Seu apelido</label>
-                <input id="nameInput" name="nickname" maxlength="16" placeholder="Ex.: Tia Neide…" autocomplete="nickname" aria-describedby="nameError" />
+                <input
+                  id="nameInput"
+                  name="nickname"
+                  maxlength="16"
+                  placeholder="Ex.: Tia Neide…"
+                  autocomplete="nickname"
+                  aria-describedby="nameError"
+                />
                 <p id="nameError" class="field-error hidden"></p>
               </div>
             </div>
 
             <nav class="home-menu" aria-label="Jogar">
-              <button id="createBtn" class="btn btn-primary btn-big"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar sala</button>
-              <button id="roomsBtn" class="btn btn-big"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Salas abertas</button>
+              <button id="createBtn" class="btn btn-primary btn-big">
+                <svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg
+                >Criar sala
+              </button>
+              <button id="roomsBtn" class="btn btn-big">
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-users" /></svg
+                >Salas abertas
+              </button>
               <div class="join-row">
-                <input id="codeInput" name="code" maxlength="5" placeholder="Código" aria-label="Código da sala" autocomplete="off" autocapitalize="characters" enterkeyhint="go" spellcheck="false" />
+                <input
+                  id="codeInput"
+                  name="code"
+                  maxlength="5"
+                  placeholder="Código"
+                  aria-label="Código da sala"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  enterkeyhint="go"
+                  spellcheck="false"
+                />
                 <button id="joinBtn" class="btn btn-big">Entrar</button>
               </div>
             </nav>
@@ -57,51 +116,126 @@
 
           <section class="howto-section" aria-labelledby="howtoTitle">
             <h2 id="howtoTitle" class="howto-title">Como jogar</h2>
-            <div id="howto" class="howto" role="group" aria-roledescription="carrossel" aria-label="Como jogar, passo a passo">
+            <div
+              id="howto"
+              class="howto"
+              role="group"
+              aria-roledescription="carrossel"
+              aria-label="Como jogar, passo a passo"
+            >
               <div class="howto-slide">
                 <div class="howto-card">9</div>
                 <h3>Receba as cartas</h3>
                 <p>Cada jogador começa a rodada com 9 cartas na mão</p>
               </div>
               <div class="howto-slide">
-                <div class="howto-card red"><svg class="howto-suit" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></div>
+                <div class="howto-card red">
+                  <svg
+                    class="howto-suit"
+                    viewBox="0 0 100 100"
+                    aria-hidden="true"
+                  >
+                    <use href="#suit-H" />
+                  </svg>
+                </div>
                 <h3>Siga o monte</h3>
-                <p>Jogue uma carta da mesma pinta ou do mesmo número da carta do monte</p>
+                <p>
+                  Jogue uma carta da mesma pinta ou do mesmo número da carta do
+                  monte
+                </p>
               </div>
               <div class="howto-slide">
                 <div class="howto-card">+1</div>
                 <h3>Sem carta? Compre</h3>
-                <p>Compre uma carta do baralho. Se ela servir, pode jogar; se não, a vez passa</p>
+                <p>
+                  Compre uma carta do baralho. Se ela servir, pode jogar; se
+                  não, a vez passa
+                </p>
               </div>
               <div class="howto-slide">
                 <div class="howto-card red">8</div>
                 <h3>Cartas especiais</h3>
-                <p>Ás pula, 7 e 9 fazem comprar, o 8 troca a pinta e o Joker faz todo mundo comprar</p>
+                <p>
+                  Ás pula, 7 e 9 fazem comprar, o 8 troca a pinta e o Joker faz
+                  todo mundo comprar
+                </p>
               </div>
               <div class="howto-slide">
                 <div class="howto-card">0</div>
                 <h3>Esvazie a mão</h3>
-                <p>Quem termina as cartas fecha a rodada; os outros somam os pontos do que sobrou</p>
+                <p>
+                  Quem termina as cartas fecha a rodada; os outros somam os
+                  pontos do que sobrou
+                </p>
               </div>
               <div class="howto-slide">
                 <div class="howto-card red js-limit">100</div>
                 <h3>Fuja dos <span class="js-limit">100</span></h3>
-                <p>Quem chega a <span class="js-limit">100</span> pontos está fora. Ganha o último que restar!</p>
+                <p>
+                  Quem chega a <span class="js-limit">100</span> pontos está
+                  fora. Ganha o último que restar!
+                </p>
               </div>
             </div>
             <div class="howto-nav">
-              <button id="howtoPrev" type="button" class="howto-arrow prev" aria-label="Passo anterior"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+              <button
+                id="howtoPrev"
+                type="button"
+                class="howto-arrow prev"
+                aria-label="Passo anterior"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-chevron" />
+                </svg>
+              </button>
               <div id="howtoDots" class="howto-dots"></div>
-              <span id="howtoCount" class="howto-count" aria-hidden="true"></span>
-              <button id="howtoNext" type="button" class="howto-arrow next" aria-label="Próximo passo"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
-              <button id="howtoPause" type="button" class="howto-arrow howto-pause" aria-label="Pausar passo a passo" title="Pausar passo a passo"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg></button>
+              <span
+                id="howtoCount"
+                class="howto-count"
+                aria-hidden="true"
+              ></span>
+              <button
+                id="howtoNext"
+                type="button"
+                class="howto-arrow next"
+                aria-label="Próximo passo"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-chevron" />
+                </svg>
+              </button>
+              <button
+                id="howtoPause"
+                type="button"
+                class="howto-arrow howto-pause"
+                aria-label="Pausar passo a passo"
+                title="Pausar passo a passo"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-pause" />
+                </svg>
+              </button>
             </div>
-            <button id="rulesBtn" class="btn btn-small"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Regras completas</button>
+            <button id="rulesBtn" class="btn btn-small">
+              <svg class="icon" aria-hidden="true"><use href="#i-book" /></svg
+              >Regras completas
+            </button>
           </section>
         </div>
 
         <footer class="home-foot">
-          <p class="copyright">© Criado com <span class="heart" role="img" aria-label="amor"><svg class="heart-glyph" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span> por Nycolas F. 2026</p>
+          <p class="copyright">
+            © Criado com
+            <span class="heart" role="img" aria-label="amor"
+              ><svg
+                class="heart-glyph"
+                viewBox="0 0 100 100"
+                aria-hidden="true"
+              >
+                <use href="#suit-H" /></svg
+            ></span>
+            por Nycolas F. 2026
+          </p>
         </footer>
       </div>
     </section>
@@ -113,19 +247,45 @@
       <div class="lobby-layout">
         <div class="lobby-main">
           <header class="lobby-head">
-            <button class="btn btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
+            <button class="btn btn-small leave-btn">
+              <svg class="icon" aria-hidden="true"><use href="#i-back" /></svg
+              >Sair
+            </button>
             <h1 class="lobby-title">Sala de espera</h1>
             <div class="top-right">
-              <button type="button" class="btn btn-small react-btn" title="Reagir" aria-label="Reagir" aria-haspopup="true" aria-expanded="false" aria-controls="reactMenu"><svg class="icon" aria-hidden="true"><use href="#i-smile"/></svg></button>
-              <button class="btn btn-small rules-link" title="Como jogar"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg><span class="rules-label">Como jogar</span></button>
+              <button
+                type="button"
+                class="btn btn-small react-btn"
+                title="Reagir"
+                aria-label="Reagir"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-controls="reactMenu"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-smile" />
+                </svg>
+              </button>
+              <button class="btn btn-small rules-link" title="Como jogar">
+                <svg class="icon" aria-hidden="true"><use href="#i-book" /></svg
+                ><span class="rules-label">Como jogar</span>
+              </button>
             </div>
           </header>
 
           <div class="table lobby-table">
-            <div class="felt"><span class="felt-logo" aria-hidden="true">8 Maluco</span></div>
-            <ul id="memberList" class="lobby-seats" aria-labelledby="lobbyCount"></ul>
+            <div class="felt">
+              <span class="felt-logo" aria-hidden="true">8 Maluco</span>
+            </div>
+            <ul
+              id="memberList"
+              class="lobby-seats"
+              aria-labelledby="lobbyCount"
+            ></ul>
             <div class="lobby-center">
-              <p class="room-code"><span>Sala</span> <strong id="lobbyCode">-----</strong></p>
+              <p class="room-code">
+                <span>Sala</span> <strong id="lobbyCode">-----</strong>
+              </p>
               <h2 id="lobbyCount" class="lobby-count">Jogadores</h2>
               <button id="copyLink" class="btn btn-small">Copiar link</button>
             </div>
@@ -141,7 +301,14 @@
           <div class="lobby-bar">
             <!-- Todo mundo vê as configurações; só o anfitrião muda (para os outros ficam desabilitadas). -->
             <div class="settings">
-              <label class="check"><input type="checkbox" id="setPublic" aria-describedby="settingsNote" /> Sala pública</label>
+              <label class="check"
+                ><input
+                  type="checkbox"
+                  id="setPublic"
+                  aria-describedby="settingsNote"
+                />
+                Sala pública</label
+              >
               <label class="select">
                 Tempo por vez
                 <select id="setTurn" aria-describedby="settingsNote">
@@ -151,15 +318,34 @@
                   <option value="60">60s</option>
                 </select>
               </label>
-              <p id="settingsNote" class="settings-note hidden">Só o anfitrião muda as configurações</p>
+              <p id="settingsNote" class="settings-note hidden">
+                Só o anfitrião muda as configurações
+              </p>
             </div>
 
             <div id="hostControls" class="host-controls">
-              <button id="addBotBtn" class="btn btn-big"><svg class="icon" aria-hidden="true"><use href="#i-bot"/></svg>Adicionar bot</button>
-              <button id="startBtn" class="btn btn-primary btn-big" aria-describedby="startHint">Começar partida</button>
-              <p id="startHint" class="start-hint hidden">Precisa de pelo menos 2 jogadores</p>
+              <button id="addBotBtn" class="btn btn-big">
+                <svg class="icon" aria-hidden="true"><use href="#i-bot" /></svg
+                >Adicionar bot
+              </button>
+              <button
+                id="startBtn"
+                class="btn btn-primary btn-big"
+                aria-describedby="startHint"
+              >
+                Começar partida
+              </button>
+              <p id="startHint" class="start-hint hidden">
+                Precisa de pelo menos 2 jogadores
+              </p>
             </div>
-            <p id="waitHost" class="wait-host"><span id="waitHostText">Esperando o anfitrião começar a partida</span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></p>
+            <p id="waitHost" class="wait-host">
+              <span id="waitHostText"
+                >Esperando o anfitrião começar a partida</span
+              ><span class="dots" aria-hidden="true"
+                ><i></i><i></i><i></i
+              ></span>
+            </p>
           </div>
         </div>
         <aside class="panel chat-panel" data-chat></aside>
@@ -171,12 +357,47 @@
       <div class="game-layout">
         <div class="game-main">
           <header class="game-top">
-            <button class="btn btn-small leave-btn"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair</button>
+            <button class="btn btn-small leave-btn">
+              <svg class="icon" aria-hidden="true"><use href="#i-back" /></svg
+              >Sair
+            </button>
             <h1 id="roundLabel" class="round-label">Rodada 1</h1>
             <div class="top-right">
-              <button type="button" class="btn btn-small react-btn" title="Reagir" aria-label="Reagir" aria-haspopup="true" aria-expanded="false" aria-controls="reactMenu"><svg class="icon" aria-hidden="true"><use href="#i-smile"/></svg></button>
-              <button id="muteBtn" class="btn btn-small" title="Silenciar" aria-label="Silenciar" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-volume"/></svg></button>
-              <button id="sideToggle" class="btn btn-small side-toggle" title="Placar e chat" aria-label="Placar e chat" aria-controls="sidePanel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span id="unread" class="dot hidden" aria-hidden="true"></span></button>
+              <button
+                type="button"
+                class="btn btn-small react-btn"
+                title="Reagir"
+                aria-label="Reagir"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-controls="reactMenu"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-smile" />
+                </svg>
+              </button>
+              <button
+                id="muteBtn"
+                class="btn btn-small"
+                title="Silenciar"
+                aria-label="Silenciar"
+                aria-pressed="false"
+              >
+                <svg class="icon" aria-hidden="true">
+                  <use href="#i-volume" />
+                </svg>
+              </button>
+              <button
+                id="sideToggle"
+                class="btn btn-small side-toggle"
+                title="Placar e chat"
+                aria-label="Placar e chat"
+                aria-controls="sidePanel"
+                aria-expanded="false"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#i-chat" /></svg
+                ><span id="unread" class="dot hidden" aria-hidden="true"></span>
+              </button>
             </div>
           </header>
 
@@ -184,20 +405,38 @@
             <div class="felt"></div>
             <div id="seats"></div>
             <div class="table-center">
-              <svg class="direction" viewBox="0 0 200 200" role="img" aria-label="O jogo gira para a direita (anti-horário)">
+              <svg
+                class="direction"
+                viewBox="0 0 200 200"
+                role="img"
+                aria-label="O jogo gira para a direita (anti-horário)"
+              >
                 <title>O jogo gira para a direita (anti-horário)</title>
-                <path d="M156.6 167.4A88 88 0 0 0 162.2 37.8"/>
-                <path class="head" d="M156.3 31.8L171.8 36.1L160.5 47.4z"/>
-                <path d="M13.3 115.3A88 88 0 0 0 122.8 185.0"/>
-                <path class="head" d="M130.9 182.8L119.4 194.2L115.3 178.7z"/>
-                <path d="M130.1 17.3A88 88 0 0 0 15.0 77.2"/>
-                <path class="head" d="M12.8 85.3L8.7 69.7L24.2 73.9z"/>
+                <path d="M156.6 167.4A88 88 0 0 0 162.2 37.8" />
+                <path class="head" d="M156.3 31.8L171.8 36.1L160.5 47.4z" />
+                <path d="M13.3 115.3A88 88 0 0 0 122.8 185.0" />
+                <path class="head" d="M130.9 182.8L119.4 194.2L115.3 178.7z" />
+                <path d="M130.1 17.3A88 88 0 0 0 15.0 77.2" />
+                <path class="head" d="M12.8 85.3L8.7 69.7L24.2 73.9z" />
               </svg>
-              <button id="drawPile" class="pile draw-pile" title="Comprar carta">
+              <button
+                id="drawPile"
+                class="pile draw-pile"
+                title="Comprar carta"
+              >
                 <span class="card back"></span>
-                <span id="drawCount" class="pile-count" aria-hidden="true">0</span>
+                <span id="drawCount" class="pile-count" aria-hidden="true"
+                  >0</span
+                >
               </button>
-              <div id="discardPile" class="pile discard-pile" role="button" tabindex="-1" aria-disabled="true" aria-label="Monte"></div>
+              <div
+                id="discardPile"
+                class="pile discard-pile"
+                role="button"
+                tabindex="-1"
+                aria-disabled="true"
+                aria-label="Monte"
+              ></div>
               <div id="activeSuit" class="active-suit"></div>
               <p id="lastMove" class="last-move" aria-live="polite"></p>
             </div>
@@ -208,21 +447,48 @@
             <div class="me-actions">
               <div id="meInfo" class="me-info"></div>
               <div id="turnBanner" class="turn-banner" aria-live="polite"></div>
-              <div id="meTimer" class="timer-bar" role="progressbar" aria-label="Tempo da sua vez" aria-valuemin="0" aria-valuemax="30" aria-valuenow="30"><i></i></div>
-              <span id="meTimerSecs" class="timer-secs" aria-hidden="true"></span>
-              <button id="passBtn" class="btn btn-small hidden">Passar a vez</button>
+              <div
+                id="meTimer"
+                class="timer-bar"
+                role="progressbar"
+                aria-label="Tempo da sua vez"
+                aria-valuemin="0"
+                aria-valuemax="30"
+                aria-valuenow="30"
+              >
+                <i></i>
+              </div>
+              <span
+                id="meTimerSecs"
+                class="timer-secs"
+                aria-hidden="true"
+              ></span>
+              <button id="passBtn" class="btn btn-small hidden">
+                Passar a vez
+              </button>
               <div id="meScore" class="me-score"></div>
             </div>
-            <div id="hand" class="hand" role="group" aria-label="Suas cartas"></div>
+            <div
+              id="hand"
+              class="hand"
+              role="group"
+              aria-label="Suas cartas"
+            ></div>
           </div>
         </div>
 
         <aside id="sidePanel" class="side" aria-label="Placar e chat">
-          <button type="button" class="btn btn-text side-close"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Fechar</button>
+          <button type="button" class="btn btn-text side-close">
+            <svg class="icon" aria-hidden="true"><use href="#i-x" /></svg>Fechar
+          </button>
           <section class="panel score-panel" aria-labelledby="scoreTitle">
             <div class="panel-head">
               <h3 id="scoreTitle">Placar</h3>
-              <span class="score-limit" title="Quem chega a esse total de pontos está fora">Limite <b id="limitLabel">100</b></span>
+              <span
+                class="score-limit"
+                title="Quem chega a esse total de pontos está fora"
+                >Limite <b id="limitLabel">100</b></span
+              >
             </div>
             <ul id="scoreList" class="score-list"></ul>
           </section>
@@ -234,39 +500,85 @@
 
     <!-- ===== Modais ===== -->
     <div id="suitModal" class="modal hidden">
-      <div class="modal-box felt-box suit-box" role="dialog" aria-modal="true" aria-labelledby="suitTitle" aria-describedby="suitDesc" tabindex="-1">
+      <div
+        class="modal-box felt-box suit-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="suitTitle"
+        aria-describedby="suitDesc"
+        tabindex="-1"
+      >
         <h2 id="suitTitle">Escolha a pinta</h2>
-        <p id="suitDesc" class="modal-sub">O próximo jogador terá que seguir essa pinta.</p>
+        <p id="suitDesc" class="modal-sub">
+          O próximo jogador terá que seguir essa pinta.
+        </p>
         <div class="suit-grid">
-          <button class="suit-btn red" data-suit="H" aria-label="Copas" data-autofocus>
+          <button
+            class="suit-btn red"
+            data-suit="H"
+            aria-label="Copas"
+            data-autofocus
+          >
             <span class="suit-face" aria-hidden="true">
-              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span>
-              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-H"/></svg>
-              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-H"/></svg></span>
+              <span class="suit-corner"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-H" /></svg
+              ></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100">
+                <use href="#suit-H" />
+              </svg>
+              <span class="suit-corner br"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-H" /></svg
+              ></span>
             </span>
             <small>Copas</small>
           </button>
           <button class="suit-btn red" data-suit="D" aria-label="Ouros">
             <span class="suit-face" aria-hidden="true">
-              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-D"/></svg></span>
-              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-D"/></svg>
-              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-D"/></svg></span>
+              <span class="suit-corner"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-D" /></svg
+              ></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100">
+                <use href="#suit-D" />
+              </svg>
+              <span class="suit-corner br"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-D" /></svg
+              ></span>
             </span>
             <small>Ouros</small>
           </button>
           <button class="suit-btn" data-suit="S" aria-label="Espadas">
             <span class="suit-face" aria-hidden="true">
-              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-S"/></svg></span>
-              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-S"/></svg>
-              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-S"/></svg></span>
+              <span class="suit-corner"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-S" /></svg
+              ></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100">
+                <use href="#suit-S" />
+              </svg>
+              <span class="suit-corner br"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-S" /></svg
+              ></span>
             </span>
             <small>Espadas</small>
           </button>
           <button class="suit-btn" data-suit="C" aria-label="Paus">
             <span class="suit-face" aria-hidden="true">
-              <span class="suit-corner">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-C"/></svg></span>
-              <svg class="suit-glyph" viewBox="0 0 100 100"><use href="#suit-C"/></svg>
-              <span class="suit-corner br">8<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-C"/></svg></span>
+              <span class="suit-corner"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-C" /></svg
+              ></span>
+              <svg class="suit-glyph" viewBox="0 0 100 100">
+                <use href="#suit-C" />
+              </svg>
+              <span class="suit-corner br"
+                >8<svg viewBox="0 0 100 100" aria-hidden="true">
+                  <use href="#suit-C" /></svg
+              ></span>
             </span>
             <small>Paus</small>
           </button>
@@ -277,7 +589,14 @@
     </div>
 
     <div id="roundModal" class="modal hidden" data-static>
-      <div class="modal-box wide results-box" role="dialog" aria-modal="true" aria-labelledby="roundTitle" aria-describedby="roundSub" tabindex="-1">
+      <div
+        class="modal-box wide results-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="roundTitle"
+        aria-describedby="roundSub"
+        tabindex="-1"
+      >
         <header class="results-head">
           <h2 id="roundTitle"></h2>
           <p id="roundSub" class="results-sub"></p>
@@ -286,12 +605,20 @@
         <ol id="roundRows" class="results-list"></ol>
         <p id="roundFooter" class="wait-line"></p>
         <div id="readyActions" class="center hidden">
-          <button id="readyBtn" class="btn btn-primary btn-big" data-autofocus>Estou pronto!</button>
+          <button id="readyBtn" class="btn btn-primary btn-big" data-autofocus>
+            Estou pronto!
+          </button>
         </div>
         <!-- Fim da partida: revanche com a mesma mesa. Sozinho com bots é "Jogar de novo" (começa na
              hora); com mais gente vira um "pronto" e começa quando todos estiverem prontos. -->
         <div id="gameOverActions" class="game-over-actions hidden">
-          <button id="rematchBtn" class="btn btn-primary btn-big" data-autofocus>Jogar de novo</button>
+          <button
+            id="rematchBtn"
+            class="btn btn-primary btn-big"
+            data-autofocus
+          >
+            Jogar de novo
+          </button>
           <p id="rematchWait" class="wait-line" aria-live="polite"></p>
           <button id="againBtn" class="btn btn-text">Voltar para a sala</button>
         </div>
@@ -299,13 +626,29 @@
     </div>
 
     <div id="roomsModal" class="modal hidden">
-      <div class="modal-box wide rooms-box" role="dialog" aria-modal="true" aria-labelledby="roomsTitle" aria-describedby="roomsDesc" tabindex="-1">
+      <div
+        class="modal-box wide rooms-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="roomsTitle"
+        aria-describedby="roomsDesc"
+        tabindex="-1"
+      >
         <header class="rooms-head">
           <div>
             <h2 id="roomsTitle">Salas públicas</h2>
-            <p id="roomsDesc" class="modal-sub">Escolha uma mesa e puxe uma cadeira.</p>
+            <p id="roomsDesc" class="modal-sub">
+              Escolha uma mesa e puxe uma cadeira.
+            </p>
           </div>
-          <button id="refreshRooms" class="btn btn-small btn-felt" title="Atualizar" aria-label="Atualizar lista de salas"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+          <button
+            id="refreshRooms"
+            class="btn btn-small btn-felt"
+            title="Atualizar"
+            aria-label="Atualizar lista de salas"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-refresh" /></svg>
+          </button>
         </header>
         <ul id="roomList" class="room-list"></ul>
         <button class="btn btn-text" data-close>Fechar</button>
@@ -313,77 +656,176 @@
     </div>
 
     <div id="avatarModal" class="modal hidden">
-      <div class="modal-box avatar-box" role="dialog" aria-modal="true" aria-labelledby="avatarTitle" tabindex="-1">
+      <div
+        class="modal-box avatar-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="avatarTitle"
+        tabindex="-1"
+      >
         <h2 id="avatarTitle">Crie seu avatar</h2>
         <div class="avatar-editor">
           <div class="avatar-stage">
             <div id="avatarPreview" class="avatar avatar-xxl"></div>
-            <button id="avatarRandom" type="button" class="btn btn-small btn-felt"><svg class="icon" aria-hidden="true"><use href="#i-dice"/></svg>Aleatório</button>
+            <button
+              id="avatarRandom"
+              type="button"
+              class="btn btn-small btn-felt"
+            >
+              <svg class="icon" aria-hidden="true"><use href="#i-dice" /></svg
+              >Aleatório
+            </button>
           </div>
           <div class="avatar-panel">
-            <div id="avatarTabs" class="avatar-tabs" role="tablist" aria-label="Partes do avatar"></div>
-            <div id="avatarOptions" class="avatar-options" role="tabpanel"></div>
+            <div
+              id="avatarTabs"
+              class="avatar-tabs"
+              role="tablist"
+              aria-label="Partes do avatar"
+            ></div>
+            <div
+              id="avatarOptions"
+              class="avatar-options"
+              role="tabpanel"
+            ></div>
           </div>
         </div>
         <div class="avatar-actions">
-          <button type="button" class="btn btn-text" data-close>Cancelar</button>
-          <button id="avatarSave" type="button" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Salvar avatar</button>
+          <button type="button" class="btn btn-text" data-close>
+            Cancelar
+          </button>
+          <button id="avatarSave" type="button" class="btn btn-primary">
+            <svg class="icon" aria-hidden="true"><use href="#i-check" /></svg
+            >Salvar avatar
+          </button>
         </div>
       </div>
     </div>
 
     <div id="leaveModal" class="modal hidden">
-      <div class="modal-box felt-box confirm-box" role="dialog" aria-modal="true" aria-labelledby="leaveTitle" aria-describedby="leaveDesc" tabindex="-1">
+      <div
+        class="modal-box felt-box confirm-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="leaveTitle"
+        aria-describedby="leaveDesc"
+        tabindex="-1"
+      >
         <div class="modal-art leave-art" aria-hidden="true">
-          <span class="card back"></span><span class="card back"></span><span class="card back"></span>
-          <span class="modal-art-badge"><svg class="icon"><use href="#i-back"/></svg></span>
+          <span class="card back"></span><span class="card back"></span
+          ><span class="card back"></span>
+          <span class="modal-art-badge"
+            ><svg class="icon"><use href="#i-back" /></svg
+          ></span>
         </div>
         <h2 id="leaveTitle">Sair da partida?</h2>
-        <p id="leaveDesc" class="modal-sub">Você será eliminado desta partida e volta para a tela inicial.</p>
+        <p id="leaveDesc" class="modal-sub">
+          Você será eliminado desta partida e volta para a tela inicial.
+        </p>
         <div class="modal-actions">
-          <button class="btn btn-text" data-close data-autofocus>Continuar jogando</button>
-          <button id="leaveConfirm" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Sair da partida</button>
+          <button class="btn btn-text" data-close data-autofocus>
+            Continuar jogando
+          </button>
+          <button id="leaveConfirm" class="btn btn-primary">
+            <svg class="icon" aria-hidden="true"><use href="#i-back" /></svg
+            >Sair da partida
+          </button>
         </div>
       </div>
     </div>
 
     <div id="kickModal" class="modal hidden">
-      <div class="modal-box felt-box confirm-box" role="dialog" aria-modal="true" aria-labelledby="kickTitle" aria-describedby="kickDesc" tabindex="-1">
+      <div
+        class="modal-box felt-box confirm-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="kickTitle"
+        aria-describedby="kickDesc"
+        tabindex="-1"
+      >
         <div class="modal-art kick-art" aria-hidden="true">
           <div id="kickAvatar" class="kick-avatar"></div>
-          <span class="modal-art-badge"><svg class="icon"><use href="#i-x"/></svg></span>
+          <span class="modal-art-badge"
+            ><svg class="icon"><use href="#i-x" /></svg
+          ></span>
         </div>
         <h2 id="kickTitle">Remover jogador?</h2>
-        <p id="kickDesc" class="modal-sub">Ele sai da sala e não consegue voltar enquanto ela estiver aberta.</p>
+        <p id="kickDesc" class="modal-sub">
+          Ele sai da sala e não consegue voltar enquanto ela estiver aberta.
+        </p>
         <div class="modal-actions">
-          <button class="btn btn-text" data-close data-autofocus>Cancelar</button>
-          <button id="kickConfirm" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>Remover</button>
+          <button class="btn btn-text" data-close data-autofocus>
+            Cancelar
+          </button>
+          <button id="kickConfirm" class="btn btn-primary">
+            <svg class="icon" aria-hidden="true"><use href="#i-x" /></svg
+            >Remover
+          </button>
         </div>
       </div>
     </div>
 
     <div id="rulesModal" class="modal hidden">
-      <div class="modal-box wide rules" role="dialog" aria-modal="true" aria-labelledby="rulesTitle" tabindex="-1">
+      <div
+        class="modal-box wide rules"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rulesTitle"
+        tabindex="-1"
+      >
         <h2 id="rulesTitle">Como jogar 8 Maluco</h2>
         <ul>
-          <li>Cada jogador recebe <b>9 cartas</b>. Quem dá as cartas na primeira rodada é sorteado; depois passa para a direita a cada rodada.</li>
-          <li>Quem está à <b>direita</b> de quem deu as cartas <b>abre o monte</b> com a carta que quiser, e o jogo gira para a direita (anti-horário).</li>
-          <li>Na sua vez, jogue uma carta da <b>mesma pinta</b> ou do <b>mesmo número</b> da carta do monte.</li>
-          <li>Sem carta para jogar? <b>Compre uma</b>. Se ela servir, pode jogar; se não, a vez passa.</li>
+          <li>
+            Cada jogador recebe <b>9 cartas</b>. Quem dá as cartas na primeira
+            rodada é sorteado; depois passa para a direita a cada rodada.
+          </li>
+          <li>
+            Quem está à <b>direita</b> de quem deu as cartas
+            <b>abre o monte</b> com a carta que quiser, e o jogo gira para a
+            direita (anti-horário).
+          </li>
+          <li>
+            Na sua vez, jogue uma carta da <b>mesma pinta</b> ou do
+            <b>mesmo número</b> da carta do monte.
+          </li>
+          <li>
+            Sem carta para jogar? <b>Compre uma</b>. Se ela servir, pode jogar;
+            se não, a vez passa.
+          </li>
         </ul>
         <h3>Cartas especiais</h3>
         <ul class="specials">
           <li><b>Ás</b> — pula o próximo jogador.</li>
-          <li><b>7</b> — o jogador da esquerda (sentido horário) compra 1 carta. Numa mesa de dois, o outro também perde a vez e você joga de novo.</li>
-          <li><b>8</b> — entra em cima de qualquer pinta, e você escolhe a pinta que o próximo deve jogar.</li>
-          <li><b>9</b> — o jogador da direita compra 2 cartas e perde a vez.</li>
-          <li><b>Joker</b> — entra em qualquer carta e todos, menos quem jogou, compram 1. A pinta da carta de baixo continua valendo.</li>
+          <li>
+            <b>7</b> — o jogador da esquerda (sentido horário) compra 1 carta.
+            Numa mesa de dois, o outro também perde a vez e você joga de novo.
+          </li>
+          <li>
+            <b>8</b> — entra em cima de qualquer pinta, e você escolhe a pinta
+            que o próximo deve jogar.
+          </li>
+          <li>
+            <b>9</b> — o jogador da direita compra 2 cartas e perde a vez.
+          </li>
+          <li>
+            <b>Joker</b> — entra em qualquer carta e todos, menos quem jogou,
+            compram 1. A pinta da carta de baixo continua valendo.
+          </li>
         </ul>
         <h3>Pontuação</h3>
         <ul>
-          <li>A rodada acaba quando alguém <b>termina as cartas</b>. Os outros somam os pontos das cartas que sobraram na mão.</li>
-          <li>Ás = 1 · 2 a 10 = o próprio número · Valete, Dama e Rei = 10 · Joker = 11.</li>
-          <li>Quem chega a <b><span class="js-limit">100</span> pontos</b> está fora. <b>Ganha o último que restar!</b></li>
+          <li>
+            A rodada acaba quando alguém <b>termina as cartas</b>. Os outros
+            somam os pontos das cartas que sobraram na mão.
+          </li>
+          <li>
+            Ás = 1 · 2 a 10 = o próprio número · Valete, Dama e Rei = 10 · Joker
+            = 11.
+          </li>
+          <li>
+            Quem chega a <b><span class="js-limit">100</span> pontos</b> está
+            fora. <b>Ganha o último que restar!</b>
+          </li>
         </ul>
         <button class="btn btn-primary" data-close>Bora jogar!</button>
       </div>
@@ -392,13 +834,29 @@
     <template id="chatTemplate">
       <div class="panel-head">
         <h3>Chat</h3>
-        <button type="button" class="btn btn-text btn-small chat-toggle" title="Recolher chat" aria-label="Chat" aria-expanded="true">
-          <span class="chat-unread dot hidden" aria-hidden="true"></span><svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+        <button
+          type="button"
+          class="btn btn-text btn-small chat-toggle"
+          title="Recolher chat"
+          aria-label="Chat"
+          aria-expanded="true"
+        >
+          <span class="chat-unread dot hidden" aria-hidden="true"></span
+          ><svg class="icon chevron" aria-hidden="true">
+            <use href="#i-chevron" />
+          </svg>
         </button>
       </div>
       <ul class="chat-log"></ul>
       <form class="chat-form">
-        <input name="message" maxlength="200" placeholder="Mande um recado…" aria-label="Mensagem para o chat" autocomplete="off" enterkeyhint="send" />
+        <input
+          name="message"
+          maxlength="200"
+          placeholder="Mande um recado…"
+          aria-label="Mensagem para o chat"
+          autocomplete="off"
+          enterkeyhint="send"
+        />
         <button class="btn btn-small">Enviar</button>
       </form>
     </template>
@@ -407,44 +865,92 @@
          um instante (CSS), para não piscar numa queda rápida. -->
     <!-- Menu das reações rápidas: abre embaixo do botão "Reagir" (na mesa ou na sala de espera).
          Os botões são montados em app.js a partir de shared/reactions.js. -->
-    <div id="reactMenu" class="react-menu hidden" role="group" aria-label="Reações"></div>
+    <div
+      id="reactMenu"
+      class="react-menu hidden"
+      role="group"
+      aria-label="Reações"
+    ></div>
 
     <div id="netStatus" class="net-status hidden" role="status">
       <div class="net-box">
         <span class="card back net-card" aria-hidden="true"></span>
-        <b>Reconectando<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></b>
+        <b
+          >Reconectando<span class="dots" aria-hidden="true"
+            ><i></i><i></i><i></i></span
+        ></b>
         <span>A partida continua de onde parou.</span>
       </div>
     </div>
 
     <!-- Não deu para entrar na sala (código errado, sala cheia ou fechada). -->
     <div id="joinErrorModal" class="modal hidden">
-      <div class="modal-box confirm-box join-error" role="dialog" aria-modal="true" aria-labelledby="joinErrorTitle" aria-describedby="joinErrorDesc" tabindex="-1">
+      <div
+        class="modal-box confirm-box join-error"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="joinErrorTitle"
+        aria-describedby="joinErrorDesc"
+        tabindex="-1"
+      >
         <div class="modal-art join-error-art" aria-hidden="true">
           <span class="card back"></span>
-          <span class="modal-art-badge"><svg class="icon"><use href="#i-x"/></svg></span>
+          <span class="modal-art-badge"
+            ><svg class="icon"><use href="#i-x" /></svg
+          ></span>
         </div>
         <h2 id="joinErrorTitle">Sala não encontrada</h2>
         <p id="joinErrorDesc" class="modal-sub"></p>
         <div class="modal-actions">
-          <button id="joinErrorRooms" type="button" class="btn btn-felt"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Ver salas abertas</button>
-          <button id="joinErrorCreate" type="button" class="btn btn-primary" data-autofocus><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Criar uma sala</button>
+          <button id="joinErrorRooms" type="button" class="btn btn-felt">
+            <svg class="icon" aria-hidden="true"><use href="#i-users" /></svg
+            >Ver salas abertas
+          </button>
+          <button
+            id="joinErrorCreate"
+            type="button"
+            class="btn btn-primary"
+            data-autofocus
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg
+            >Criar uma sala
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Esta aba perdeu o lugar na sala porque o mesmo navegador entrou por outra aba. -->
     <div id="replacedModal" class="modal hidden">
-      <div class="modal-box confirm-box join-error" role="dialog" aria-modal="true" aria-labelledby="replacedTitle" aria-describedby="replacedDesc" tabindex="-1">
+      <div
+        class="modal-box confirm-box join-error"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="replacedTitle"
+        aria-describedby="replacedDesc"
+        tabindex="-1"
+      >
         <div class="modal-art join-error-art" aria-hidden="true">
           <span class="card back"></span>
-          <span class="modal-art-badge"><svg class="icon"><use href="#i-users"/></svg></span>
+          <span class="modal-art-badge"
+            ><svg class="icon"><use href="#i-users" /></svg
+          ></span>
         </div>
         <h2 id="replacedTitle">Sala aberta em outra aba</h2>
         <p id="replacedDesc" class="modal-sub"></p>
         <div class="modal-actions">
-          <button id="replacedHome" type="button" class="btn btn-felt"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Ficar no início</button>
-          <button id="replacedHere" type="button" class="btn btn-primary" data-autofocus><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>Jogar aqui</button>
+          <button id="replacedHome" type="button" class="btn btn-felt">
+            <svg class="icon" aria-hidden="true"><use href="#i-back" /></svg
+            >Ficar no início
+          </button>
+          <button
+            id="replacedHere"
+            type="button"
+            class="btn btn-primary"
+            data-autofocus
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-play" /></svg
+            >Jogar aqui
+          </button>
         </div>
       </div>
     </div>
