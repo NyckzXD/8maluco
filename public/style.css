@@ -3810,6 +3810,9 @@ body.is-dragging * {
 
 .suit-face {
   position: relative;
+  /* os cantos medem a carta de verdade (cqw), não o --suit-w: no celular as quatro cartas
+     encolhem abaixo dele para caber na largura, e o canto ficava do tamanho da carta grande */
+  container-type: inline-size;
   display: grid;
   place-items: center;
   width: 100%;
@@ -3844,13 +3847,13 @@ body.is-dragging * {
   display: grid;
   justify-items: center;
   font-family: var(--font-display);
-  font-size: calc(var(--suit-w) * 0.2);
+  font-size: 20cqw;
   line-height: 1;
 }
 
 .suit-corner svg {
-  width: calc(var(--suit-w) * 0.13);
-  height: calc(var(--suit-w) * 0.13);
+  width: 13cqw;
+  height: 13cqw;
   margin-top: 2px;
   fill: currentColor;
 }
