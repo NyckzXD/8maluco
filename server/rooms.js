@@ -19,6 +19,7 @@ const BOT_DELAY_MS = [3000, 5000]; // bots esperam pelo menos 3s para dar tempo 
 const DEAL_MS = 3500; // tempo da animação de distribuir as cartas no começo da rodada (a primeira vez espera por ela)
 const AWAY_DELAY_MS = 1500; // jogador desconectado: joga no automático rapidinho
 const LOBBY_GRACE_MS = 30_000; // quanto tempo um desconectado segura o lugar no lobby
+const HOST_GRACE_MS = 5000; // quanto tempo o anfitrião desconectado segura o cargo
 const EMPTY_ROOM_MS = 5 * 60_000;
 
 const BOT_NAMES = [
@@ -127,6 +128,8 @@ class Room {
     this.ready = new Set(); // quem já clicou em "pronto" no intervalo entre rodadas
     this.rematchVotes = new Set(); // quem já pediu revanche no fim da partida
     this.emptyTimer = null;
+    this.hostTimer = null; // anfitrião desconectado: quando o cargo passa para outro
+    this.hostOrphan = false; // nenhum humano conectado para assumir: o próximo que entrar assume
   }
 
   // ---------- membros ----------
@@ -141,8 +144,17 @@ class Room {
     if (m) {
       m.name = name;
       m.avatar = avatar;
-      if (m.socketId && m.socketId !== socket.id)
-        this.io.sockets.sockets.get(m.socketId)?.leave(this.code);
+      // Mesmo token por outra conexão (outra aba): a nova assume o lugar e a antiga perde
+      // o acesso à sala de vez, não só o canal (senão ela ainda conseguiria jogar e falar).
+      if (m.socketId && m.socketId !== socket.id) {
+        const old = this.io.sockets.sockets.get(m.socketId);
+        if (old) {
+          old.leave(this.code);
+          old.data.code = null;
+          old.data.memberId = null;
+          old.emit("room:replaced", { code: this.code });
+        }
+      }
     } else {
       if (this.members.length >= MAX_PLAYERS)
         return { ok: false, error: "A sala está cheia" };
@@ -161,7 +173,12 @@ class Room {
     m.connected = true;
     clearTimeout(m.graceTimer);
     clearTimeout(this.emptyTimer);
-    if (!this.members.some((x) => x.id === this.hostId)) this.hostId = m.id;
+    if (m.id === this.hostId) {
+      // o anfitrião voltou a tempo: continua com o cargo
+      clearTimeout(this.hostTimer);
+      this.hostOrphan = false;
+    } else if (!this.members.some((x) => x.id === this.hostId)) this.hostId = m.id;
+    else if (this.hostOrphan) this.setHost(m.id); // o cargo estava sem ninguém conectado
 
     socket.join(this.code);
     socket.data.code = this.code;
@@ -175,16 +192,25 @@ class Room {
   leave(memberId) {
     const m = this.member(memberId);
     if (!m) return;
+    // o anfitrião saiu: o cargo vai para o próximo humano conectado (ou, sem nenhum, o próximo humano)
+    const wasHost = this.hostId === memberId;
+    const heir = wasHost
+      ? (this.nextHuman(memberId, (x) => x.connected) ?? this.nextHuman(memberId))
+      : null;
     this.members = this.members.filter((x) => x.id !== memberId);
     if (m.socketId) this.io.sockets.sockets.get(m.socketId)?.leave(this.code);
+    if (wasHost) {
+      clearTimeout(this.hostTimer);
+      this.hostId = heir?.id ?? null;
+      this.hostOrphan = !!heir && !heir.connected;
+    }
+    if (!this.members.some((x) => !x.isBot))
+      return this.manager.delete(this.code);
     this.system(`${m.name} saiu da sala`);
+    if (heir?.connected) this.system(`${heir.name} agora é o anfitrião`);
     if (this.game?.players.some((p) => p.id === memberId)) {
       this.apply(removePlayer(this.game, memberId));
     }
-    if (this.hostId === memberId)
-      this.hostId = this.members.find((x) => !x.isBot)?.id ?? null;
-    if (!this.members.some((x) => !x.isBot))
-      return this.manager.delete(this.code);
     // quem saiu não segura a próxima rodada nem a revanche
     this.rematchVotes.delete(memberId);
     if (!this.checkReady() && !this.checkRematch()) this.broadcast();
@@ -203,6 +229,10 @@ class Room {
     if (!seated) {
       m.graceTimer = setTimeout(() => this.leave(memberId), LOBBY_GRACE_MS);
     }
+    if (memberId === this.hostId) {
+      clearTimeout(this.hostTimer);
+      this.hostTimer = setTimeout(() => this.passHost(), HOST_GRACE_MS);
+    }
     if (!this.members.some((x) => !x.isBot && x.connected)) {
       this.emptyTimer = setTimeout(
         () => this.manager.delete(this.code),
@@ -211,6 +241,41 @@ class Room {
     }
     this.schedule(false);
     if (!this.checkReady() && !this.checkRematch()) this.broadcast();
+  }
+
+  // ---------- anfitrião ----------
+  // Anfitrião sem conexão por HOST_GRACE_MS passa o cargo para o próximo humano conectado, na
+  // ordem dos assentos, e não recebe de volta quando reconecta. Sem nenhum humano conectado,
+  // o cargo fica "órfão" e vai para quem voltar primeiro.
+
+  passHost() {
+    const host = this.member(this.hostId);
+    if (!host || host.connected) return;
+    const next = this.nextHuman(host.id, (x) => x.connected);
+    if (!next) {
+      this.hostOrphan = true;
+      return;
+    }
+    this.setHost(next.id);
+    this.broadcast();
+  }
+
+  setHost(memberId) {
+    clearTimeout(this.hostTimer);
+    this.hostId = memberId;
+    this.hostOrphan = false;
+    this.system(`${this.nameOf(memberId)} agora é o anfitrião`);
+  }
+
+  // Próximo humano depois de `fromId` na ordem dos assentos (dando a volta na mesa).
+  nextHuman(fromId, accept = () => true) {
+    const n = this.members.length;
+    const i = this.members.findIndex((x) => x.id === fromId);
+    for (let k = 1; k <= n; k++) {
+      const x = this.members[(i + k + n) % n];
+      if (x.id !== fromId && !x.isBot && accept(x)) return x;
+    }
+    return null;
   }
 
   addBot(byId) {
@@ -539,6 +604,7 @@ class Room {
   dispose() {
     this.clearTimer();
     clearTimeout(this.emptyTimer);
+    clearTimeout(this.hostTimer);
     for (const m of this.members) clearTimeout(m.graceTimer);
   }
 

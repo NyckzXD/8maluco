@@ -21,7 +21,7 @@ Para jogar com amigos na mesma rede, abra `http://SEU-IP:3000` no celular. Para 
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
 | `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão. |
 | `public/` | Interface web (HTML/CSS/JS puro), responsiva para celular, instalável (PWA). |
-| `test/` | Testes das regras, do avatar e das reações com `node:test`. |
+| `test/` | Testes das regras, do avatar, das reações, da revanche, do anfitrião e do servidor (com clientes socket.io reais) com `node:test`. |
 
 ### PWA
 

@@ -426,6 +426,22 @@
       </div>
     </div>
 
+    <!-- Esta aba perdeu o lugar na sala porque o mesmo navegador entrou por outra aba. -->
+    <div id="replacedModal" class="modal hidden">
+      <div class="modal-box confirm-box join-error" role="dialog" aria-modal="true" aria-labelledby="replacedTitle" aria-describedby="replacedDesc" tabindex="-1">
+        <div class="modal-art join-error-art" aria-hidden="true">
+          <span class="card back"></span>
+          <span class="modal-art-badge"><svg class="icon"><use href="#i-users"/></svg></span>
+        </div>
+        <h2 id="replacedTitle">Sala aberta em outra aba</h2>
+        <p id="replacedDesc" class="modal-sub"></p>
+        <div class="modal-actions">
+          <button id="replacedHome" type="button" class="btn btn-felt"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>Ficar no início</button>
+          <button id="replacedHere" type="button" class="btn btn-primary" data-autofocus><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>Jogar aqui</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Avisos para leitores de tela: os flashes visuais escrevem aqui também. -->
     <div id="srStatus" class="sr-only" role="status" aria-live="polite"></div>
     <div id="srAlert" class="sr-only" role="alert"></div>

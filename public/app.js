@@ -3650,6 +3650,31 @@ socket.on("room:kicked", () => {
   flash("Você foi removido da sala");
 });
 
+// O mesmo navegador entrou nesta sala por outra aba: esta perde o lugar (o servidor já cortou
+// o acesso) e não reentra sozinha ao reconectar. "Jogar aqui" puxa o lugar de volta.
+let replacedCode = null;
+socket.on("room:replaced", ({ code } = {}) => {
+  replacedCode = code ?? roomCode;
+  roomCode = null;
+  state = null;
+  setUrl(null);
+  while (modalStack.length) hideModal(modalStack.at(-1));
+  show("home");
+  $("#replacedDesc").textContent =
+    `Você entrou na sala ${replacedCode} por outra aba ou janela. Só uma delas pode jogar por vez.`;
+  openModal("replacedModal");
+});
+$("#replacedHome").addEventListener("click", () => {
+  replacedCode = null;
+  closeModal("replacedModal");
+});
+$("#replacedHere").addEventListener("click", () => {
+  const code = replacedCode;
+  replacedCode = null;
+  closeModal("replacedModal");
+  if (code) joinRoom(code);
+});
+
 socket.on("connect", async () => {
   $("#netStatus").classList.add("hidden");
   if (roomCode) {
