@@ -690,10 +690,8 @@ export function avatarSVG(avatar, { view = '0 0 100 100', title } = {}) {
     (hair.cast ?? []).map((d) => fillOnly(d, darken(skin, 0.2), 'transform="translate(.8 2.6)" opacity=".55"')).join('');
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${view}" role="img" aria-label="${title ?? 'Avatar'}">`,
+    // fundo liso, só a cor escolhida
     `<rect x="-20" y="-20" width="140" height="140" fill="${bg}"/>`,
-    `<circle cx="34" cy="26" r="46" fill="#fff" opacity=".12"/>`,
-    `<circle cx="28" cy="20" r="22" fill="#fff" opacity=".08"/>`,
-    `<path d="M-20 92Q50 80 120 92V120H-20Z" fill="#000" opacity=".08"/>`,
     hair.back ?? '',
     shape(NECK, skin),
     fillOnly('M43.9 61Q50 68 56.1 61V66Q50 71 43.9 66Z', skinShade),
