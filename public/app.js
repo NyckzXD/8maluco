@@ -2451,7 +2451,11 @@ let tipPress = null; // toque longo em andamento: { id, x, y }
 let tipLongPressed = null; // id da carta cujo toque longo abriu a dica (o clique seguinte não seleciona)
 
 function tipText(card) {
-  const tip = SPECIAL_TIPS[card.rank];
+  let tip = SPECIAL_TIPS[card.rank];
+  // mesa de dois: o 7 também faz o outro perder a vez (shared/engine.js)
+  const active = state?.game?.players.filter((p) => !p.eliminated).length;
+  if (card.rank === "7" && active === 2)
+    tip = "o outro jogador compra 1 carta e perde a vez: você joga de novo";
   return tip && { rank: RANK_NAMES[card.rank] ?? card.rank, tip };
 }
 

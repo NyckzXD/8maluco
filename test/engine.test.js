@@ -125,6 +125,35 @@ test('7 faz o jogador da esquerda comprar 1', () => {
   assert.equal(s.turn, 1);
 });
 
+test('mesa de dois: 7 faz o outro comprar 1, perder a vez e a mão volta para quem jogou', () => {
+  const s = table([[c('7', 'H'), c('2', 'S')], filler()]);
+  const r = playCard(s, 'p0', c('7', 'H').id);
+  assert.equal(r.ok, true);
+  assert.equal(s.players[1].hand.length, 3);
+  assert.equal(s.turn, 0);
+  assert.deepEqual(
+    r.events.filter((e) => e.type !== 'play').map((e) => [e.type, e.playerId]),
+    [['penalty', 'p1'], ['skip', 'p1']],
+  );
+});
+
+test('mesa de três: 7 continua só fazendo o da esquerda comprar 1', () => {
+  const s = table([[c('7', 'H'), c('2', 'S')], filler(), filler()]);
+  const r = playCard(s, 'p0', c('7', 'H').id);
+  assert.equal(s.players[2].hand.length, 3); // esquerda de p0 = p2
+  assert.equal(s.turn, 1);
+  assert.ok(!r.events.some((e) => e.type === 'skip'));
+});
+
+test('7 conta só quem ainda está na mesa: com dois ativos, também pula', () => {
+  const s = table([[c('7', 'H'), c('2', 'S')], filler(), filler(), filler()]);
+  s.players[1].eliminated = true;
+  s.players[3].eliminated = true;
+  playCard(s, 'p0', c('7', 'H').id);
+  assert.equal(s.players[2].hand.length, 3);
+  assert.equal(s.turn, 0);
+});
+
 test('9 faz o jogador da direita comprar 2 e perder a vez', () => {
   const s = table([[c('9', 'H'), c('2', 'S')], filler(), filler(), filler()]);
   const r = playCard(s, 'p0', c('9', 'H').id);

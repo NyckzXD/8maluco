@@ -16,7 +16,8 @@ export function chooseMove(state, playerId) {
     let score = cardPoints(card);
     if (card.rank === '9') score += threat ? 12 : 5;
     if (card.rank === 'A') score += threat ? 10 : 3;
-    if (card.rank === '7') score += 3;
+    // mesa de dois: o 7 também pula o outro (vale quase como um 9)
+    if (card.rank === '7') score += state.players.filter((p) => !p.eliminated).length === 2 ? (threat ? 10 : 4) : 3;
     if (card.rank === JOKER) score += 6;
     // O 8 é coringa: guarda para quando não houver outra saída.
     if (card.rank === '8') score -= me.hand.length > 2 ? 25 : 0;

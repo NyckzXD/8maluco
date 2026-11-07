@@ -242,11 +242,20 @@ export function playCard(state, playerId, cardId, chosenSuit) {
       state.activeSuit = card.suit;
       state.activeRank = card.rank;
       break;
-    case '7': // o da esquerda (sentido horário) compra 1
-      penalty(state, prevActive(state, i), 1, events, '7');
+    case '7': {
+      // o da esquerda (sentido horário) compra 1
+      const left = prevActive(state, i);
+      penalty(state, left, 1, events, '7');
+      // Mesa de dois: o da esquerda é o único adversário, que também perde a vez,
+      // e a mão volta para quem jogou o 7.
+      if (activePlayers(state).length === 2) {
+        events.push({ type: 'skip', playerId: state.players[left].id });
+        next = nextActive(state, left);
+      }
       state.activeSuit = card.suit;
       state.activeRank = card.rank;
       break;
+    }
     case '9': // o da direita compra 2 e não joga
       penalty(state, next, 2, events, '9');
       events.push({ type: 'skip', playerId: state.players[next].id });
