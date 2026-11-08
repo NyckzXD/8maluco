@@ -15,7 +15,7 @@ Antes de mandar código, `npm run check` roda tudo o que o CI roda:
 | Comando | O que faz |
 | --- | --- |
 | `npm run lint` | ESLint em todo o projeto. |
-| `npm run typecheck` | `tsc` checando os tipos de `shared/` e `server/` (o código continua JS; tipos via JSDoc onde precisa). |
+| `npm run typecheck` | `tsc` checando os tipos de `shared/` e `server/` (`tsconfig.json`) e do cliente (`client/tsconfig.json`). O código continua JS; tipos via JSDoc onde precisa. |
 | `npm run format` / `format:check` | Prettier (aspas simples, linhas de até 120). Markdown e HTML ficam de fora. |
 | `npm run build` | Vite: junta e minifica o cliente em `dist/`. |
 
@@ -77,7 +77,8 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 | `shared/names.js` | Regras de apelido que valem no servidor e na tela (nomes "Robô …" são só dos bots). |
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
 | `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
-| `client/` | Interface web (`index.html`, `app.js`, `style.css`, JS puro sem framework), responsiva para celular. Entrada do Vite (`vite.config.js`). |
+| `client/` | Interface web (`index.html`, `style.css` e os módulos em `src/`, JS puro sem framework), responsiva para celular. Entrada do Vite (`vite.config.js`). |
+| `client/src/` | Um módulo por parte da tela. `main.js` é a entrada (conexão e convite) e carrega os outros; `core.js` tem atalhos do DOM, o socket e o estado da sala, que os outros leem direto e só mudam pelas funções `set...`. Telas: `home`, `howto`, `avatar-editor`, `lobby`, `results`. Mesa: `table` (assentos e voos), `deal`, `pile`, `hand`, `card-tip`, `drag`, `suit-picker`, `scores`, `clock`, `render` (desenha cada atualização). Gerais: `modals`, `chat`, `reactions`, `cards` (desenho das cartas e ícones), `audio`. |
 | `public/` | Arquivos que vão para o build do jeito que estão, sempre no mesmo caminho: fontes, ícones, cartas, sons, `manifest.json` e o service worker (PWA). |
 | `dist/` | Saída do `npm run build` (fora do git). |
 | `test/` | Testes com `node:test`: regras (`engine`), salas (`rooms`, `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`), avatar, e rede de ponta a ponta com clientes socket.io reais (`multiplayer`, `production`, `restart`). |
@@ -108,5 +109,5 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 
 O motor (`shared/`) não depende do navegador nem do servidor, então dá para:
 
-1. **Capacitor** (o caminho mais rápido): embrulhar a pasta `dist/` (o `webDir` do Capacitor) como app Android/iOS e apontar o `io()` do `client/app.js` para o servidor publicado. O cliente do Socket.IO já vem no build, então o app não depende do servidor para carregar a tela. Para o servidor aceitar o app, coloque a origem dele em `ALLOWED_ORIGINS` (veja "Publicando").
+1. **Capacitor** (o caminho mais rápido): embrulhar a pasta `dist/` (o `webDir` do Capacitor) como app Android/iOS e apontar o `io()` do `client/src/core.js` para o servidor publicado. O cliente do Socket.IO já vem no build, então o app não depende do servidor para carregar a tela. Para o servidor aceitar o app, coloque a origem dele em `ALLOWED_ORIGINS` (veja "Publicando").
 2. **React Native / Expo**: refazer a interface nativa e reaproveitar `shared/engine.js` e `shared/bot.js`, inclusive para um modo offline contra bots.

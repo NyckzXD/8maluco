@@ -1,0 +1,16 @@
+{
+  // Tipos do cliente: só checa (o Vite é quem monta). Navegador, sem os tipos do Node.
+  "compilerOptions": {
+    "checkJs": true,
+    "allowJs": true,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.js", "../shared/**/*.js"]
+}

@@ -58,7 +58,7 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 - [ ] **8. Seleção de carta igual no mouse e no toque**
       No desktop o 1º clique já joga a carta; no toque o 1º toque só seleciona.
-  - Onde: `onCardClick()` em `client/app.js`
+  - Onde: `onCardClick()` em `client/src/hand.js`
   - Pronto quando: o comportamento é o mesmo nos dois (ou a diferença é intencional e há uma dica de "clique para jogar").
 
 ## 🟡 Visual e layout
@@ -131,6 +131,8 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 - [ ] **22. Dividir `app.js` e `style.css`**
       `app.js` tem 3.397 linhas e `style.css` 4.462.
   - Pronto quando: o cliente é dividido em módulos ES sem build (rede, mesa, animações, modais, editor de avatar) e o CSS por tela, sem mudar o comportamento.
+  - Feito (JS): `client/app.js` virou 22 módulos em `client/src/` (`main.js` é a entrada; `core.js` tem o estado da sala e as utilidades; um módulo por parte da tela: `lobby`, `table`, `hand`, `drag`, `suit-picker`, `audio`, `avatar-editor`...). O Vite junta tudo no build. O estado compartilhado (`state`, `roomCode`...) só muda pelas funções `set...` do `core.js`. Os tipos do cliente entram no `npm run typecheck`. Conferido no navegador: partida com bots, arrastar, pinta do 8, reações, resultado e rodada 2, no desenvolvimento e no build de produção.
+  - Falta: dividir o `client/style.css` por tela.
 
 - [x] **23. Testes do servidor**
       Só o motor e o avatar têm testes.
