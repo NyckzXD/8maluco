@@ -45,11 +45,17 @@ test('a sala volta igual: membros com token, configurações, partida e chat', (
   assert.deepEqual(back.game, JSON.parse(JSON.stringify(r.game)), 'estado do motor idêntico, com a seed');
   assert.deepEqual(back.settings, r.settings);
   assert.equal(back.hostId, r.hostId);
-  assert.deepEqual(back.members.map((m) => [m.id, m.token, m.name, m.isBot]), r.members.map((m) => [m.id, m.token, m.name, m.isBot]));
+  assert.deepEqual(
+    back.members.map((m) => [m.id, m.token, m.name, m.isBot]),
+    r.members.map((m) => [m.id, m.token, m.name, m.isBot]),
+  );
   assert.ok(back.chat.some((m) => m.text === 'boa sorte'));
   assert.ok(back.chat.some((m) => m.system && m.text.includes('O servidor reiniciou')));
   // humanos desconectados, bot "conectado"; relógio parado até alguém voltar
-  assert.deepEqual(back.members.map((m) => m.connected), [false, false, true]);
+  assert.deepEqual(
+    back.members.map((m) => m.connected),
+    [false, false, true],
+  );
   assert.equal(back.resumePending, true);
   assert.equal(back.deadline, null);
   assert.equal(back.timer, null);
@@ -69,7 +75,11 @@ test('o primeiro a voltar solta a vez, com o prazo cheio', () => {
   back.join(fakeSocket('a2'), { token: 'tok-a', name: 'Ana' });
   assert.equal(back.resumePending, false);
   assert.equal(back.game.players[back.game.turn].id, turn, 'continua a mesma vez');
-  assert.deepEqual(back.game.players.map((p) => p.hand.map((c) => c.id)), handBefore, 'ninguém jogou enquanto estava parado');
+  assert.deepEqual(
+    back.game.players.map((p) => p.hand.map((c) => c.id)),
+    handBefore,
+    'ninguém jogou enquanto estava parado',
+  );
   if (!back.member(turn).isBot) {
     const left = back.deadline - before;
     assert.ok(left >= 45_000 && left <= 45_100, `prazo cheio, mesmo para quem ainda não voltou: ${left}`);

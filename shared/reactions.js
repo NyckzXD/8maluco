@@ -4,12 +4,12 @@
 // SVG `#r-<id>` do sprite em public/app.js.
 
 export const REACTIONS = [
-  { id: "boa", label: "Boa!" },
-  { id: "haha", label: "Haha" },
-  { id: "ops", label: "Ops!" },
-  { id: "grr", label: "Grr!" },
-  { id: "uau", label: "Uau!" },
-  { id: "vai", label: "Vai logo!" },
+  { id: 'boa', label: 'Boa!' },
+  { id: 'haha', label: 'Haha' },
+  { id: 'ops', label: 'Ops!' },
+  { id: 'grr', label: 'Grr!' },
+  { id: 'uau', label: 'Uau!' },
+  { id: 'vai', label: 'Vai logo!' },
 ];
 
 // Por pessoa: no máximo `max` reações dentro de `windowMs` (dá para uma rajada curta, sem flood).
@@ -19,5 +19,5 @@ export const REACTION_LIMIT = { max: 3, windowMs: 5000 };
 export const REACTION_MS = 2000;
 
 const IDS = new Set(REACTIONS.map((r) => r.id));
-export const isReaction = (id) => typeof id === "string" && IDS.has(id);
-export const reactionLabel = (id) => REACTIONS.find((r) => r.id === id)?.label ?? "";
+export const isReaction = (id) => typeof id === 'string' && IDS.has(id);
+export const reactionLabel = (id) => REACTIONS.find((r) => r.id === id)?.label ?? '';

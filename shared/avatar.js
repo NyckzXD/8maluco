@@ -120,7 +120,6 @@ export function sanitizeAvatar(input) {
   return out;
 }
 
-
 // ---------- desenho ----------
 // Estilo de desenho animado: contorno escuro, cor chapada e uma camada de sombra/luz
 // (luz vindo de cima à esquerda). Sombras e brilhos são recortados (clipPath) na peça
@@ -143,7 +142,8 @@ const isLight = (hex) => {
   return 0.299 * (p >> 16) + 0.587 * ((p >> 8) & 255) + 0.114 * (p & 255) > 170;
 };
 
-const shape = (d, fill, extra = '') => `<path d="${d}" fill="${fill}" stroke="${INK}" stroke-width="${SW}" stroke-linejoin="round" ${extra}/>`;
+const shape = (d, fill, extra = '') =>
+  `<path d="${d}" fill="${fill}" stroke="${INK}" stroke-width="${SW}" stroke-linejoin="round" ${extra}/>`;
 const line = (d, stroke = INK, w = 2, extra = '') =>
   `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${extra}/>`;
 const fillOnly = (d, fill, extra = '') => `<path d="${d}" fill="${fill}" ${extra}/>`;
@@ -255,7 +255,10 @@ function outfitSvg(style, c, skin, clip) {
         line('M39.5 79.5Q43.5 81.5 46.5 80.5', darken(skin, 0.28), 1.3) +
         line('M60.5 79.5Q56.5 81.5 53.5 80.5', darken(skin, 0.28), 1.3) +
         shape(tank, c) +
-        clip(tank, fillOnly('M62 76C68 84 70 94 69 104H80V76Z', shade) + fillOnly('M38 86Q50 92 62 86V90Q50 96 38 90Z', shade)) +
+        clip(
+          tank,
+          fillOnly('M62 76C68 84 70 94 69 104H80V76Z', shade) + fillOnly('M38 86Q50 92 62 86V90Q50 96 38 90Z', shade),
+        ) +
         shape(tank, 'none') +
         line('M40.6 78.5Q43.6 85.6 50 85.6Q56.4 85.6 59.4 78.5', trim, 1.4) +
         line('M31.2 86.5Q33.5 80.5 37 78.6', trim, 1.4) +
@@ -306,7 +309,11 @@ function outfitSvg(style, c, skin, clip) {
         torso(c) +
         clip(BODY, line('M33 104V86M40 104V82M60 104V82M67 104V86', shade, 1.1)) +
         shape(collar, shade) +
-        clip(collar, line('M44 60V80M47 60V80M50 60V80M53 60V80M56 60V80', dark, 0.9) + fillOnly('M55 58H62V80H55Z', dark, 'opacity=".5"')) +
+        clip(
+          collar,
+          line('M44 60V80M47 60V80M50 60V80M53 60V80M56 60V80', dark, 0.9) +
+            fillOnly('M55 58H62V80H55Z', dark, 'opacity=".5"'),
+        ) +
         shape(collar, 'none') +
         shape('M40.3 67.5Q50 71.5 59.7 67.5L60 75.5Q50 80.5 40 75.5Z', c) +
         clip('M40.3 67.5Q50 71.5 59.7 67.5L60 75.5Q50 80.5 40 75.5Z', fillOnly('M54 66H62V80H54Z', shade)) +
@@ -342,25 +349,31 @@ function hairSvg(style, c, skin) {
   const shine = (d, w = 2.2) => line(d, hl, w, 'opacity=".85"');
   const back = (d) => shape(d, shade);
   const front = (d) => shape(d, c);
-  const curls = (pts, col = deep, w = 1.1) => pts.map(([x, y]) => line(`M${x - 2} ${y + 0.6}q2 -3 4 0`, col, w)).join('');
-  const sideburns = front('M30.7 44.5Q31 49.5 33 51.5L34.4 51V41.5Z') + front('M69.3 44.5Q69 49.5 67 51.5L65.6 51V41.5Z');
+  const curls = (pts, col = deep, w = 1.1) =>
+    pts.map(([x, y]) => line(`M${x - 2} ${y + 0.6}q2 -3 4 0`, col, w)).join('');
+  const sideburns =
+    front('M30.7 44.5Q31 49.5 33 51.5L34.4 51V41.5Z') + front('M69.3 44.5Q69 49.5 67 51.5L65.6 51V41.5Z');
 
   switch (style) {
     case 1: {
       // curto, franja jogada de lado
-      const F = 'M30.5 46C28.5 29 38 21.5 50 21.5C62 21.5 71.5 29 69.5 46C67 37 62 33 56 32C50 35 40 35 34 38.5C32 40.5 31 43 30.5 46Z';
+      const F =
+        'M30.5 46C28.5 29 38 21.5 50 21.5C62 21.5 71.5 29 69.5 46C67 37 62 33 56 32C50 35 40 35 34 38.5C32 40.5 31 43 30.5 46Z';
       return {
         cast: [F],
         front:
           sideburns +
           front(F) +
-          strands('M64 35Q64 28.5 59.5 24.5M55 32.5Q56.5 27.5 52 23.2M45 34.5Q48 29 44.5 24.5M37.5 36.5Q38.5 31.5 36.5 28.5') +
+          strands(
+            'M64 35Q64 28.5 59.5 24.5M55 32.5Q56.5 27.5 52 23.2M45 34.5Q48 29 44.5 24.5M37.5 36.5Q38.5 31.5 36.5 28.5',
+          ) +
           shine('M38.5 30Q42.5 25.5 48.5 24.2'),
       };
     }
     case 2: {
       // espetado
-      const F = 'M30.5 45C29.5 35 31 29 34 26.5L32 17L40 22.5L41.5 13L48 20.5L52 11L56 20.5L62.5 14L63 23.5L70 19L67.5 28C70.5 32 71 38 69.5 45C66 37 60 33.5 50 33.5C42 33.5 35 37 30.5 45Z';
+      const F =
+        'M30.5 45C29.5 35 31 29 34 26.5L32 17L40 22.5L41.5 13L48 20.5L52 11L56 20.5L62.5 14L63 23.5L70 19L67.5 28C70.5 32 71 38 69.5 45C66 37 60 33.5 50 33.5C42 33.5 35 37 30.5 45Z';
       return {
         cast: [F],
         front:
@@ -371,7 +384,8 @@ function hairSvg(style, c, skin) {
     }
     case 3: {
       // topete
-      const F = 'M31 43C30 31 35 25 43 23.5C41 17.5 48 12.5 58 13.5C67 14.5 71 20 68 24.5C71 28.5 71 36 69.5 43C66 35 60 32 52 33C44 32 36 35.5 31 43Z';
+      const F =
+        'M31 43C30 31 35 25 43 23.5C41 17.5 48 12.5 58 13.5C67 14.5 71 20 68 24.5C71 28.5 71 36 69.5 43C66 35 60 32 52 33C44 32 36 35.5 31 43Z';
       return {
         cast: [F],
         front:
@@ -383,8 +397,10 @@ function hairSvg(style, c, skin) {
     }
     case 4: {
       // comprido
-      const B = 'M28.5 46C26 26 38 19 50 19C62 19 74 26 71.5 46L75 79C70 83 62 83 58.5 79L57 62H43L41.5 79C38 83 30 83 25 79Z';
-      const F = 'M30.5 49C28 30 38 21 50 21C62 21 72 29.5 69.5 49C68 41 66.5 37 64 33.5C56 36.5 44 34.5 38 30C34 34 32 40 30.5 49Z';
+      const B =
+        'M28.5 46C26 26 38 19 50 19C62 19 74 26 71.5 46L75 79C70 83 62 83 58.5 79L57 62H43L41.5 79C38 83 30 83 25 79Z';
+      const F =
+        'M30.5 49C28 30 38 21 50 21C62 21 72 29.5 69.5 49C68 41 66.5 37 64 33.5C56 36.5 44 34.5 38 30C34 34 32 40 30.5 49Z';
       return {
         cast: [F],
         back:
@@ -402,7 +418,10 @@ function hairSvg(style, c, skin) {
       const F = 'M30.5 45C30 30 39 23.5 50 23.5C61 23.5 70 30 69.5 45C66 36 58 31.5 50 31.5C42 31.5 34 36 30.5 45Z';
       return {
         cast: [F],
-        back: back('M41 19A9 9 0 1 1 59 19A9 9 0 1 1 41 19Z') + strands('M44 20Q46 13 52 12.5M47 23Q52 21 56 15.5') + line('M45 15.5Q48 11.5 52 11.5', hl, 1.6, 'opacity=".6"'),
+        back:
+          back('M41 19A9 9 0 1 1 59 19A9 9 0 1 1 41 19Z') +
+          strands('M44 20Q46 13 52 12.5M47 23Q52 21 56 15.5') +
+          line('M45 15.5Q48 11.5 52 11.5', hl, 1.6, 'opacity=".6"'),
         front:
           front(F) +
           strands('M35 39Q39 30 46.5 25.5M65 39Q61 30 53.5 25.5M50 31.5Q50.5 27.5 50 24') +
@@ -422,15 +441,44 @@ function hairSvg(style, c, skin) {
           shape(B, c) +
           fillOnly('M70 18C78 26 80 40 76 50C73 57 70 60 66 62H74C79 56 81 48 78 40C80 31 76 23 70 18Z', shade) +
           curls([
-            [28, 34], [26, 44], [29, 54], [34, 24], [42, 17], [52, 15], [61, 18], [69, 25], [74, 35], [75, 46], [71, 55],
-            [37, 31], [64, 31],
+            [28, 34],
+            [26, 44],
+            [29, 54],
+            [34, 24],
+            [42, 17],
+            [52, 15],
+            [61, 18],
+            [69, 25],
+            [74, 35],
+            [75, 46],
+            [71, 55],
+            [37, 31],
+            [64, 31],
           ]) +
-          curls([[38, 19], [46, 15]], hl, 1.4),
+          curls(
+            [
+              [38, 19],
+              [46, 15],
+            ],
+            hl,
+            1.4,
+          ),
         front:
           fillOnly(F, c) +
           fillOnly('M62 24C67 28 70 34 69.8 42C67.5 38.5 65 36.5 62.5 35.5Z', shade) +
           line(hairline, INK, SW) +
-          curls([[39, 29], [47, 26], [55, 26.5], [63, 30], [43, 32.5], [57, 32.5]], deep, 1) +
+          curls(
+            [
+              [39, 29],
+              [47, 26],
+              [55, 26.5],
+              [63, 30],
+              [43, 32.5],
+              [57, 32.5],
+            ],
+            deep,
+            1,
+          ) +
           curls([[42, 25]], hl, 1.4),
       };
     }
@@ -451,13 +499,25 @@ function hairSvg(style, c, skin) {
     case 8: {
       // moicano: laterais raspadas e crista no meio
       const S = 'M31.2 42C31 30 40 24.2 50 24.2C60 24.2 69 30 68.8 42C64 34 36 34 31.2 42Z';
-      const M = 'M44.5 35C42.5 27 43 18 47 10L48.5 15.5L50 5L51.5 15.5L53 10C57 18 57.5 27 55.5 35C53 33 47 33 44.5 35Z';
+      const M =
+        'M44.5 35C42.5 27 43 18 47 10L48.5 15.5L50 5L51.5 15.5L53 10C57 18 57.5 27 55.5 35C53 33 47 33 44.5 35Z';
       const stubble = darken(mix(skin, c, 0.5), 0.08);
       return {
         cast: [M],
         front:
           fillOnly(S, stubble) +
-          [[36, 32], [39, 29], [34, 36.5], [42.5, 28], [64, 32], [61, 29], [66, 36.5], [57.5, 28]].map(([x, y]) => dot(x, y, 0.45, deep)).join('') +
+          [
+            [36, 32],
+            [39, 29],
+            [34, 36.5],
+            [42.5, 28],
+            [64, 32],
+            [61, 29],
+            [66, 36.5],
+            [57.5, 28],
+          ]
+            .map(([x, y]) => dot(x, y, 0.45, deep))
+            .join('') +
           front(M) +
           strands('M50 32.5V13.5M47 31Q45.5 24 47.5 15.5M53 31Q54.5 24 52.5 15.5') +
           shine('M46.2 29Q45.4 22 47.4 16', 1.6),
@@ -465,19 +525,43 @@ function hairSvg(style, c, skin) {
     }
     case 9: {
       // cacheado
-      const F = 'M30.5 45C26 41 27.5 33.5 32 32C30 26 36 21.5 40.5 23.5C40.5 17.5 48 16.5 50 20.5C53 16.5 60 17.5 59.5 23.5C64.5 21.5 70.5 26 68 32C72.5 33.5 74 41 69.5 45C66 38.5 60 34.5 50 34.5C40 34.5 34 38.5 30.5 45Z';
+      const F =
+        'M30.5 45C26 41 27.5 33.5 32 32C30 26 36 21.5 40.5 23.5C40.5 17.5 48 16.5 50 20.5C53 16.5 60 17.5 59.5 23.5C64.5 21.5 70.5 26 68 32C72.5 33.5 74 41 69.5 45C66 38.5 60 34.5 50 34.5C40 34.5 34 38.5 30.5 45Z';
       return {
         cast: [F],
-        back: back('M28.5 50C24 47 23.5 40 27 36L73 36C76.5 40 76 47 71.5 50Z') + curls([[27, 44], [73, 44]]),
+        back:
+          back('M28.5 50C24 47 23.5 40 27 36L73 36C76.5 40 76 47 71.5 50Z') +
+          curls([
+            [27, 44],
+            [73, 44],
+          ]),
         front:
           front(F) +
-          curls([[34, 30], [41, 26.5], [50, 24.5], [59, 26.5], [66, 30], [31, 39], [69, 39], [45, 31], [55, 31]]) +
-          curls([[40, 22], [47, 20]], hl, 1.4),
+          curls([
+            [34, 30],
+            [41, 26.5],
+            [50, 24.5],
+            [59, 26.5],
+            [66, 30],
+            [31, 39],
+            [69, 39],
+            [45, 31],
+            [55, 31],
+          ]) +
+          curls(
+            [
+              [40, 22],
+              [47, 20],
+            ],
+            hl,
+            1.4,
+          ),
       };
     }
     case 10: {
       // chiquinhas com xuxinhas
-      const F = 'M30.5 45C29.5 28 38 21.5 50 21.5C62 21.5 70.5 28 69.5 45C68 34.5 60 28.5 51 28.5L50 32.5L49 28.5C40 28.5 32 34.5 30.5 45Z';
+      const F =
+        'M30.5 45C29.5 28 38 21.5 50 21.5C62 21.5 70.5 28 69.5 45C68 34.5 60 28.5 51 28.5L50 32.5L49 28.5C40 28.5 32 34.5 30.5 45Z';
       return {
         cast: [F],
         back:
@@ -514,18 +598,25 @@ function faceSvg(style, skin, hairColor, clip) {
   const mouthFill = '#7a1a22';
   const tongue = '#ff6f8a';
   const eye = (x, y, r = 2.4) =>
-    `<ellipse cx="${x}" cy="${y}" rx="${r * 0.85}" ry="${r * 1.15}" fill="${INK}"/>` + dot(x + r * 0.32, y - r * 0.45, r * 0.32, '#fff');
+    `<ellipse cx="${x}" cy="${y}" rx="${r * 0.85}" ry="${r * 1.15}" fill="${INK}"/>` +
+    dot(x + r * 0.32, y - r * 0.45, r * 0.32, '#fff');
   const eyes = (r) => eye(42, 47, r) + eye(58, 47, r);
   const brows = (lift = 0, w = 2.1) =>
-    line(`M38.5 ${41 - lift}Q42 ${39.2 - lift} 45.5 ${40.6 - lift}`, browC, w) + line(`M54.5 ${40.6 - lift}Q58 ${39.2 - lift} 61.5 ${41 - lift}`, browC, w);
+    line(`M38.5 ${41 - lift}Q42 ${39.2 - lift} 45.5 ${40.6 - lift}`, browC, w) +
+    line(`M54.5 ${40.6 - lift}Q58 ${39.2 - lift} 61.5 ${41 - lift}`, browC, w);
   const happyEyes = line('M39 48.5Q42 44 45 48.5') + line('M55 48.5Q58 44 61 48.5');
   const nose = line('M49.4 49.2Q47.9 52.4 49.9 53.1Q51.3 53.4 52.1 52.5', darken(skin, 0.32), 1.4);
-  const blush = (o = 0.3) => dot(36.5, 54, 3.4, '#ff5a6e', `opacity="${o}"`) + dot(63.5, 54, 3.4, '#ff5a6e', `opacity="${o}"`);
+  const blush = (o = 0.3) =>
+    dot(36.5, 54, 3.4, '#ff5a6e', `opacity="${o}"`) + dot(63.5, 54, 3.4, '#ff5a6e', `opacity="${o}"`);
   const smile = line('M43.5 55.5Q50 61.5 56.5 55.5', INK, 2);
   // Boca aberta: dentes em cima e língua embaixo, recortados no formato da boca.
   const openMouth = (d, { teeth = true, tongueY = 62.6 } = {}) =>
     fillOnly(d, mouthFill) +
-    clip(d, (teeth ? fillOnly('M40 50H60V57H40Z', '#fff') : '') + `<ellipse cx="50" cy="${tongueY}" rx="5.2" ry="3" fill="${tongue}"/>`) +
+    clip(
+      d,
+      (teeth ? fillOnly('M40 50H60V57H40Z', '#fff') : '') +
+        `<ellipse cx="50" cy="${tongueY}" rx="5.2" ry="3" fill="${tongue}"/>`,
+    ) +
     shape(d, 'none');
   const heart = (x, y) =>
     `<path d="M${x} ${y + 3.4}C${x - 5.8} ${y - 0.5} ${x - 3.7} ${y - 5.8} ${x} ${y - 2.7}C${x + 3.7} ${y - 5.8} ${x + 5.8} ${y - 0.5} ${x} ${y + 3.4}Z" fill="#e8203a" stroke="${INK}" stroke-width="1.1" stroke-linejoin="round"/>` +
@@ -548,7 +639,8 @@ function faceSvg(style, skin, hairColor, clip) {
       );
     case 3: {
       // surpreso
-      const o = 'M50 54.6C53.3 54.6 53.6 57.6 53.6 59C53.6 61.4 52 62.8 50 62.8C48 62.8 46.4 61.4 46.4 59C46.4 57.6 46.7 54.6 50 54.6Z';
+      const o =
+        'M50 54.6C53.3 54.6 53.6 57.6 53.6 59C53.6 61.4 52 62.8 50 62.8C48 62.8 46.4 61.4 46.4 59C46.4 57.6 46.7 54.6 50 54.6Z';
       return (
         brows(3, 1.9) +
         `<circle cx="42" cy="47" r="4.2" fill="#fff" stroke="${INK}" stroke-width="1.4"/><circle cx="58" cy="47" r="4.2" fill="#fff" stroke="${INK}" stroke-width="1.4"/>` +
@@ -585,7 +677,8 @@ function faceSvg(style, skin, hairColor, clip) {
         eyes(2.1) +
         clip(
           `${ellipseD(42, 47, 5.6, 5.6)}${ellipseD(58, 47, 5.6, 5.6)}`,
-          fillOnly('M0 0H100V100H0Z', '#bfe6ff', 'opacity=".22"') + line('M37.5 45L41 41.5M53.5 45L57 41.5', '#fff', 1.6, 'opacity=".9"'),
+          fillOnly('M0 0H100V100H0Z', '#bfe6ff', 'opacity=".22"') +
+            line('M37.5 45L41 41.5M53.5 45L57 41.5', '#fff', 1.6, 'opacity=".9"'),
         ) +
         `<circle cx="42" cy="47" r="5.6" fill="none" stroke="${INK}" stroke-width="1.9"/><circle cx="58" cy="47" r="5.6" fill="none" stroke="${INK}" stroke-width="1.9"/>` +
         line('M47.6 46.5Q50 45 52.4 46.5', INK, 1.6) +
@@ -622,7 +715,14 @@ function faceSvg(style, skin, hairColor, clip) {
       );
     }
     case 8: // apaixonado
-      return brows(2) + heart(42, 47) + heart(58, 47) + nose + openMouth('M43.5 55H56.5Q55.6 62.6 50 62.6Q44.4 62.6 43.5 55Z', { tongueY: 61.4 }) + blush(0.45);
+      return (
+        brows(2) +
+        heart(42, 47) +
+        heart(58, 47) +
+        nose +
+        openMouth('M43.5 55H56.5Q55.6 62.6 50 62.6Q44.4 62.6 43.5 55Z', { tongueY: 61.4 }) +
+        blush(0.45)
+      );
     case 9: {
       // óculos escuros com reflexo
       const L = 'M35.5 43.5H48L47 50Q42 53.5 37.5 50Z';
@@ -632,7 +732,11 @@ function faceSvg(style, skin, hairColor, clip) {
         nose +
         shape(L, '#22222e') +
         shape(R, '#22222e') +
-        clip(L + R, line('M36 49L44 41M40 51L48 43M52.5 49L60.5 41M56.5 51L64.5 43', '#fff', 1.4, 'opacity=".28"') + fillOnly('M30 43H70V45.5H30Z', '#fff', 'opacity=".12"')) +
+        clip(
+          L + R,
+          line('M36 49L44 41M40 51L48 43M52.5 49L60.5 41M56.5 51L64.5 43', '#fff', 1.4, 'opacity=".28"') +
+            fillOnly('M30 43H70V45.5H30Z', '#fff', 'opacity=".12"'),
+        ) +
         line('M48 44.5Q50 43.5 52 44.5', INK, 1.6) +
         line('M35.6 44.4L31 44.2M64.4 44.4L69 44.2', INK, 1.6) +
         line('M45 57.5Q51 60 56 55.5', INK, 2) +
@@ -641,7 +745,8 @@ function faceSvg(style, skin, hairColor, clip) {
     }
     case 10: {
       // bigodão
-      const M = 'M50 53.8C46 51 39.5 52 36.5 57.2C38 58.2 39.4 57.4 40.2 56.4C43 57.8 46.5 57.8 50 56.4C53.5 57.8 57 57.8 59.8 56.4C60.6 57.4 62 58.2 63.5 57.2C60.5 52 54 51 50 53.8Z';
+      const M =
+        'M50 53.8C46 51 39.5 52 36.5 57.2C38 58.2 39.4 57.4 40.2 56.4C43 57.8 46.5 57.8 50 56.4C53.5 57.8 57 57.8 59.8 56.4C60.6 57.4 62 58.2 63.5 57.2C60.5 52 54 51 50 53.8Z';
       return (
         line('M38 41.2Q42 38.6 46 40.6', browC, 3) +
         line('M54 40.6Q58 38.6 62 41.2', browC, 3) +
@@ -649,16 +754,29 @@ function faceSvg(style, skin, hairColor, clip) {
         line('M49.2 47.5Q47.4 51 49.8 51.8Q51.4 52.1 52.4 51', darken(skin, 0.32), 1.5) +
         line('M46.6 60Q50 62 53.4 60', INK, 1.8) +
         shape(M, hairColor) +
-        line('M42 55.2Q45 54.2 48 55.2M52 55.2Q55 54.2 58 55.2', darken(hairColor, isLight(hairColor) ? 0.3 : 0.45), 1) +
+        line(
+          'M42 55.2Q45 54.2 48 55.2M52 55.2Q55 54.2 58 55.2',
+          darken(hairColor, isLight(hairColor) ? 0.3 : 0.45),
+          1,
+        ) +
         line('M44 53.8Q47 52.8 49 53.6', lighten(hairColor, 0.4), 1.1, 'opacity=".7"')
       );
     }
     case 11: {
       // sardas
       const freckles = [
-        [35, 51.6, 0.85], [38.2, 52.8, 0.75], [35.8, 54.8, 0.9], [39.2, 55.6, 0.7], [37, 57.4, 0.6],
-        [65, 51.6, 0.85], [61.8, 52.8, 0.75], [64.2, 54.8, 0.9], [60.8, 55.6, 0.7], [63, 57.4, 0.6],
-        [47.6, 50.4, 0.5], [52.4, 50.4, 0.5],
+        [35, 51.6, 0.85],
+        [38.2, 52.8, 0.75],
+        [35.8, 54.8, 0.9],
+        [39.2, 55.6, 0.7],
+        [37, 57.4, 0.6],
+        [65, 51.6, 0.85],
+        [61.8, 52.8, 0.75],
+        [64.2, 54.8, 0.9],
+        [60.8, 55.6, 0.7],
+        [63, 57.4, 0.6],
+        [47.6, 50.4, 0.5],
+        [52.4, 50.4, 0.5],
       ];
       return (
         brows(0.6) +
@@ -670,11 +788,23 @@ function faceSvg(style, skin, hairColor, clip) {
       );
     }
     default: // sorriso
-      return brows() + eyes() + nose + smile + line('M42.7 54.6Q43.2 55.9 44.3 56', INK, 1.3) + line('M57.3 54.6Q56.8 55.9 55.7 56', INK, 1.3) + blush(0.18);
+      return (
+        brows() +
+        eyes() +
+        nose +
+        smile +
+        line('M42.7 54.6Q43.2 55.9 44.3 56', INK, 1.3) +
+        line('M57.3 54.6Q56.8 55.9 55.7 56', INK, 1.3) +
+        blush(0.18)
+      );
   }
 }
 
 // SVG completo como texto. `view` deixa recortar (ex.: só a cabeça nas miniaturas de cabelo e rosto).
+/**
+ * @param {any} avatar
+ * @param {{ view?: string, title?: string }} [options]
+ */
 export function avatarSVG(avatar, { view = '0 0 100 100', title } = {}) {
   const a = sanitizeAvatar(avatar) ?? randomAvatar();
   const clip = clipper();
@@ -687,7 +817,9 @@ export function avatarSVG(avatar, { view = '0 0 100 100', title } = {}) {
   // Sombra do lado direito do rosto e a do cabelo caindo na testa.
   const headShading =
     fillOnly(`M0 0H100V100H0Z${ellipseD(47.6, 43.2, 19, 21)}`, darken(skin, 0.09), 'fill-rule="evenodd"') +
-    (hair.cast ?? []).map((d) => fillOnly(d, darken(skin, 0.2), 'transform="translate(.8 2.6)" opacity=".55"')).join('');
+    (hair.cast ?? [])
+      .map((d) => fillOnly(d, darken(skin, 0.2), 'transform="translate(.8 2.6)" opacity=".55"'))
+      .join('');
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${view}" role="img" aria-label="${title ?? 'Avatar'}">`,
     // fundo liso, só a cor escolhida

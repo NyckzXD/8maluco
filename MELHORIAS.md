@@ -14,19 +14,19 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 - [x] **1. Margem quebrada na home do celular**
       Em 375px os botões Criar sala, Salas abertas e a linha do código ficam a 16px da borda esquerda e a 2px da direita. O campo de código (`.join-row input`) força a coluna implícita da grade a 357px, maior que os 343px disponíveis.
-  - Onde: `.home-menu` em `public/style.css`
+  - Onde: `.home-menu` em `client/style.css`
   - Pronto quando: `.home-menu` tem `grid-template-columns: minmax(0, 1fr)` e as margens ficam iguais (16px) dos dois lados em 320, 375 e 414px.
 
 - [x] **2. Mão inteira na tela em telas baixas**
       Com 500px de altura a base das cartas fica cortada; no celular a segunda fileira encosta no fim da tela, sem respeitar a área segura do iPhone.
-  - Onde: `.hand` e `layoutHand()` em `public/app.js`, `public/style.css`
+  - Onde: `.hand` e `layoutHand()` em `client/app.js`, `client/style.css`
   - Pronto quando: em 800×500 e 375×667 as cartas aparecem inteiras, e a mão usa `padding-bottom: env(safe-area-inset-bottom)`.
   - Feito: o caso que cortava era o desktop baixo (1024×500 rolava 49px). A mesa agora é quem cede altura (mínimo = assento de cima + montes), e desktops com até 580px de altura usam cartas de 64×92. O assento de cima não sobe mais por cima da barra do topo (`placeSeat()`), os montes descem quando a mesa é baixa e o selo da pinta vai para o lado deles (container query na `.table`). A área segura já vinha do padding de `.game-layout`. Conferido sem rolagem em 1024×500, 800×500, 1280×720 e 375×812, inclusive com 24 cartas em 2 fileiras.
   - Fica de fora: celular deitado (~844×390) ainda rola um pouco.
 
 - [x] **3. Ações do lobby sempre à vista**
       Em ~800px a mesa oval ocupa a primeira tela inteira; "Adicionar bot" e "Começar partida" ficam abaixo da dobra, e o chat embaixo sobra com uns 250px vazios.
-  - Onde: tela `#lobby` em `public/index.html` e `public/style.css`
+  - Onde: tela `#lobby` em `client/index.html` e `client/style.css`
   - Pronto quando: em 800×500 e 1440×900 dá para começar a partida sem rolar (mesa e painel lado a lado, ou as ações fixas no rodapé), e o chat não deixa um bloco vazio.
   - Feito: mesa e chat ficam lado a lado até 700px de largura, e a mesa da sala de espera tem mínimo de 280px. Quando ela fica baixa, o centro fica compacto: código menor e rótulo "Sala" só para leitor de tela. No celular a mesa encolhe conforme a altura, o chat cresce com as mensagens (até 40% da tela) e os dois botões cabem numa linha em 360px. "Começar partida" visível sem rolar em 1280×720, 1024×560, 800×500, 720×480, 375×812 e 360×640.
 
@@ -34,44 +34,44 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 - [x] **4. Última jogada visível na mesa**
       A partida corre rápido e só dá para saber quem jogou o quê abrindo a gaveta.
-  - Onde: `renderCenter()` em `public/app.js`
+  - Onde: `renderCenter()` em `client/app.js`
   - Pronto quando: perto do monte aparece a última ação ("Robô Cida jogou 9♠ · Você compra 2") com o avatar de quem jogou, atualizada a cada jogada e compra.
   - Feito: `#lastMove` acima dos montes, montado por `describeMove()` a partir dos eventos. Mostra o avatar, o nome, a carta como mini carta e os efeitos: "compra 2 e perde a vez", "foi pulado", "todos compram 1" no Joker. Compras e passes também aparecem. A linha fica até a próxima jogada, é anunciada para leitor de tela (com o nome inteiro da carta) e se limpa no começo da rodada. Em mesas baixas ela vai para a esquerda dos montes. Conferido sem sobreposição com 4 e 8 jogadores, de 1440×900 a 375×812.
 
 - [x] **5. Feltro limpo no início da rodada**
       A marca "8 Maluco", o fantasma "Rodada 1" e o "monte vazio" ficam sobrepostos no centro.
-  - Onde: `.felt` e o anúncio de rodada em `public/style.css` / `public/app.js`
+  - Onde: `.felt` e o anúncio de rodada em `client/style.css` / `client/app.js`
   - Pronto quando: em nenhum momento dois textos do centro da mesa se sobrepõem.
   - Feito: saiu a marca "8 Maluco" da mesa da partida (no lobby ela continua, e some quando a mesa é baixa). O monte vazio ficou só com o contorno, porque o selo embaixo já diz quem abre. O letreiro "Rodada N" ficou quase opaco (95%), então o que está embaixo não aparece através dele.
 
 - [x] **6. Usar a faixa entre a mesa e a mão no desktop**
       A linha "Você · 0 pts" fica solta, com uma faixa vazia à direita.
-  - Onde: `#meInfo` em `public/index.html`
+  - Onde: `#meInfo` em `client/index.html`
   - Pronto quando: a faixa mostra seu placar com a barra até 100 (ou as cartas crescem para ocupar o espaço).
   - Feito: `#meScore` no canto direito da barra mostra "Seus pontos 12 / 100" e uma barra que fica vermelha a 20 pontos do limite, com dica de quanto falta. No desktop o "Você" perde o "· N pts" para não repetir; no celular o placar não aparece e o "Você · N pts" continua.
 
 - [x] **7. Contagem de cartas dos adversários em destaque**
       Cartas na mão e pontos aparecem a ~12px, e o número de cartas é a informação mais importante da partida.
-  - Onde: `.seat` em `public/style.css` e o render dos assentos em `public/app.js`
+  - Onde: `.seat` em `client/style.css` e o render dos assentos em `client/app.js`
   - Pronto quando: a quantidade de cartas aparece num selo legível (16px ou mais) e quem está com 1 carta ganha um aviso visível.
   - Feito: selo com mini carta e número a 18px (16px no celular). Com 1 carta o selo fica vermelho e pulsa duas vezes (sem pulsar com movimento reduzido). Os pontos ficam ao lado em texto menor; no celular, embaixo do selo.
 
 - [ ] **8. Seleção de carta igual no mouse e no toque**
       No desktop o 1º clique já joga a carta; no toque o 1º toque só seleciona.
-  - Onde: `onCardClick()` em `public/app.js`
+  - Onde: `onCardClick()` em `client/app.js`
   - Pronto quando: o comportamento é o mesmo nos dois (ou a diferença é intencional e há uma dica de "clique para jogar").
 
 ## 🟡 Visual e layout
 
 - [x] **9. Home do desktop com estrutura**
       Logo, perfil, botões e "Como jogar" flutuam em três colunas soltas, com uns 35% da tela vazia embaixo. O perfil é pequeno para o que faz e o carrossel tem contraste e texto fracos.
-  - Onde: `#home` em `public/index.html` e `public/style.css`
+  - Onde: `#home` em `client/index.html` e `client/style.css`
   - Pronto quando: em 1440×900 a home ocupa a tela com um elemento dominante, o perfil tem mais peso e o texto do "Como jogar" passa de 4.5:1 de contraste.
   - Feito: no desktop ficam dois painéis num degrau de tom (sem contorno nem sombra): "você + jogar" (avatar de 200px, apelido e os três botões) e "Como jogar" (passo com 24px, texto com 18px). A grade da home virou `auto 1fr auto`. Em desktops com até 820px de altura o logo e os espaçamentos diminuem; entre 861 e 1100px de largura os painéis empilham. Sem rolagem e com margens iguais em 1280×720, 1366×768, 1440×900 e 1920×1080. No celular continua a coluna solta de antes.
 
 - [x] **10. Rótulos sem caixa alta numerada**
       "1. RECEBA AS CARTAS" e o placeholder "C Ó D I G O" com letras espaçadas.
-  - Onde: `.howto-card` em `public/index.html`, `.join-row input::placeholder` em `public/style.css`
+  - Onde: `.howto-card` em `client/index.html`, `.join-row input::placeholder` em `client/style.css`
   - Pronto quando: os títulos ficam em caixa normal, sem número na frente, e o placeholder sem espaçamento extra.
   - Feito: os passos do "Como jogar" perderam o número (a ordem já aparece nas bolinhas e no contador) e a caixa alta. O placeholder "Código" ficou em caixa normal, sem espaçamento; o código digitado continua em caixa alta e espaçado. Os rótulos "Cor" e "Estilo" do editor de avatar também saíram da caixa alta.
 
@@ -82,13 +82,13 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 - [x] **12. Sombras, cores e tamanhos em tokens**
       Há 60 `box-shadow`, 10 gradientes, 101 `rgba()` soltos e 5 `font-size` fora da escala (4.2rem, 2.6rem, 2.4rem, 1.3rem, 3.2rem).
-  - Onde: `public/style.css`
+  - Onde: `client/style.css`
   - Pronto quando: sombras e véus usam tokens (`--shadow-raised`, `--scrim`…), os tamanhos de texto vêm de `--fs-*` (com um `--fs-display` para o logo e o avatar grande) e os gradientes que sobrarem têm motivo.
   - Feito: tokens novos `--shadow-sm` / `--shadow` / `--shadow-lg` / `--shadow-float` (elevação pelo tamanho do desfoque), `--text-shadow`, `--veil-weak` / `--veil` / `--veil-strong`, `--scrim`, `--felt-surface` e `--fs-4xl` / `--fs-5xl` / `--fs-display`. As 27 sombras soltas com desfoque, as 5 sombras de texto, os 9 véus e fundos de modal e os tamanhos fora da escala passaram a usar esses tokens. `rgba()` fora dos tokens: 94 → 60; gradientes: 9 → 7, todos funcionais (anel de tempo, contador, máscara) ou do material do feltro; tamanhos de fonte soltos: 6 → 0. O relevo 3D dos botões (sombra sem desfoque) ficou como estava.
 
 - [x] **13. Estado vazio de "Salas públicas"**
       Caixa tracejada e o botão "Criar uma sala" pequeno demais.
-  - Onde: `#roomsModal` e o render da lista em `public/app.js`
+  - Onde: `#roomsModal` e o render da lista em `client/app.js`
   - Pronto quando: o estado vazio não usa borda tracejada e o botão tem o tamanho do botão principal.
   - Feito: o estado vazio está num degrau de tom (sem contorno tracejado) e o "Criar uma sala" é o mesmo botão principal da home (grande, com ícone de +, 60px de altura).
 
@@ -170,7 +170,7 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
 
 - [x] **27. Duas abas controlam o mesmo jogador**
       O token fica no `localStorage`, então duas abas do mesmo navegador são o mesmo jogador. Quando a segunda entra, `join()` só tira a primeira do canal da sala: o `socket.data` dela continua apontando para o mesmo `memberId`, então a aba antiga para de receber o estado, mas ainda consegue jogar, comprar e mandar chat.
-  - Onde: `Room.join()` em `server/rooms.js`, `socket.on(...)` em `public/app.js`
+  - Onde: `Room.join()` em `server/rooms.js`, `socket.on(...)` em `client/app.js`
   - Pronto quando: a conexão antiga recebe `room:replaced`, tem `socket.data.code`/`memberId` limpos, e a aba antiga mostra "Você abriu esta sala em outra aba" com um botão "Jogar aqui" (que reentra e passa a outra aba para esse estado).
   - Feito: `Room.join()` faz isso com a conexão antiga. A aba antiga fecha os modais abertos, volta para a home sem `?sala=` na URL, não reentra sozinha quando reconecta e abre o modal `#replacedModal` (carvão, como o "Erro ao entrar"): "Sala aberta em outra aba", com "Ficar no início" e "Jogar aqui". Conferido no navegador com duas abas, nos dois sentidos. Em `test/multiplayer.test.js`: com clientes reais, a aba antiga não consegue mandar chat nem adicionar bot, a nova consegue, e a queda da antiga não marca o jogador como desconectado.
 
@@ -190,7 +190,7 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
 
 - [x] **30. Jogador parado (conectado, mas sem jogar)**
       Quem deixa a aba aberta e sai segura cada vez por 30s, rodada após rodada.
-  - Onde: `Room.schedule()` / `autoplay()` em `server/rooms.js`, assentos em `public/app.js`
+  - Onde: `Room.schedule()` / `autoplay()` em `server/rooms.js`, assentos em `client/app.js`
   - Pronto quando: depois de 2 vezes seguidas por tempo esgotado, o jogador fica "ausente": joga no automático rápido como um desconectado, com selo "Ausente" no assento, e as rodadas não esperam o "pronto" dele. Qualquer ação dele tira o estado. Ausente também não segura a revanche.
   - Feito: `idleTimeouts` conta os tempos esgotados seguidos. No segundo (`IDLE_TIMEOUTS`), o jogador fica `away`, o chat avisa "Fulano está ausente, jogadas automáticas até voltar" e `schedule()` passa a jogar por ele em 1,5s. `waitingOn()` e `rematchWaitingOn()` não esperam por ele. Todo evento da sala passa por `Room.touch()` (em `inRoom`, no `server/index.js`), que zera a contagem e tira o ausente; se for a vez dele, o prazo volta cheio, e o chat avisa "Fulano voltou". No cliente: o assento mostra o selo "Ausente" em dourado (e a cadeira do lobby diz "ausente"). Na sua própria barra aparece "Ausente · toque na tela para voltar", com um aviso quando o estado começa. Qualquer toque ou tecla manda `presence` (no máximo uma vez por segundo). Conferido no navegador: dois tempos esgotados deixam o jogador ausente, o aviso aparece na barra, e um toque na mesa tira o estado. O selo no assento de outro jogador só foi conferido no código, porque isso pedia um segundo humano com outro navegador. Testes em `test/away.test.js`.
 
@@ -207,13 +207,13 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
 
 - [x] **33. Nomes repetidos na mesma sala**
       Dois "Jogador" (o padrão) ou dois "Ana" ficam iguais no chat, no placar e no "Fulano jogou", e o chat manda só o nome (`from`), sem o id. Também dá para se chamar "Robô Zeca".
-  - Onde: `Room.join()` e `Room.say()` em `server/rooms.js`, `addChat()` em `public/app.js`
+  - Onde: `Room.join()` e `Room.say()` em `server/rooms.js`, `addChat()` em `client/app.js`
   - Pronto quando: o servidor acrescenta um número a nomes repetidos ("Ana 2"), não aceita nomes começando com "Robô", e as mensagens do chat levam o `id` de quem mandou (o cliente pode mostrar o avatar).
   - Feito: `Room.uniqueName()` compara os nomes sem diferenciar maiúsculas e minúsculas e acrescenta " 2", " 3"… Quando o nome passa de 16 caracteres, ele é cortado para o número caber. Quem reconecta com o mesmo apelido continua com o nome que tinha na sala (o "Ana 2" não vira "Ana" porque a outra Ana saiu). A regra do "Robô" ficou em `shared/names.js` (`isBotName`, que aceita "Robo"/"Robô" em qualquer caixa e deixa "Roberto" passar), e o servidor e a home usam a mesma regra. Na home, o aviso aparece embaixo do campo de apelido antes de criar ou entrar numa sala (conferido no navegador). O `names.js` foi adicionado ao cache do `sw.js`. O chat agora leva `fromId`, e o `addChat()` grava esse id em `data-from` na linha. O avatar no chat ficou de fora. Testes em `test/names.test.js`.
 
 - [x] **34. Plateia com regras claras**
       Quem entra no meio da partida vira plateia e entra na próxima partida (inclusive na revanche, via `newGame`), mas: a plateia conta no limite de 8, então uma mesa cheia não aceita nem quem só quer assistir; a lista de salas mostra "jogando" sem dizer que dá para assistir; e quem entra não recebe aviso de que é plateia.
-  - Onde: `Room.join()`, `listPublic()` e `newGame()` em `server/rooms.js`, lista de salas em `public/app.js`
+  - Onde: `Room.join()`, `listPublic()` e `newGame()` em `server/rooms.js`, lista de salas em `client/app.js`
   - Pronto quando: há até 8 na mesa e mais alguns (por exemplo 4) na plateia; a lista mostra "Em jogo · entrar como plateia"; quem entra assim vê um aviso; na partida nova entra quem couber na mesa, pela ordem de chegada. Teste em `test/` para os três casos.
   - Feito: a sala aceita `MAX_PLAYERS` (8) na mesa e mais `MAX_SPECTATORS` (4) na plateia. `seated()` diz quem está sentado: na partida, quem está nela; fora dela, os 8 primeiros a chegar. Quem não está sentado é plateia (`spectating()`). O `join()` responde `spectator: true`, e o estado leva `spectators` e `maxSpectators`. `newGame()` senta os 8 primeiros da lista, e a revanche só espera por quem vai sentar: quem fica na plateia não segura ninguém. Na lista de salas, cada sala vem com `players` (só a mesa), `watching` e `full` (sem vaga nem na plateia). Uma sala em jogo ou com a mesa cheia aparece como "Em jogo · entrar como plateia" (ou "Mesa cheia · …"), com o botão "Assistir"; "Cheia" só quando não sobra lugar nem na plateia. Quem entra como plateia vê o aviso "Você entrou na plateia: assiste agora e senta na próxima partida, se tiver lugar". No lobby, a mesa mostra só quem está sentado ("8 de 8 jogadores"), e embaixo dela aparece a faixa "Plateia · N de 4", com o avatar de cada um e o "×" do anfitrião. Conferido no navegador (desktop e 375×812) com uma sala de 8 jogadores falsos. Testes em `test/spectators.test.js`.
   - Fica de fora: no celular, com plateia no lobby, a faixa empurra "Começar partida" do anfitrião um pouco para baixo (só quando a mesa já está cheia).

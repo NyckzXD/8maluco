@@ -2,6 +2,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { io as connect } from 'socket.io-client';
+import { fileURLToPath } from 'node:url';
 import { createGameServer, clientIp, originAllowed, configFromEnv } from '../server/index.js';
 
 const servers = [];
@@ -104,7 +105,8 @@ test('criar salas tem limite por conexão', async () => {
 test('tentativas de código de sala têm limite', async () => {
   const s = await start();
   const c = await client(s);
-  for (let i = 0; i < 12; i++) assert.equal((await call(c, 'room:join', { code: 'ZZZZZ', token: 't' })).error, 'Sala não encontrada');
+  for (let i = 0; i < 12; i++)
+    assert.equal((await call(c, 'room:join', { code: 'ZZZZZ', token: 't' })).error, 'Sala não encontrada');
   assert.match((await call(c, 'room:join', { code: 'ZZZZZ', token: 't' })).error, /Muitas tentativas/);
 });
 
@@ -125,8 +127,9 @@ test('conexões por IP têm limite', async () => {
 });
 
 test('arquivos de texto vão comprimidos', async () => {
-  const s = await start();
-  for (const path of ['/app.js', '/style.css', '/shared/engine.js']) {
+  // public/ no lugar do dist/ (o build não precisa existir para o teste)
+  const s = await start({ client: fileURLToPath(new URL('../public', import.meta.url)) });
+  for (const path of ['/sw.js', '/bg-pattern.svg']) {
     const res = await fetch(`${s.url}${path}`, { headers: { 'accept-encoding': 'gzip' } });
     assert.equal(res.status, 200, path);
     assert.equal(res.headers.get('content-encoding'), 'gzip', path);

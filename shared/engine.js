@@ -96,6 +96,15 @@ function fail(error) {
 
 // ---------- ciclo de vida ----------
 
+/**
+ * O que aconteceu numa ação, na ordem: o servidor repassa para as telas.
+ * @typedef {{ type: string, playerId?: string, [key: string]: any }} GameEvent
+ */
+
+/**
+ * @param {any[]} players
+ * @param {{ rules?: object, seed?: number, dealer?: number }} [options]
+ */
 export function createGame(players, { rules = {}, seed, dealer } = {}) {
   if (players.length < 2) throw new Error('São necessários pelo menos 2 jogadores');
   const state = {
@@ -232,6 +241,7 @@ export function playCard(state, playerId, cardId, chosenSuit) {
 
   player.hand.splice(ci, 1);
   state.discard.push(card);
+  /** @type {GameEvent[]} */
   const events = [{ type: 'play', playerId, card }];
   let next = nextActive(state, i);
 
@@ -293,6 +303,7 @@ export function drawCard(state, playerId) {
   const i = state.turn;
   const taken = takeCards(state, i, 1);
   state.hasDrawn = true;
+  /** @type {GameEvent[]} */
   const events = [{ type: 'draw', playerId, count: taken.length }];
   // Se mesmo depois de comprar não há o que jogar, a vez passa sozinha.
   if (!state.players[i].hand.some((c) => canPlay(state, c))) {
@@ -357,6 +368,7 @@ export function removePlayer(state, playerId) {
   state.drawPile.unshift(...p.hand);
   p.hand = [];
   p.eliminated = true;
+  /** @type {GameEvent[]} */
   const events = [{ type: 'left', playerId }];
   const remaining = activePlayers(state);
   if (remaining.length <= 1 && state.phase !== 'gameOver') {

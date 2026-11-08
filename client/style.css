@@ -2,57 +2,69 @@
    Google Fonts: funcionam offline no app instalado. Só o subconjunto latino, que cobre o português. */
 
 @font-face {
-  font-family: "Russo One";
+  font-family: 'Russo One';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("fonts/russo-one-400.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/russo-one-400.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Barlow Semi Condensed";
+  font-family: 'Barlow Semi Condensed';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("fonts/barlow-semi-condensed-400.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/barlow-semi-condensed-400.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Barlow Semi Condensed";
+  font-family: 'Barlow Semi Condensed';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("fonts/barlow-semi-condensed-500.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/barlow-semi-condensed-500.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Barlow Semi Condensed";
+  font-family: 'Barlow Semi Condensed';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("fonts/barlow-semi-condensed-600.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/barlow-semi-condensed-600.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Barlow Semi Condensed";
+  font-family: 'Barlow Semi Condensed';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("fonts/barlow-semi-condensed-700.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/barlow-semi-condensed-700.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Barlow Semi Condensed";
+  font-family: 'Barlow Semi Condensed';
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url("fonts/barlow-semi-condensed-800.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/barlow-semi-condensed-800.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 :root {
@@ -141,9 +153,8 @@
   /* Duas famílias só. Russo One: o logo e os títulos grandes (h1, h2, letreiros, o 8 do verso).
      Barlow Semi Condensed: todo o resto, do texto aos números da mesa e das cartas.
      --font-hud continua como apelido de --font-body, para números e placares. */
-  --font-display: "Russo One", "Barlow Semi Condensed", system-ui, sans-serif;
-  --font-body:
-    "Barlow Semi Condensed", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: 'Russo One', 'Barlow Semi Condensed', system-ui, sans-serif;
+  --font-body: 'Barlow Semi Condensed', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-hud: var(--font-body);
 }
 
@@ -170,12 +181,12 @@ body {
 
 /* a estampa fica numa camada fixa, para não rolar junto com a home */
 body::before {
-  content: "";
+  content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: url(bg-pattern.svg) 0 0 / 168px 168px repeat;
+  background: url('/bg-pattern.svg') 0 0 / 168px 168px repeat;
   transition: opacity 0.4s;
 }
 
@@ -191,7 +202,7 @@ input,
 select,
 textarea,
 label,
-[role="button"] {
+[role='button'] {
   touch-action: manipulation;
 }
 
@@ -425,7 +436,7 @@ h3 {
 
 /* área de toque de pelo menos 44×44px, mesmo com o botão pequeno */
 .btn-small::after {
-  content: "";
+  content: '';
   position: absolute;
   left: 50%;
   top: 50%;
@@ -433,7 +444,6 @@ h3 {
   height: max(100%, 44px);
   transform: translate(-50%, -50%);
 }
-
 
 input,
 select {
@@ -659,7 +669,7 @@ select:focus {
   color: var(--red-text);
 }
 
-input[aria-invalid="true"] {
+input[aria-invalid='true'] {
   border-color: var(--primary);
 }
 
@@ -835,7 +845,7 @@ input[aria-invalid="true"] {
   }
 
   .howto-count::before {
-    content: "";
+    content: '';
     width: 14px;
     height: 14px;
     border-radius: 50%;
@@ -872,7 +882,7 @@ input[aria-invalid="true"] {
 
 .howto-dots button::before,
 .howto-dots button::after {
-  content: "";
+  content: '';
   grid-area: 1 / 1;
   height: 10px;
   border-radius: var(--r-pill);
@@ -889,7 +899,7 @@ input[aria-invalid="true"] {
 /* Relógio do passo atual: um círculo que se enche no sentido horário enquanto o passo
    está na tela (--t de 0 a 1, no tempo --howto-ms). Pausado, ele para onde está. */
 @property --t {
-  syntax: "<number>";
+  syntax: '<number>';
   inherits: false;
   initial-value: 0;
 }
@@ -907,7 +917,7 @@ input[aria-invalid="true"] {
     transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.4);
 }
 
-.howto-nav.run .howto-dots button[aria-current="true"]::after,
+.howto-nav.run .howto-dots button[aria-current='true']::after,
 .howto-nav.run .howto-count::before {
   animation: howto-clock var(--howto-ms, 3500ms) linear forwards;
 }
@@ -931,11 +941,11 @@ input[aria-invalid="true"] {
   transform: scale(1.2);
 }
 
-.howto-dots button[aria-current="true"]::before {
+.howto-dots button[aria-current='true']::before {
   opacity: 0;
 }
 
-.howto-dots button[aria-current="true"]::after {
+.howto-dots button[aria-current='true']::after {
   opacity: 1;
   transform: none;
 }
@@ -1229,7 +1239,7 @@ input[aria-invalid="true"] {
 
 .rooms-empty-art {
   display: grid;
-  grid-template-areas: "c";
+  grid-template-areas: 'c';
   margin-bottom: 10px;
 }
 
@@ -1450,7 +1460,7 @@ input[aria-invalid="true"] {
 }
 
 .bench-chip .kick::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: -10px;
 }
@@ -1485,7 +1495,7 @@ input[aria-invalid="true"] {
 }
 
 .lobby-seat .kick::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: -9px;
 }
@@ -1828,7 +1838,7 @@ input[aria-invalid="true"] {
 
 /* costura no meio da borda de couro */
 .felt::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: calc(var(--rail-w) / -2 - 1px);
   border-radius: 50%;
@@ -2086,7 +2096,7 @@ input[aria-invalid="true"] {
 }
 
 .draw-pile.can-draw::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   width: var(--card-w);
@@ -2307,7 +2317,7 @@ input[aria-invalid="true"] {
 
 @media (prefers-reduced-motion: reduce) {
   .draw-pile.can-draw .card,
-  .discard-pile .card[class*="fx-"],
+  .discard-pile .card[class*='fx-'],
   .hand.wave .card,
   .fx-suit,
   .fx-ring {
@@ -2352,7 +2362,7 @@ input[aria-invalid="true"] {
 }
 
 .seat.played .avatar::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: -3px;
   border-radius: 50%;
@@ -2605,7 +2615,7 @@ input[aria-invalid="true"] {
    --p vai de 1 (cheio) a 0 e é atualizado pelo updateClock() a cada 200ms;
    registrado com @property, ele desliza entre uma atualização e outra. */
 @property --p {
-  syntax: "<number>";
+  syntax: '<number>';
   inherits: false;
   initial-value: 1;
 }
@@ -2616,11 +2626,12 @@ input[aria-invalid="true"] {
   position: absolute;
   inset: calc(-1 * var(--ring-w) - 2px);
   border-radius: 50%;
-  background: conic-gradient(
-    rgba(255, 255, 255, 0.16) calc((1 - var(--p)) * 360deg),
-    var(--primary) 0
+  background: conic-gradient(rgba(255, 255, 255, 0.16) calc((1 - var(--p)) * 360deg), var(--primary) 0);
+  -webkit-mask: radial-gradient(
+    closest-side,
+    transparent calc(100% - var(--ring-w)),
+    #000 calc(100% - var(--ring-w) + 0.5px)
   );
-  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - var(--ring-w)), #000 calc(100% - var(--ring-w) + 0.5px));
   mask: radial-gradient(closest-side, transparent calc(100% - var(--ring-w)), #000 calc(100% - var(--ring-w) + 0.5px));
   transition: --p 0.2s linear;
   pointer-events: none;
@@ -2937,7 +2948,7 @@ input[aria-invalid="true"] {
 }
 
 .reaction::after {
-  content: "";
+  content: '';
   position: absolute;
   left: 50%;
   top: 100%;
@@ -3276,7 +3287,7 @@ body.is-dragging * {
 
 .discard-pile.drop-target::after,
 .discard-pile.drag-ready::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: -8px;
   border: 2px dashed var(--silver-300);
@@ -3443,7 +3454,7 @@ body.is-dragging * {
 }
 
 .card.back::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 7%;
   border-radius: calc(var(--r-card) - 3px);
@@ -3457,7 +3468,7 @@ body.is-dragging * {
 }
 
 .card.back::after {
-  content: "8";
+  content: '8';
   position: absolute;
   left: 50%;
   top: 50%;
@@ -3603,7 +3614,9 @@ body.is-dragging * {
 }
 
 .score-list li.turn .avatar {
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--primary);
 }
 
 .score-list li.turn .nm {
@@ -3639,7 +3652,7 @@ body.is-dragging * {
 }
 
 .score-list .bar::after {
-  content: "";
+  content: '';
   position: absolute;
   right: -5px;
   top: -3px;
@@ -4114,8 +4127,7 @@ body.is-dragging * {
 .mini-hand .card {
   --r-card: 4px;
   box-shadow: var(--shadow-sm);
-  animation: res-card 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3)
-    calc(var(--row-delay) + 260ms + var(--c, 0) * 70ms) both;
+  animation: res-card 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) calc(var(--row-delay) + 260ms + var(--c, 0) * 70ms) both;
 }
 
 @keyframes res-card {
@@ -4186,7 +4198,7 @@ body.is-dragging * {
 }
 
 .res-bar::after {
-  content: "";
+  content: '';
   position: absolute;
   right: -5px;
   top: -4px;
@@ -4437,7 +4449,7 @@ body.is-dragging * {
 
 /* sair: a mão de cartas em leque, que fica na mesa */
 .leave-art {
-  grid-template-areas: "c";
+  grid-template-areas: 'c';
   width: 130px;
 }
 
@@ -4631,7 +4643,7 @@ body.is-dragging * {
 
 /* setinha apontando para a carta */
 .card-tip::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: calc(50% + var(--caret-x, 0px));
@@ -4687,7 +4699,6 @@ body.is-dragging * {
     grid-template-columns: minmax(0, 1fr);
     gap: 28px;
   }
-
 
   .profile {
     justify-self: center;
@@ -4832,8 +4843,8 @@ body.is-dragging * {
   .res-row {
     grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "who pts score"
-      "hand hand hand";
+      'who pts score'
+      'hand hand hand';
     gap: 8px 10px;
   }
 
@@ -4853,7 +4864,6 @@ body.is-dragging * {
     grid-area: score;
     width: 110px;
   }
-
 }
 
 @media (max-width: 520px) {
@@ -5015,7 +5025,7 @@ body.is-dragging * {
 }
 
 /* a aba escolhida vira papel, como uma carta virada para cima */
-.avatar-tab[aria-selected="true"] {
+.avatar-tab[aria-selected='true'] {
   background: var(--card-face);
   color: var(--card-ink);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
@@ -5072,7 +5082,7 @@ body.is-dragging * {
   outline-offset: 3px;
 }
 
-.style-opt[aria-pressed="true"] {
+.style-opt[aria-pressed='true'] {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(245, 196, 58, 0.3);
 }
@@ -5112,7 +5122,7 @@ body.is-dragging * {
   transform: scale(1.08);
 }
 
-.swatch[aria-pressed="true"] {
+.swatch[aria-pressed='true'] {
   border-color: var(--felt-dark);
   box-shadow:
     0 0 0 3px var(--gold),
