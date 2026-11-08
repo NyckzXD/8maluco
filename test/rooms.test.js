@@ -5,7 +5,7 @@
 // multiplayer.test.js passa pela rede de verdade.
 import { test, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { RoomManager, MAX_PLAYERS } from '../server/rooms.js';
+import { RoomManager, MAX_PLAYERS, BOT_NAMES } from '../server/rooms.js';
 
 // io falso que guarda o que foi enviado para cada socket
 function fakeIo() {
@@ -181,7 +181,7 @@ test('adicionar bot: só o anfitrião, fora da partida e com lugar na mesa', () 
   assert.deepEqual(r.addBot(ana.id), { ok: true });
   const bot = r.members.at(-1);
   assert.equal(bot.isBot, true);
-  assert.match(bot.name, /^Robô /);
+  assert.equal(bot.name, BOT_NAMES[0]);
   assert.ok(bot.avatar);
   r.start(ana.id);
   assert.deepEqual(r.addBot(ana.id), { ok: false, error: 'Espere a partida acabar' });
