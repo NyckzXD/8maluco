@@ -31,17 +31,17 @@ const SNAPSHOT_MAX_AGE_MS = 10 * 60_000; // salas gravadas há mais que isso nã
 const RESTORE_HOST_GRACE_MS = 15_000; // depois de reiniciar, o anfitrião tem mais tempo para voltar
 
 export const BOT_NAMES = [
-  "Robo Scarlet",
-  "Nina",
-  "Duque",
-  "Tobias",
-  "Laila",
-  "Betoven",
-  "Meg",
-  "Piuli",
-  "Bububu",
-  "Pingo",
-  "Luke",
+  "Robô Scarlet",
+  "Robô Nina",
+  "Robô Duque",
+  "Robô Tobias",
+  "Robô Laila",
+  "Robô Betoven",
+  "Robô Meg",
+  "Robô Piuli",
+  "Robô Bububu",
+  "Robô Pingo",
+  "Robô Luke",
 ];
 const COLORS = [
   "#ff6b6b",
