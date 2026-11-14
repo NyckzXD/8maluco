@@ -74,7 +74,10 @@ test('criar e entrar pelo código: todos recebem o estado da sala', async () => 
   for (const p of [ana, bia]) {
     const st = await p.until((s) => s.members.length === 2);
     assert.equal(st.code, created.code);
-    assert.deepEqual(st.members.map((m) => m.name), ['Ana', 'Bia']);
+    assert.deepEqual(
+      st.members.map((m) => m.name),
+      ['Ana', 'Bia'],
+    );
     assert.equal(st.hostId, ana.state().me);
   }
   assert.notEqual(seatId(ana), seatId(bia));
@@ -103,7 +106,10 @@ test('partida: cada um recebe só a própria mão', async () => {
     assert.ok(JSON.stringify(p.states).includes(`"id":"${mine[0]}"`));
     for (const other of all.filter((o) => o !== p)) {
       const theirs = new Set(handIds(other.state()));
-      assert.ok(mine.every((id) => !theirs.has(id)), 'mãos sem cartas em comum');
+      assert.ok(
+        mine.every((id) => !theirs.has(id)),
+        'mãos sem cartas em comum',
+      );
       const everything = JSON.stringify(other.states);
       for (const id of mine)
         assert.ok(!everything.includes(`"id":"${id}"`), `${other.name} recebeu a carta ${id} de ${p.name}`);
@@ -116,8 +122,7 @@ test('partida: cada um recebe só a própria mão', async () => {
   }
   // e só quem tem a vez recebe a lista de jogáveis
   const turnId = ana.state().game.turnId;
-  for (const p of all)
-    if (seatId(p) !== turnId) assert.deepEqual(p.state().game.playable, []);
+  for (const p of all) if (seatId(p) !== turnId) assert.deepEqual(p.state().game.playable, []);
 });
 
 test('reconectar com o mesmo token mantém o lugar e as cartas', async () => {
@@ -210,9 +215,23 @@ test('quem entra no meio da partida vira plateia (34)', async () => {
 test('mensagens malformadas respondem erro e não derrubam o servidor (26)', async () => {
   const s = await socket();
   const events = [
-    'room:list', 'room:create', 'room:join', 'room:leave', 'room:addBot', 'room:kick',
-    'room:settings', 'room:start', 'room:lobby', 'game:rematch', 'chat', 'reaction',
-    'game:play', 'game:draw', 'game:pass', 'game:ready', 'presence',
+    'room:list',
+    'room:create',
+    'room:join',
+    'room:leave',
+    'room:addBot',
+    'room:kick',
+    'room:settings',
+    'room:start',
+    'room:lobby',
+    'game:rematch',
+    'chat',
+    'reaction',
+    'game:play',
+    'game:draw',
+    'game:pass',
+    'game:ready',
+    'presence',
   ];
   const payloads = [null, 42, 'texto', [1, 2], { code: { a: 1 }, token: ['x'], name: 7 }, { text: null }];
   for (const event of events) {

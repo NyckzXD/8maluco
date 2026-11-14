@@ -142,7 +142,10 @@ test('reconectar: mesmo token volta para o mesmo lugar, com as mesmas cartas', (
   assert.equal(back.id, bia.id);
   assert.equal(r.member(bia.id).connected, true);
   assert.equal(r.members.length, 2);
-  assert.deepEqual(r.viewFor(bia.id, []).game.hand.map((c) => c.id), hand);
+  assert.deepEqual(
+    r.viewFor(bia.id, []).game.hand.map((c) => c.id),
+    hand,
+  );
   r.dispose();
 });
 

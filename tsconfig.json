@@ -1,0 +1,17 @@
+{
+  // Só checa (não gera nada): o código continua em JS, com JSDoc onde o tipo não é óbvio.
+  // Começa pelas regras e pelo servidor; o cliente (client/app.js) entra depois.
+  "compilerOptions": {
+    "checkJs": true,
+    "allowJs": true,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2023"],
+    "types": ["node"],
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "include": ["shared/**/*.js", "server/**/*.js"]
+}

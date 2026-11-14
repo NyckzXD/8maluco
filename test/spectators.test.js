@@ -56,7 +56,10 @@ test('na partida nova sentam os 8 primeiros a chegar; o resto continua na platei
   for (let i = 0; i < MAX_PLAYERS + 2; i++) enter(r, i);
   const ids = r.members.map((m) => m.id);
   r.start(r.hostId);
-  assert.deepEqual(r.game.players.map((p) => p.id), ids.slice(0, MAX_PLAYERS));
+  assert.deepEqual(
+    r.game.players.map((p) => p.id),
+    ids.slice(0, MAX_PLAYERS),
+  );
 
   // um da mesa sai: na revanche, o primeiro da plateia senta
   r.leave(ids[3]);
@@ -67,7 +70,10 @@ test('na partida nova sentam os 8 primeiros a chegar; o resto continua na platei
   assert.deepEqual(r.rematchWaitingOn().sort(), [...nextTable].sort());
   for (const id of nextTable) r.rematch(id);
   assert.equal(r.game.phase, 'playing');
-  assert.deepEqual(r.game.players.map((p) => p.id), nextTable);
+  assert.deepEqual(
+    r.game.players.map((p) => p.id),
+    nextTable,
+  );
   assert.deepEqual(r.viewFor(ids[0], []).spectators, [ids.at(-1)]);
   r.dispose();
 });

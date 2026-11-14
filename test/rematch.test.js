@@ -33,7 +33,10 @@ test('sozinho com bots: "Jogar de novo" recomeça na hora, com a mesma mesa e co
   assert.deepEqual(room.rematch(ids[0]), { ok: true });
   assert.notEqual(room.game, finished);
   assert.equal(room.game.phase, 'playing');
-  assert.deepEqual(room.game.players.map((p) => p.id), seats);
+  assert.deepEqual(
+    room.game.players.map((p) => p.id),
+    seats,
+  );
   assert.ok(room.game.players.every((p) => p.score === 0 && !p.eliminated));
   assert.equal(room.settings.turnSeconds, 45);
   assert.equal(room.rematchVotes.size, 0);

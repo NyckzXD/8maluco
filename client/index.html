@@ -12,11 +12,11 @@
       content="8 Maluco: jogo de cartas multiplayer online. Crie uma sala, chame a galera pelo link e complete a mesa com bots."
     />
     <title>8 Maluco</title>
-    <link rel="manifest" href="manifest.json" />
-    <link rel="icon" href="icon.svg" type="image/svg+xml" />
-    <link rel="icon" href="icons/icon-32.png" type="image/png" sizes="32x32" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icons/icon-32.png" type="image/png" sizes="32x32" />
     <!-- iOS ignora o ícone SVG e o manifest: usa este PNG ao adicionar à tela de início -->
-    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="8 Maluco" />
@@ -27,26 +27,26 @@
     <!-- as fontes mais usadas na primeira tela já começam a baixar junto com o CSS -->
     <link
       rel="preload"
-      href="fonts/russo-one-400.woff2"
+      href="/fonts/russo-one-400.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
     <link
       rel="preload"
-      href="fonts/barlow-semi-condensed-600.woff2"
+      href="/fonts/barlow-semi-condensed-600.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
     <link
       rel="preload"
-      href="fonts/barlow-semi-condensed-700.woff2"
+      href="/fonts/barlow-semi-condensed-700.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <!-- ===== Tela inicial ===== -->
@@ -328,11 +328,7 @@
                 <svg class="icon" aria-hidden="true"><use href="#i-bot" /></svg
                 >Adicionar bot
               </button>
-              <button
-                id="startBtn"
-                class="btn btn-primary btn-big"
-                aria-describedby="startHint"
-              >
+              <button id="startBtn" class="btn btn-primary btn-big">
                 Começar partida
               </button>
             </div>
@@ -956,7 +952,6 @@
     <div id="srStatus" class="sr-only" role="status" aria-live="polite"></div>
     <div id="srAlert" class="sr-only" role="alert"></div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

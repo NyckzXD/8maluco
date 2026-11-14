@@ -6,15 +6,33 @@ Jogo de cartas 8 Maluco multiplayer online, no estilo Gartic: cria uma sala, man
 
 ```bash
 npm install
-npm run dev     # servidor com recarga automática em http://localhost:3000
-npm test        # testes das regras
+npm run dev     # servidor + Vite em http://localhost:3000 (a página recarrega ao salvar)
+npm test        # testes das regras e do multiplayer
 ```
+
+Antes de mandar código, `npm run check` roda tudo o que o CI roda:
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run lint` | ESLint em todo o projeto. |
+| `npm run typecheck` | `tsc` checando os tipos de `shared/` e `server/` (`tsconfig.json`) e do cliente (`client/tsconfig.json`). O código continua JS; tipos via JSDoc onde precisa. |
+| `npm run format` / `format:check` | Prettier (aspas simples, linhas de até 120). Markdown e HTML ficam de fora. |
+| `npm run build` | Vite: junta e minifica o cliente em `dist/`. |
+
+O GitHub Actions (`.github/workflows/ci.yml`) roda lint, tipos, formatação, testes e build a cada push na `main` e em todo pull request, no Node 20, 22 e 24.
 
 Para jogar com amigos na mesma rede, abra `http://SEU-IP:3000` no celular. Para jogar pela internet, publique o servidor num serviço que aceite Node e WebSocket (Render, Railway, Fly.io…).
 
 ## Publicando
 
-Tudo vem de variáveis de ambiente:
+Em produção o servidor serve o `dist/`, então a plataforma precisa gerar o build antes de subir:
+
+- **Build command**: `npm ci --include=dev && npm run build` (o Vite é dependência de desenvolvimento; o `--include=dev` garante que ele seja instalado mesmo com `NODE_ENV=production`).
+- **Start command**: `npm start`.
+
+Sem `NODE_ENV=production`, o `npm start` sobe o Vite no lugar do `dist/` (bom para testar em casa, lento para publicar).
+
+Tudo o mais vem de variáveis de ambiente:
 
 | Variável | Padrão | Para quê |
 | --- | --- | --- |
@@ -58,13 +76,16 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 | `shared/bot.js` | Jogador automático (bots e jogada automática quando o tempo acaba ou alguém cai). |
 | `shared/names.js` | Regras de apelido que valem no servidor e na tela (nomes "Robô …" são só dos bots). |
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
-| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). |
-| `public/` | Interface web (HTML/CSS/JS puro), responsiva para celular, instalável (PWA). |
+| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
+| `client/` | Interface web (`index.html`, `style.css` e os módulos em `src/`, JS puro sem framework), responsiva para celular. Entrada do Vite (`vite.config.js`). |
+| `client/src/` | Um módulo por parte da tela. `main.js` é a entrada (conexão e convite) e carrega os outros; `core.js` tem atalhos do DOM, o socket e o estado da sala, que os outros leem direto e só mudam pelas funções `set...`. Telas: `home`, `howto`, `avatar-editor`, `lobby`, `results`. Mesa: `table` (assentos e voos), `deal`, `pile`, `hand`, `card-tip`, `drag`, `suit-picker`, `scores`, `clock`, `render` (desenha cada atualização). Gerais: `modals`, `chat`, `reactions`, `cards` (desenho das cartas e ícones), `audio`. |
+| `public/` | Arquivos que vão para o build do jeito que estão, sempre no mesmo caminho: fontes, ícones, cartas, sons, `manifest.json` e o service worker (PWA). |
+| `dist/` | Saída do `npm run build` (fora do git). |
 | `test/` | Testes com `node:test`: regras (`engine`), salas (`rooms`, `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`), avatar, e rede de ponta a ponta com clientes socket.io reais (`multiplayer`, `production`, `restart`). |
 
 ### PWA
 
-- `public/sw.js`: service worker. Página, CSS e JS vêm da rede primeiro (o cache só entra sem internet), então editar o código não exige limpar nada. Fontes, ícones, cartas e sons vêm do cache primeiro: ao trocar um desses arquivos, suba `VERSION` no `sw.js`.
+- `public/sw.js`: service worker. A página vem da rede primeiro (o cache só entra sem internet), então editar o código não exige limpar nada. O JS e o CSS do build (`/assets/`, com hash no nome) vêm do cache primeiro: cada build gera nomes novos, e o service worker descobre quais são lendo a própria página na instalação. Fontes, ícones, cartas e sons também vêm do cache primeiro: ao trocar um desses arquivos, suba `VERSION` no `sw.js`.
 - `public/fonts/`: Russo One e Barlow Semi Condensed (só o subconjunto latino), servidas pelo próprio projeto, com as licenças OFL ao lado.
 - `public/icons/`: PNGs gerados a partir de `icon.svg` (192/512 e 32 para favicon) e de `icons/maskable.svg` (versões `maskable` com fundo até a borda e `apple-touch-icon`, de 180px, com a carta maior, porque o iOS ignora SVG e só arredonda os cantos).
 
@@ -88,5 +109,5 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 
 O motor (`shared/`) não depende do navegador nem do servidor, então dá para:
 
-1. **Capacitor** (o caminho mais rápido): embrulhar a pasta `public/` como app Android/iOS e apontar o `io()` do `app.js` para o servidor publicado. Para o servidor aceitar o app, coloque a origem dele em `ALLOWED_ORIGINS` (veja "Publicando").
+1. **Capacitor** (o caminho mais rápido): embrulhar a pasta `dist/` (o `webDir` do Capacitor) como app Android/iOS e apontar o `io()` do `client/src/core.js` para o servidor publicado. O cliente do Socket.IO já vem no build, então o app não depende do servidor para carregar a tela. Para o servidor aceitar o app, coloque a origem dele em `ALLOWED_ORIGINS` (veja "Publicando").
 2. **React Native / Expo**: refazer a interface nativa e reaproveitar `shared/engine.js` e `shared/bot.js`, inclusive para um modo offline contra bots.

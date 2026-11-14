@@ -25,7 +25,7 @@ test('avatar inválido vindo do navegador vira null', () => {
   assert.equal(sanitizeAvatar({ ...ok, hair: -1 }), null);
   assert.equal(sanitizeAvatar({ ...ok, face: 1.5 }), null);
   assert.equal(sanitizeAvatar({ ...ok, skin: '1' }), null);
-  const { outfit, ...missing } = ok;
+  const { outfit: _outfit, ...missing } = ok;
   assert.equal(sanitizeAvatar(missing), null);
   // campos extras são descartados
   assert.deepEqual(sanitizeAvatar({ ...ok, evil: '<script>' }), ok);

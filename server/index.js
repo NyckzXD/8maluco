@@ -1,5 +1,6 @@
 import compression from 'compression';
 import express from 'express';
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Server } from 'socket.io';
@@ -28,15 +29,18 @@ export const RATE_LIMITS = {
 export function configFromEnv(env = process.env) {
   const production = env.NODE_ENV === 'production';
   return {
+    production,
     // origens de fora que podem conectar (o app Capacitor, por exemplo); a própria origem sempre pode
-    allowedOrigins: (env.ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    allowedOrigins: (env.ALLOWED_ORIGINS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
     // quantos proxies na frente (Render/Railway/Fly = 1): é de onde sai o IP de verdade
     trustProxy: Number(env.TRUST_PROXY ?? (production ? 1 : 0)) || 0,
     maxRooms: Number(env.MAX_ROOMS) || 500,
     maxConnectionsPerIp: Number(env.MAX_CONNECTIONS_PER_IP) || 20,
     // onde as salas ficam entre um processo e outro; "off" desliga (o reinício perde as partidas)
-    snapshotFile:
-      env.SNAPSHOT_FILE === 'off' ? null : (env.SNAPSHOT_FILE || `${root}data/rooms.json`),
+    snapshotFile: env.SNAPSHOT_FILE === 'off' ? null : env.SNAPSHOT_FILE || `${root}data/rooms.json`,
   };
 }
 
@@ -44,7 +48,10 @@ export function configFromEnv(env = process.env) {
 // confiamos (contando da direita); sem proxy, o cabeçalho é ignorado (qualquer um pode inventar).
 export function clientIp(headers, address, trustProxy) {
   if (trustProxy > 0) {
-    const chain = String(headers['x-forwarded-for'] ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    const chain = String(headers['x-forwarded-for'] ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const ip = chain[chain.length - trustProxy];
     if (ip) return ip;
   }
@@ -64,22 +71,34 @@ export function originAllowed(origin, host, allowed) {
 }
 
 // Monta o servidor sem ligar a porta (os testes sobem um em porta qualquer).
+// O cliente vem de `client`: um middleware (o Vite, no desenvolvimento) ou uma pasta pronta
+// (o `dist/` do `npm run build`, em produção). Sem nenhum dos dois, só o tempo real responde.
+/**
+ * @param {Partial<ReturnType<typeof configFromEnv>> & {
+ *   client?: string | import('express').RequestHandler | null,
+ *   timing?: object,
+ *   rateLimits?: Record<string, { max: number, windowMs: number, error?: string }>,
+ * }} [options]
+ */
 export function createGameServer(options = {}) {
+  /** @type {ReturnType<typeof configFromEnv> & typeof options} */
   const config = { ...configFromEnv(), ...options };
   const app = express();
   app.set('trust proxy', config.trustProxy);
   // gzip/brotli nos arquivos de texto (app.js e style.css passam de 100KB cada); imagens e
   // fontes já vêm comprimidas e o pacote as deixa como estão
   app.use(compression());
-  app.use(express.static(`${root}/public`));
-  app.use('/shared', express.static(`${root}/shared`));
+  const client = options.client ?? `${root}dist`;
+  if (typeof client === 'function') app.use(client);
+  else if (client && existsSync(client)) app.use(express.static(client));
+  else if (client && config.production)
+    console.warn(`[client] ${client} não existe: rode "npm run build" antes de "npm start"`);
 
   const server = createServer(app);
   const io = new Server(server, {
     // CORS só para as origens liberadas; a checagem de verdade é o allowRequest (vale para WebSocket também)
     cors: { origin: config.allowedOrigins, credentials: false },
-    allowRequest: (req, cb) =>
-      cb(null, originAllowed(req.headers.origin, req.headers.host, config.allowedOrigins)),
+    allowRequest: (req, cb) => cb(null, originAllowed(req.headers.origin, req.headers.host, config.allowedOrigins)),
     maxHttpBufferSize: 16 * 1024, // a maior mensagem de verdade (entrar com avatar) tem ~300 bytes
     // celular: o navegador segura timers em segundo plano, então dá mais folga antes de dar a queda
     pingInterval: 20_000,
@@ -127,7 +146,8 @@ export function createGameServer(options = {}) {
     const on = (event, fn) =>
       socket.on(event, (...args) => {
         const ack = typeof args.at(-1) === 'function' ? args.pop() : null;
-        const limit = config.rateLimits?.[event] ?? RATE_LIMITS[event] ?? config.rateLimits?.default ?? RATE_LIMITS.default;
+        const limit =
+          config.rateLimits?.[event] ?? RATE_LIMITS[event] ?? config.rateLimits?.default ?? RATE_LIMITS.default;
         const slot = takeSlot(rate[event], Date.now(), limit);
         rate[event] = slot.times;
         if (!slot.ok) return reply(ack, { ok: false, error: limit.error ?? SLOW_DOWN });
@@ -150,8 +170,7 @@ export function createGameServer(options = {}) {
     on('room:list', () => ({ ok: true, rooms: rooms.listPublic() }));
 
     on('room:create', (data) => {
-      if (rooms.rooms.size >= config.maxRooms)
-        return { ok: false, error: 'Servidor cheio, tente daqui a pouco' };
+      if (rooms.rooms.size >= config.maxRooms) return { ok: false, error: 'Servidor cheio, tente daqui a pouco' };
       leaveCurrent();
       const room = rooms.create({ isPublic: data.isPublic !== false });
       const result = room.join(socket, data);
@@ -197,26 +216,28 @@ export function createGameServer(options = {}) {
   // fecha as conexões e a porta.
   let closing = null;
   const shutdown = ({ snapshotFile = null } = {}) =>
-    (closing ??= new Promise((resolve) => {
-      rooms.shutdown(
-        snapshotFile
-          ? 'O servidor vai reiniciar. A partida continua quando ele voltar!'
-          : 'O servidor vai reiniciar. Volte em instantes!',
-      );
-      if (snapshotFile) {
-        try {
-          const saved = saveSnapshot(rooms, snapshotFile);
-          console.log(`${saved} sala(s) gravada(s) em ${snapshotFile}`);
-        } catch (err) {
-          console.error('[snapshot] não deu para gravar as salas:', err);
+    (closing ??= new Promise(
+      /** @param {(value?: void) => void} resolve */ (resolve) => {
+        rooms.shutdown(
+          snapshotFile
+            ? 'O servidor vai reiniciar. A partida continua quando ele voltar!'
+            : 'O servidor vai reiniciar. Volte em instantes!',
+        );
+        if (snapshotFile) {
+          try {
+            const saved = saveSnapshot(rooms, snapshotFile);
+            console.log(`${saved} sala(s) gravada(s) em ${snapshotFile}`);
+          } catch (err) {
+            console.error('[snapshot] não deu para gravar as salas:', err);
+          }
         }
-      }
-      // um instante para o aviso chegar antes de cortar as conexões
-      setTimeout(() => {
-        io.close();
-        server.close(() => resolve());
-      }, 500);
-    }));
+        // um instante para o aviso chegar antes de cortar as conexões
+        setTimeout(() => {
+          io.close();
+          server.close(() => resolve());
+        }, 500);
+      },
+    ));
 
   return { app, server, io, rooms, config, shutdown };
 }
@@ -227,7 +248,14 @@ if (isMain) {
   // Um erro que escapou fica no log em vez de derrubar todas as salas.
   process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));
   process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err));
-  const game = createGameServer();
+  // Fora de produção o Vite monta o cliente na hora (com recarga ao salvar), na mesma porta.
+  let client;
+  if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createVite } = await import('vite');
+    const vite = await createVite({ configFile: `${root}vite.config.js`, server: { middlewareMode: true } });
+    client = vite.middlewares;
+  }
+  const game = createGameServer({ client });
   // salas gravadas no último desligamento: voltam antes de abrir a porta
   if (game.config.snapshotFile) {
     const restored = loadSnapshot(game.rooms, game.config.snapshotFile);

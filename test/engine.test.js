@@ -37,21 +37,24 @@ const filler = () => [c('2', 'S', 50), c('3', 'S', 51)];
 test('distribui 9 cartas e o da direita do carteador abre o monte', () => {
   const s = createGame(
     [1, 2, 3, 4].map((n) => ({ id: `p${n}`, name: `P${n}` })),
-    { seed: 7, dealer: 2 }
+    { seed: 7, dealer: 2 },
   );
   const r = startRound(s);
   assert.ok(r.ok);
   for (const p of s.players) assert.equal(p.hand.length, 9);
   assert.equal(s.turn, 3);
   assert.equal(s.discard.length, 0);
-  assert.ok(s.players[3].hand.every((card) => canPlay(s, card)), 'quem abre joga qualquer carta');
+  assert.ok(
+    s.players[3].hand.every((card) => canPlay(s, card)),
+    'quem abre joga qualquer carta',
+  );
   assert.equal(108 - 36, s.drawPile.length); // 4 jogadores = 2 baralhos
 });
 
 test('o carteador é sorteado e depois passa para a direita a cada rodada', () => {
   const s = createGame(
     [1, 2, 3].map((n) => ({ id: `p${n}`, name: `P${n}` })),
-    { seed: 11 }
+    { seed: 11 },
   );
   const first = s.dealer;
   startRound(s);
@@ -60,13 +63,12 @@ test('o carteador é sorteado e depois passa para a direita a cada rodada', () =
   startRound(s);
   assert.equal(s.dealer, (first + 1) % 3);
   assert.equal(s.turn, (first + 2) % 3);
-
 });
 
 test('usa mais de um baralho com muitos jogadores', () => {
   const s = createGame(
     Array.from({ length: 6 }, (_, n) => ({ id: `p${n}`, name: `P${n}` })),
-    { seed: 3 }
+    { seed: 3 },
   );
   startRound(s);
   assert.equal(s.drawPile.length + s.discard.length + 6 * 9, 108);
@@ -133,7 +135,10 @@ test('mesa de dois: 7 faz o outro comprar 1, perder a vez e a mão volta para qu
   assert.equal(s.turn, 0);
   assert.deepEqual(
     r.events.filter((e) => e.type !== 'play').map((e) => [e.type, e.playerId]),
-    [['penalty', 'p1'], ['skip', 'p1']],
+    [
+      ['penalty', 'p1'],
+      ['skip', 'p1'],
+    ],
   );
 });
 
@@ -186,7 +191,7 @@ test('Joker: todos menos quem jogou compram 1 e a pinta de baixo continua', () =
   assert.ok(r.ok);
   assert.deepEqual(
     s.players.map((p) => p.hand.length),
-    [1, 3, 3, 3]
+    [1, 3, 3, 3],
   );
   assert.equal(s.activeSuit, 'H');
   assert.equal(canPlay(s, c('2', 'H')), true);
@@ -223,18 +228,13 @@ test('baralho vazio é refeito com o monte', () => {
 });
 
 test('fim da rodada soma os pontos de quem ficou com cartas', () => {
-  const s = table([
-    [c('5', 'S')],
-    [c('K', 'D'), joker()],
-    [c('A', 'C'), c('3', 'C')],
-    [c('9', 'S')],
-  ]);
+  const s = table([[c('5', 'S')], [c('K', 'D'), joker()], [c('A', 'C'), c('3', 'C')], [c('9', 'S')]]);
   const r = playCard(s, 'p0', c('5', 'S').id);
   assert.ok(r.ok);
   assert.equal(s.phase, 'roundOver');
   assert.deepEqual(
     s.players.map((p) => p.score),
-    [0, 21, 4, 9]
+    [0, 21, 4, 9],
   );
 });
 
@@ -288,7 +288,7 @@ test('bots terminam partidas inteiras sem travar', () => {
     const n = 2 + (seed % 7); // 2 a 8 jogadores
     const s = createGame(
       Array.from({ length: n }, (_, i) => ({ id: `b${i}`, name: `B${i}` })),
-      { seed }
+      { seed },
     );
     let moves = 0;
     while (s.phase !== 'gameOver') {

@@ -1,0 +1,9 @@
+dist/
+node_modules/
+package-lock.json
+skills-lock.json
+.agents/
+.claude/
+# Markdown e HTML ficam como estão (listas indentadas à mão, texto em português)
+*.md
+*.html
