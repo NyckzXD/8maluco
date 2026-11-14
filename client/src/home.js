@@ -1,5 +1,6 @@
 // Tela inicial: apelido, entrar por código ou link, lista de salas abertas.
-import { BOT_NAME_ERROR, isBotName } from '../../shared/names.js';
+import { BOT_NAME_ERROR, RESERVED_NAME_ERROR, isBotName } from '../../shared/names.js';
+import { openAccount, refreshUser, user } from './account.js';
 import { myAvatar } from './avatar-editor.js';
 import { icon } from './cards.js';
 import { $, avatar, el, emit, flash, setRoomCode, setUrl, speak, store, token } from './core.js';
@@ -9,7 +10,8 @@ import { closeModal, hideModal, openModal } from './modals.js';
 
 export const nameInput = $('#nameInput');
 export const codeInput = $('#codeInput');
-nameInput.value = store.get('om_name') ?? '';
+// com conta, o account.js já pôs o apelido dela no campo
+if (!user) nameInput.value = store.get('om_name') ?? '';
 
 // Erro do apelido logo abaixo do campo (lido na hora pelo leitor de tela), com o foco nele.
 function setNameError(text) {
@@ -23,6 +25,7 @@ function setNameError(text) {
 nameInput.addEventListener('input', () => setNameError(null));
 
 function askName() {
+  if (user) return user.nickname; // com conta, o servidor usa o apelido dela
   const name = nameInput.value.trim();
   if (!name) {
     closeModal('roomsModal');
@@ -46,6 +49,18 @@ const NOT_CODE_CHAR = /[^A-HJ-NP-Z2-9]/g; // mesmo alfabeto do servidor (sem I, 
 export function extractCode(text = '') {
   const fromLink = /[?&]sala=([a-z0-9]+)/i.exec(text);
   return (fromLink ? fromLink[1] : text).toUpperCase().replace(NOT_CODE_CHAR, '').slice(0, 5);
+}
+
+// O servidor recusou o apelido por ser de uma conta. Se a pessoa achava que estava logada, a
+// sessão venceu: volta a ser convidada e abre o "Entrar".
+async function nameTaken() {
+  closeModal('roomsModal');
+  if (user && !(await refreshUser())) {
+    flash('Sua sessão venceu. Entre de novo na sua conta.');
+    return openAccount();
+  }
+  setNameError(RESERVED_NAME_ERROR);
+  nameInput.focus();
 }
 
 function onJoined(res) {
@@ -103,6 +118,7 @@ export async function joinRoom(code) {
   const res = await emit('room:join', { code, token, name, avatar: myAvatar }, { quiet: true });
   if (!res.ok) {
     setUrl(null);
+    if (res.error === RESERVED_NAME_ERROR) return nameTaken();
     return showJoinError(res.error, code);
   }
   onJoined(res);
@@ -111,7 +127,10 @@ export async function joinRoom(code) {
 $('#createBtn').addEventListener('click', async () => {
   const name = askName();
   if (!name) return;
-  onJoined(await emit('room:create', { token, name, avatar: myAvatar }));
+  const res = await emit('room:create', { token, name, avatar: myAvatar }, { quiet: true });
+  if (res.error === RESERVED_NAME_ERROR) return nameTaken();
+  if (!res.ok && res.error) flash(res.error);
+  onJoined(res);
 });
 
 $('#joinBtn').addEventListener('click', () => joinRoom(codeInput.value));

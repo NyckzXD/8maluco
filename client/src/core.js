@@ -20,6 +20,11 @@ export const store = {
       localStorage.setItem(key, value);
     } catch {}
   },
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch {}
+  },
 };
 
 // Token secreto que identifica este navegador: permite voltar para a sala depois de cair.
@@ -27,7 +32,8 @@ export const token =
   store.get('om_token') ?? crypto.randomUUID?.() ?? `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 store.set('om_token', token);
 
-export const socket = io();
+// A sessão da conta (account.js) vai no handshake; função para cada reconexão ler a atual.
+export const socket = io({ auth: (cb) => cb({ session: store.get('om_session') ?? '' }) });
 
 export let state = null;
 export let roomCode = null;

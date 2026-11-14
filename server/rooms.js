@@ -4,7 +4,7 @@ import { createGame, startRound, playCard, drawCard, passTurn, removePlayer, vie
 import { chooseMove } from '../shared/bot.js';
 import { randomAvatar, sanitizeAvatar } from '../shared/avatar.js';
 import { REACTION_LIMIT, isReaction } from '../shared/reactions.js';
-import { BOT_NAME_ERROR, isBotName } from '../shared/names.js';
+import { BOT_NAME_ERROR, RESERVED_NAME_ERROR, isBotName } from '../shared/names.js';
 
 export const MAX_PLAYERS = 8; // lugares na mesa
 export const MAX_SPECTATORS = 4; // e mais estes na plateia (só assistem até abrir lugar)
@@ -64,11 +64,14 @@ const clean = (text, max) =>
     .slice(0, max);
 
 export class RoomManager {
-  // `timing` troca os tempos de espera (os testes de rede não querem esperar 5s de verdade)
-  constructor(io, { timing = {} } = {}) {
+  // `timing` troca os tempos de espera (os testes de rede não querem esperar 5s de verdade).
+  // `nicknameTaken` diz se um apelido é de alguma conta (convidado não pode usar).
+  /** @param {any} io @param {{ timing?: object, nicknameTaken?: (name: string) => boolean }} [options] */
+  constructor(io, { timing = {}, nicknameTaken = (_name) => false } = {}) {
     this.io = io;
     this.rooms = new Map();
     this.timing = { hostGraceMs: HOST_GRACE_MS, ...timing };
+    this.nicknameTaken = nicknameTaken;
   }
 
   create({ isPublic = true } = {}) {
@@ -180,7 +183,7 @@ class Room {
     this.turnMs = null; // duração total do prazo atual (o anel de tempo do cliente mede contra ela)
     this.ready = new Set(); // quem já clicou em "pronto" no intervalo entre rodadas
     this.rematchVotes = new Set(); // quem já pediu revanche no fim da partida
-    this.banned = new Set(); // tokens de quem o anfitrião removeu (some junto com a sala)
+    this.banned = new Set(); // tokens (e "u:<id>" das contas) de quem o anfitrião removeu (some junto com a sala)
     this.emptyTimer = null;
     this.hostTimer = null; // anfitrião desconectado: quando o cargo passa para outro
     this.hostOrphan = false; // nenhum humano conectado para assumir: o próximo que entrar assume
@@ -189,19 +192,34 @@ class Room {
 
   // ---------- membros ----------
 
+  // Quem entrou na conta (socket.data.user, do handshake) aparece sempre com o apelido da conta;
+  // convidado escolhe o nome, desde que não seja o de uma conta.
   join(socket, { token, name, avatar }) {
+    /** @type {{ id: number, nickname: string } | null} */
+    const user = socket.data.user ?? null;
     token = clean(token, 64);
-    name = clean(name, 16) || 'Jogador';
+    name = user ? user.nickname : clean(name, 16) || 'Jogador';
     avatar = sanitizeAvatar(avatar);
     if (!token) return { ok: false, error: 'Sessão inválida' };
-    if (isBotName(name)) return { ok: false, error: BOT_NAME_ERROR };
+    if (!user && isBotName(name)) return { ok: false, error: BOT_NAME_ERROR };
 
-    if (this.banned.has(token)) return { ok: false, error: 'Você foi removido desta sala' };
+    if (this.banned.has(token) || (user && this.banned.has(`u:${user.id}`)))
+      return { ok: false, error: 'Você foi removido desta sala' };
 
-    let m = this.members.find((x) => !x.isBot && x.token === token);
+    // a mesma conta noutro aparelho (outro token) volta para o mesmo lugar
+    let m = this.members.find((x) => !x.isBot && (x.token === token || (user && x.userId === user.id)));
+    // Convidado com o apelido de uma conta: só se já estava na sala com ele (a conta pode ter
+    // sido criada depois, e quem cai e volta não perde o lugar por isso).
+    const keepsName = m && !m.userId && m.askedName === name;
+    if (!user && !keepsName && this.manager.nicknameTaken(name)) return { ok: false, error: RESERVED_NAME_ERROR };
+
     if (m) {
-      // voltando com o mesmo apelido, mantém o nome que já tinha na sala (o "Ana 2" continua "Ana 2")
-      if (name !== m.askedName) m.name = this.uniqueName(name, m.id);
+      m.token = token;
+      m.userId = user?.id ?? null;
+      // conta: o apelido dela; convidado voltando com o mesmo apelido mantém o nome que já tinha
+      // na sala (o "Ana 2" continua "Ana 2")
+      if (user) m.name = name;
+      else if (name !== m.askedName) m.name = this.uniqueName(name, m.id);
       m.askedName = name;
       m.avatar = avatar;
       // Mesmo token por outra conexão (outra aba): a nova assume o lugar e a antiga perde
@@ -220,7 +238,8 @@ class Room {
       m = {
         id: randomUUID().slice(0, 8),
         token,
-        name: this.uniqueName(name),
+        userId: user?.id ?? null,
+        name: user ? name : this.uniqueName(name),
         askedName: name,
         avatar,
         color: this.freeColor(),
@@ -229,6 +248,7 @@ class Room {
       this.members.push(m);
       this.system(`${m.name} entrou na sala`);
     }
+    if (user) this.yieldName(m);
     m.socketId = socket.id;
     m.connected = true;
     clearTimeout(m.graceTimer);
@@ -261,6 +281,7 @@ class Room {
       members: this.members.map((m) => ({
         id: m.id,
         token: m.token,
+        userId: m.userId ?? null,
         name: m.name,
         askedName: m.askedName,
         avatar: m.avatar,
@@ -399,6 +420,13 @@ class Room {
     }
   }
 
+  // O apelido da conta é dela: um convidado da sala com o mesmo nome vira "Ana 2".
+  yieldName(owner) {
+    const key = owner.name.toLowerCase();
+    for (const x of this.members)
+      if (x !== owner && !x.isBot && !x.userId && x.name.toLowerCase() === key) x.name = this.uniqueName(x.name, x.id);
+  }
+
   // Qualquer ação do jogador (jogar, falar, reagir, pronto, ou só tocar na tela) mostra que ele
   // está ali: zera a contagem de tempo esgotado e tira o "ausente". Se for a vez dele, ganha o
   // prazo cheio de novo.
@@ -475,6 +503,7 @@ class Room {
     if (!m) return { ok: false, error: 'Jogador não encontrado' };
     // pessoa removida não volta pelo mesmo link: o token fica barrado enquanto a sala existir
     if (!m.isBot) this.banned.add(m.token);
+    if (m.userId) this.banned.add(`u:${m.userId}`); // nem pela mesma conta em outro aparelho
     if (m.socketId) this.io.to(m.socketId).emit('room:kicked');
     this.leave(memberId);
     return { ok: true };
@@ -813,6 +842,7 @@ class Room {
         avatar: m.avatar,
         color: m.color,
         isBot: m.isBot,
+        account: !!m.userId, // entrou com conta (o nome é o apelido dela)
         connected: m.connected,
         away: !!m.away,
       })),

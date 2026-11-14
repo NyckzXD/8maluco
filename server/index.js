@@ -128,7 +128,11 @@ export function createGameServer(options = {}) {
     pingInterval: 20_000,
     pingTimeout: 30_000,
   });
-  const rooms = new RoomManager(io, { timing: config.timing });
+  const rooms = new RoomManager(io, {
+    timing: config.timing,
+    // sem banco aberto não há conta nenhuma (em produção a subida já abre)
+    nicknameTaken: (name) => !!accounts?.nicknameTaken(name),
+  });
 
   app.get('/health', (_req, res) =>
     res.json({ ok: true, ...rooms.stats(), connections: io.engine.clientsCount, uptime: Math.round(process.uptime()) }),
@@ -158,6 +162,21 @@ export function createGameServer(options = {}) {
       if (left > 0) perIp.set(ip, left);
       else perIp.delete(ip);
     });
+    next();
+  });
+
+  // Conta: a sessão vem no handshake (`io({ auth: { session } })`). Sessão inválida ou vencida
+  // não barra ninguém, só entra como convidado (o cliente descobre pelo /api/me e limpa a dele).
+  io.use((socket, next) => {
+    const session = socket.handshake.auth?.session;
+    socket.data.user = null;
+    if (typeof session === 'string' && session) {
+      try {
+        socket.data.user = getAccounts().userForSession(session);
+      } catch (err) {
+        console.error('[auth] sessão do socket:', err);
+      }
+    }
     next();
   });
 

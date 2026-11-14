@@ -9,6 +9,7 @@ export const isBotName = (name) =>
   );
 
 export const BOT_NAME_ERROR = 'Apelidos começando com "Robô" são dos bots. Escolha outro!';
+export const RESERVED_NAME_ERROR = 'Esse apelido é de uma conta. Entre nela ou escolha outro!';
 
 // ---------- apelido de conta ----------
 // Mais rígido que o apelido de convidado: vai para o ranking, então nada de caractere invisível

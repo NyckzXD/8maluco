@@ -669,6 +669,116 @@ select:focus {
   color: var(--red-text);
 }
 
+/* logado: o apelido é o da conta (só de leitura; tocar nele abre "Minha conta") */
+.profile input[readonly] {
+  border-color: var(--surface-3);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.account-btn {
+  justify-self: center;
+  margin-top: -6px;
+}
+
+/* ---------- conta (entrar / criar / minha conta) ---------- */
+
+.account-box {
+  max-width: 400px;
+}
+
+/* Entrar | Criar conta: duas abas no mesmo material das abas do avatar */
+.account-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.account-tab {
+  padding: 9px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--silver-300);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+@media (hover: hover) {
+  .account-tab:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+}
+
+.account-tab:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+}
+
+/* a aba escolhida vira papel, como no editor de avatar */
+.account-tab[aria-selected='true'] {
+  background: var(--card-face);
+  color: var(--card-ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-form {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
+.account-form > .btn {
+  margin-top: 8px;
+}
+
+.account-form input {
+  width: 100%;
+}
+
+.account-form .field-label {
+  margin-top: 4px;
+}
+
+.account-hint {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* apagar a conta fica escondido atrás de um clique, longe dos botões de sempre */
+.account-danger {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  text-align: left;
+}
+
+.account-danger summary {
+  cursor: pointer;
+  color: var(--red-text);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-align: center;
+}
+
+.account-danger summary:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.account-danger[open] summary {
+  margin-bottom: 10px;
+}
+
 input[aria-invalid='true'] {
   border-color: var(--primary);
 }

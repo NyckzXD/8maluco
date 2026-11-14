@@ -141,6 +141,11 @@ export class Accounts {
     return Accounts.public(row);
   }
 
+  // O apelido é de alguma conta? (convidado não pode usar o nome de ninguém)
+  nicknameTaken(name) {
+    return !!this.q.byKey.get(nicknameKey(name));
+  }
+
   logout(token) {
     if (typeof token === 'string' && token) this.q.deleteSession.run(sha256(token));
   }
