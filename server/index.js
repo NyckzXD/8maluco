@@ -308,6 +308,13 @@ export function createGameServer(options = {}) {
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
+  // Variáveis do arquivo .env na raiz (fora do git; o modelo é o .env.example). O que já vier do
+  // ambiente (o painel da plataforma, o terminal) vale mais que o arquivo. Sem arquivo, segue.
+  try {
+    process.loadEnvFile(`${root}.env`);
+  } catch (err) {
+    if (err?.code !== 'ENOENT') console.error('[env] não deu para ler o .env:', err.message);
+  }
   const PORT = Number(process.env.PORT) || 3000;
   // Um erro que escapou fica no log em vez de derrubar todas as salas.
   process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));

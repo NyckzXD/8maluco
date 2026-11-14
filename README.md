@@ -32,7 +32,7 @@ Em produção o servidor serve o `dist/`, então a plataforma precisa gerar o bu
 
 Sem `NODE_ENV=production`, o `npm start` sobe o Vite no lugar do `dist/` (bom para testar em casa, lento para publicar).
 
-Tudo o mais vem de variáveis de ambiente:
+Tudo o mais vem de variáveis de ambiente. Em casa, o jeito mais fácil é um arquivo `.env` na raiz: copie o `.env.example` para `.env` e preencha. O servidor lê o arquivo ao iniciar (reinicie depois de mudar), o `.env` fica fora do git, e uma variável definida no terminal ou no painel da plataforma vale mais que o arquivo. Nas plataformas, use o painel delas.
 
 | Variável | Padrão | Para quê |
 | --- | --- | --- |
