@@ -86,8 +86,10 @@ export function openAccount() {
     resetDelete();
     openModal('accountModal');
   } else {
+    showAuthMain();
     setMode('login');
     openModal('authModal');
+    showGoogleButton($('#googleBox'), $('#googleBtn'), 'continue_with', googleSignIn);
   }
 }
 
@@ -164,17 +166,135 @@ form.addEventListener('submit', async (e) => {
   if (!res.ok)
     return setAuthError(res.error ?? 'Não deu certo. Tente de novo.', res.status === 409 ? nickInput : passInput);
   passInput.value = '';
+  finishSignIn(res, mode === 'register');
+});
+
+function finishSignIn(res, created) {
   closeModal('authModal');
   setUser(res.user, res.session);
-  flash(mode === 'register' ? `Conta criada! Bem-vindo, ${res.user.nickname}.` : `Oi de novo, ${res.user.nickname}!`, {
-    info: true,
+  const nick = res.user.nickname;
+  flash(created ? `Conta criada! Bem-vindo, ${nick}.` : `Oi de novo, ${nick}!`, { info: true });
+}
+
+// ---------- Google ----------
+// O botão é o oficial do Google (script deles, carregado só quando o modal abre). Ele devolve
+// um ID token, que o servidor confere. Sem GOOGLE_CLIENT_ID no servidor, nada disso aparece.
+
+let googleClientId = null; // null: ainda não perguntou ao servidor; '': desligado
+let gisLoading = null;
+let onGoogle = null; // quem recebe o próximo token: entrar ou confirmar "apagar conta"
+const gis = () => /** @type {any} */ (window).google?.accounts?.id;
+
+async function googleConfig() {
+  if (googleClientId === null) {
+    const res = await api('GET', '/config');
+    if (res.ok) googleClientId = res.googleClientId ?? ''; // sem rede: pergunta de novo na próxima
+  }
+  return googleClientId;
+}
+
+function loadGoogle() {
+  gisLoading ??= new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      gis()?.initialize({ client_id: googleClientId, callback: (r) => onGoogle?.(r.credential) });
+      resolve(gis() ?? null);
+    };
+    script.onerror = () => {
+      script.remove();
+      gisLoading = null; // bloqueado ou sem rede: tenta de novo na próxima vez que abrir
+      resolve(null);
+    };
+    document.head.append(script);
   });
+  return gisLoading;
+}
+
+// Desenha o botão do Google em `target` e mostra `box`. Desligado ou sem carregar, `box` fica escondido.
+async function showGoogleButton(box, target, text, handler) {
+  box.classList.add('hidden');
+  if (!(await googleConfig())) return;
+  const id = await loadGoogle();
+  if (!id) return;
+  onGoogle = handler;
+  box.classList.remove('hidden');
+  target.replaceChildren();
+  id.renderButton(target, {
+    theme: 'filled_black',
+    size: 'large',
+    shape: 'pill',
+    text,
+    locale: 'pt-BR',
+    width: Math.min(400, Math.max(220, target.clientWidth || 300)),
+  });
+}
+
+async function googleSignIn(credential) {
+  setAuthError(null);
+  const res = await api('POST', '/auth/google', { credential });
+  if (!res.ok) return setAuthError(res.error ?? 'Não deu para entrar com o Google. Tente de novo.');
+  if (res.needsNickname) return showNickStep(res.ticket);
+  finishSignIn(res, false);
+}
+
+// Primeira vez com o Google: o modal troca o formulário pelo campo do apelido.
+const nickForm = /** @type {HTMLFormElement} */ ($('#googleNickForm'));
+const googleNick = /** @type {HTMLInputElement} */ ($('#googleNick'));
+let googleTicket = null;
+
+function showAuthMain() {
+  googleTicket = null;
+  $('#authMain').classList.remove('hidden');
+  nickForm.classList.add('hidden');
+}
+
+function showNickStep(ticket) {
+  googleTicket = ticket;
+  $('#authMain').classList.add('hidden');
+  nickForm.classList.remove('hidden');
+  googleNick.value = store.get('om_name') ?? '';
+  setNickError(null);
+  googleNick.focus();
+  speak('Escolha seu apelido para terminar de criar a conta');
+}
+
+function setNickError(text) {
+  const err = $('#googleNickError');
+  err.textContent = text ?? '';
+  err.classList.toggle('hidden', !text);
+  if (text) {
+    googleNick.setAttribute('aria-invalid', 'true');
+    speak(text, { urgent: true });
+    googleNick.focus();
+  } else googleNick.removeAttribute('aria-invalid');
+}
+googleNick.addEventListener('input', () => setNickError(null));
+
+nickForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nickname = tidyNickname(googleNick.value);
+  const error = nicknameError(nickname);
+  if (error) return setNickError(error);
+  const btn = /** @type {HTMLButtonElement} */ ($('#googleNickSubmit'));
+  btn.disabled = true;
+  const res = await api('POST', '/auth/google/complete', { ticket: googleTicket, nickname });
+  btn.disabled = false;
+  if (res.ok) return finishSignIn(res, true);
+  if (res.status === 400 && /expirou/.test(res.error ?? '')) {
+    // demorou demais (ou o servidor reiniciou): volta para o botão do Google
+    showAuthMain();
+    return setAuthError(res.error);
+  }
+  setNickError(res.error ?? 'Não deu certo. Tente de novo.');
 });
 
 // ---------- minha conta ----------
 
 $('#logoutBtn').addEventListener('click', async () => {
   await api('POST', '/auth/logout');
+  gis()?.disableAutoSelect(); // o Google não entra sozinho de novo nesta conta
   closeModal('accountModal');
   setUser(null, null);
   flash('Você saiu da conta.', { info: true });
@@ -183,12 +303,24 @@ $('#logoutBtn').addEventListener('click', async () => {
 const deleteForm = /** @type {HTMLFormElement} */ ($('#deleteForm'));
 const deletePass = /** @type {HTMLInputElement} */ ($('#deletePass'));
 
+// Conta só do Google não tem senha: confirma entrando com o Google de novo.
+const googleOnly = () => !!user && !user.hasPassword && user.hasGoogle;
+
 function resetDelete() {
   /** @type {HTMLDetailsElement} */ ($('#deleteDetails')).open = false;
   deletePass.value = '';
   $('#deletePassField').classList.toggle('hidden', !user?.hasPassword);
+  $('#deleteSubmit').classList.toggle('hidden', googleOnly());
+  $('#deleteGoogleField').classList.add('hidden');
   setDeleteError(null);
 }
+
+$('#deleteDetails').addEventListener('toggle', (e) => {
+  if (!(/** @type {HTMLDetailsElement} */ (e.target).open) || !googleOnly()) return;
+  showGoogleButton($('#deleteGoogleField'), $('#googleDeleteBtn'), 'continue_with', (credential) =>
+    deleteAccount({ credential }),
+  );
+});
 
 function setDeleteError(text) {
   const err = $('#deleteError');
@@ -207,24 +339,29 @@ deleteForm.addEventListener('submit', async (e) => {
     setDeleteError('Digite sua senha para confirmar');
     return deletePass.focus();
   }
+  deleteAccount({ password: deletePass.value });
+});
+
+async function deleteAccount(body) {
   const btn = /** @type {HTMLButtonElement} */ ($('#deleteSubmit'));
   btn.disabled = true;
-  const res = await api('DELETE', '/account', { password: deletePass.value });
+  const res = await api('DELETE', '/account', body);
   btn.disabled = false;
   if (!res.ok) {
-    if (res.status === 401 && !/senha/i.test(res.error ?? '')) {
+    if (res.code === 'session') {
       // a sessão venceu no meio do caminho
       closeModal('accountModal');
       setUser(null, null);
       return flash('Sua sessão venceu. Entre de novo para apagar a conta.');
     }
     setDeleteError(res.error ?? 'Não deu certo. Tente de novo.');
-    return deletePass.focus();
+    if (!googleOnly()) deletePass.focus();
+    return;
   }
   closeModal('accountModal');
   setUser(null, null);
   flash('Sua conta foi apagada.', { info: true });
-});
+}
 
 renderAccount();
 refreshUser();

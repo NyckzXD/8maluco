@@ -38,9 +38,18 @@ function limiter({ max, windowMs }) {
  *   originAllowed: (origin: string | undefined, host: string | undefined) => boolean,
  *   allowedOrigins: string[],
  *   limits?: Partial<typeof AUTH_LIMITS>,
+ *   googleClientId?: string | null,
+ *   verifyGoogle?: ((credential: unknown) => Promise<string | null>) | null,
  * }} options
  */
-export function createApi({ accounts, originAllowed, allowedOrigins, limits = {} }) {
+export function createApi({
+  accounts,
+  originAllowed,
+  allowedOrigins,
+  limits = {},
+  googleClientId = null,
+  verifyGoogle = null,
+}) {
   const L = { ...AUTH_LIMITS, ...limits };
   const loginIp = limiter(L.loginIp);
   const loginNickname = limiter(L.loginNickname);
@@ -83,9 +92,40 @@ export function createApi({ accounts, originAllowed, allowedOrigins, limits = {}
   const signedIn = (fn) =>
     handle((req, res, body) => {
       const user = accounts().userForSession(bearer(req));
-      if (!user) return res.status(401).json({ ok: false, error: 'Entre na sua conta de novo' });
+      // `code: 'session'` separa "sessão vencida" de "senha errada" (os dois são 401)
+      if (!user) return res.status(401).json({ ok: false, error: 'Entre na sua conta de novo', code: 'session' });
       return fn(req, res, body, user);
     });
+
+  // O que o navegador precisa saber antes de mostrar o login (o id do Google não é segredo).
+  api.get('/config', (_req, res) => res.json({ ok: true, googleClientId: verifyGoogle ? googleClientId : null }));
+
+  const GOOGLE_OFF = { ok: false, error: 'O login com o Google não está ligado neste servidor', status: 404 };
+  const GOOGLE_FAIL = { ok: false, error: 'Não deu para confirmar com o Google. Tente de novo.', status: 401 };
+
+  // Entrar com o Google: conta existente recebe a sessão; primeira vez recebe { needsNickname, ticket }.
+  api.post(
+    '/auth/google',
+    handle(async (req, res, body) => {
+      if (!verifyGoogle) return send(res, GOOGLE_OFF);
+      if (!loginIp.hit(req.ip)) return send(res, { ok: false, error: TOO_MANY, status: 429 });
+      const sub = await verifyGoogle(body.credential);
+      if (!sub) return send(res, GOOGLE_FAIL);
+      send(res, accounts().loginGoogle(sub));
+    }),
+  );
+
+  // Primeira vez com o Google: a conta nasce quando a pessoa escolhe o apelido.
+  api.post(
+    '/auth/google/complete',
+    handle((req, res, body) => {
+      if (!verifyGoogle) return send(res, GOOGLE_OFF);
+      if (registerIp.full(req.ip)) return send(res, { ok: false, error: TOO_MANY, status: 429 });
+      const result = accounts().registerGoogle(body);
+      if (result.ok && 'session' in result) registerIp.hit(req.ip);
+      send(res, result, 201);
+    }),
+  );
 
   api.post(
     '/auth/register',
@@ -124,7 +164,12 @@ export function createApi({ accounts, originAllowed, allowedOrigins, limits = {}
 
   api.delete(
     '/account',
-    signedIn(async (_req, res, body, user) => send(res, await accounts().deleteAccount(user.id, body))),
+    signedIn(async (_req, res, body, user) => {
+      // conta do Google confirma entrando com o Google de novo (o sub sai do token, nunca do pedido)
+      const googleSub = verifyGoogle && body.credential ? await verifyGoogle(body.credential) : null;
+      const password = typeof body.password === 'string' ? body.password : '';
+      send(res, await accounts().deleteAccount(user.id, { password, googleSub }));
+    }),
   );
 
   api.use((_req, res) => res.status(404).json({ ok: false, error: 'Não encontrado' }));

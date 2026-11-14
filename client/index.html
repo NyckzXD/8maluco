@@ -671,6 +671,12 @@
           Com conta, seu apelido fica só seu e suas vitórias vão contar no
           ranking.
         </p>
+        <div id="authMain" class="account-main">
+        <!-- o botão oficial do Google entra aqui (só se o servidor tiver GOOGLE_CLIENT_ID) -->
+        <div id="googleBox" class="google-box hidden">
+          <div id="googleBtn" class="google-btn"></div>
+          <p class="account-or"><span>ou com apelido e senha</span></p>
+        </div>
         <div class="account-tabs" role="tablist" aria-label="Entrar ou criar conta">
           <button
             id="authTabLogin"
@@ -726,6 +732,31 @@
             Entrar
           </button>
         </form>
+        </div>
+        <!-- primeira vez com o Google: falta só o apelido -->
+        <form id="googleNickForm" class="account-form hidden" novalidate>
+          <p class="account-hint">
+            Primeira vez por aqui com o Google? Escolha o apelido que vai
+            aparecer na mesa e no ranking.
+          </p>
+          <label for="googleNick" class="field-label">Apelido</label>
+          <input
+            id="googleNick"
+            name="nickname"
+            maxlength="16"
+            autocomplete="nickname"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-describedby="googleNickHint googleNickError"
+          />
+          <p id="googleNickHint" class="account-hint">
+            De 3 a 16 letras: letras, números, espaço, ponto, hífen ou _.
+          </p>
+          <p id="googleNickError" class="field-error hidden"></p>
+          <button id="googleNickSubmit" type="submit" class="btn btn-primary">
+            Criar conta
+          </button>
+        </form>
         <button type="button" class="btn btn-text" data-close>Agora não</button>
       </div>
     </div>
@@ -766,6 +797,10 @@
                 autocomplete="current-password"
                 aria-describedby="deleteError"
               />
+            </div>
+            <div id="deleteGoogleField" class="google-box hidden">
+              <p class="account-hint">Para confirmar, entre com o Google de novo.</p>
+              <div id="googleDeleteBtn" class="google-btn"></div>
             </div>
             <p id="deleteError" class="field-error hidden"></p>
             <button id="deleteSubmit" type="submit" class="btn btn-primary">

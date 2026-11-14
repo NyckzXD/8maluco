@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import { createApi } from './api.js';
 import { Accounts } from './auth.js';
 import { openDatabase } from './db.js';
+import { googleVerifier } from './google.js';
 import { RoomManager, takeSlot } from './rooms.js';
 import { loadSnapshot, saveSnapshot } from './snapshot.js';
 
@@ -46,6 +47,8 @@ export function configFromEnv(env = process.env) {
     snapshotFile: env.SNAPSHOT_FILE === 'off' ? null : env.SNAPSHOT_FILE || `${root}data/rooms.json`,
     // contas (SQLite); precisa do mesmo disco persistente do SNAPSHOT_FILE. ":memory:" nos testes
     databaseFile: env.DATABASE_FILE || `${root}data/oito-maluco.db`,
+    // "Entrar com o Google": o Client ID do Google Cloud (README). Sem ele, o botão nem aparece.
+    googleClientId: env.GOOGLE_CLIENT_ID?.trim() || null,
   };
 }
 
@@ -84,6 +87,7 @@ export function originAllowed(origin, host, allowed) {
  *   timing?: object,
  *   rateLimits?: Record<string, { max: number, windowMs: number, error?: string }>,
  *   authLimits?: Partial<typeof import('./api.js').AUTH_LIMITS>,
+ *   verifyGoogle?: (credential: unknown) => Promise<string | null>,
  * }} [options]
  */
 export function createGameServer(options = {}) {
@@ -106,6 +110,9 @@ export function createGameServer(options = {}) {
       allowedOrigins: config.allowedOrigins,
       originAllowed: (origin, host) => originAllowed(origin, host, config.allowedOrigins),
       limits: config.authLimits,
+      googleClientId: config.googleClientId,
+      // os testes trocam o verificador (não dá para pedir token de verdade ao Google)
+      verifyGoogle: options.verifyGoogle ?? (config.googleClientId ? googleVerifier(config.googleClientId) : null),
     }),
   );
   const client = options.client ?? `${root}dist`;

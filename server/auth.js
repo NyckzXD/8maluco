@@ -18,6 +18,10 @@ const SESSION_MS = SESSION_DAYS * DAY;
 const RENEW_BEFORE_MS = SESSION_MS / 2; // usou a sessão com menos da metade do prazo: renova
 
 const WRONG_LOGIN = 'Apelido ou senha incorretos';
+const NICK_TAKEN = 'Esse apelido já tem dono. Escolha outro!';
+// Primeira vez com o Google: a pessoa ainda escolhe o apelido. O "ticket" segura o sub do Google
+// enquanto isso (só na memória: um reinício no meio só pede para entrar com o Google de novo).
+const GOOGLE_TICKET_MS = 10 * 60_000;
 
 // Formato guardado: scrypt$log2N$r$p$sal$hash (sal e hash em base64url). Os parâmetros vão
 // junto para dar para endurecer depois sem invalidar as senhas antigas.
@@ -50,6 +54,8 @@ const dummy = async () => (dummyHash ??= await hashPassword(randomBytes(16).toSt
  *   google_sub: string | null, avatar: string | null, created_at: number }} UserRow
  */
 
+/** @typedef {{ ok: true, user: object, session: string } | { ok: false, error: string, status: number }} AuthResult */
+
 const sha256 = (text) => createHash('sha256').update(text).digest('hex');
 
 export class Accounts {
@@ -57,11 +63,14 @@ export class Accounts {
   constructor(db, { now = Date.now } = {}) {
     this.db = db;
     this.now = now;
+    /** @type {Map<string, { sub: string, expires: number }>} */
+    this.googleTickets = new Map();
     this.q = {
       byKey: db.prepare('SELECT * FROM users WHERE nickname_key = ?'),
       byId: db.prepare('SELECT * FROM users WHERE id = ?'),
+      byGoogle: db.prepare('SELECT * FROM users WHERE google_sub = ?'),
       insertUser: db.prepare(
-        'INSERT INTO users (nickname, nickname_key, password_hash, created_at) VALUES (?, ?, ?, ?)',
+        'INSERT INTO users (nickname, nickname_key, password_hash, google_sub, created_at) VALUES (?, ?, ?, ?, ?)',
       ),
       deleteUser: db.prepare('DELETE FROM users WHERE id = ?'),
       insertSession: db.prepare(
@@ -83,28 +92,62 @@ export class Accounts {
     return { id: row.id, nickname: row.nickname, hasPassword: !!row.password_hash, hasGoogle: !!row.google_sub };
   }
 
-  /** @returns {Promise<{ ok: true, user: object, session: string } | { ok: false, error: string, status: number }>} */
+  /** @returns {Promise<AuthResult>} */
   async register({ nickname, password }) {
     const error = nicknameError(nickname) ?? passwordError(password);
     if (error) return { ok: false, error, status: 400 };
+    if (this.nicknameTaken(nickname)) return { ok: false, error: NICK_TAKEN, status: 409 };
+    return this.createUser({ nickname, passwordHash: await hashPassword(String(password)) });
+  }
+
+  /** @returns {AuthResult} */
+  // Grava a conta nova e já abre uma sessão. O apelido pode ter sido pego no meio do caminho
+  // (outra pessoa, enquanto o hash da senha era calculado): aí o UNIQUE do banco avisa.
+  createUser({ nickname, passwordHash = null, googleSub = null }) {
     const nick = tidyNickname(nickname);
-    const key = nicknameKey(nick);
-    if (this.q.byKey.get(key)) return { ok: false, error: 'Esse apelido já tem dono. Escolha outro!', status: 409 };
-    const hash = await hashPassword(String(password));
     let id;
     try {
-      id = Number(this.q.insertUser.run(nick, key, hash, this.now()).lastInsertRowid);
+      id = Number(this.q.insertUser.run(nick, nicknameKey(nick), passwordHash, googleSub, this.now()).lastInsertRowid);
     } catch (err) {
-      // outra pessoa pegou o mesmo apelido enquanto o hash era calculado
-      if (err?.code === 'SQLITE_CONSTRAINT_UNIQUE')
-        return { ok: false, error: 'Esse apelido já tem dono. Escolha outro!', status: 409 };
+      if (err?.code === 'SQLITE_CONSTRAINT_UNIQUE') return { ok: false, error: NICK_TAKEN, status: 409 };
       throw err;
     }
     const user = /** @type {UserRow} */ (this.q.byId.get(id));
     return { ok: true, user: Accounts.public(user), session: this.createSession(id) };
   }
 
-  /** @returns {Promise<{ ok: true, user: object, session: string } | { ok: false, error: string, status: number }>} */
+  // ---------- Google ----------
+
+  // Entrou com o Google (sub já conferido em server/google.js). Conta existente: sessão nova.
+  // Primeira vez: devolve um ticket para a pessoa escolher o apelido em registerGoogle().
+  loginGoogle(sub) {
+    const row = /** @type {UserRow | undefined} */ (this.q.byGoogle.get(sub));
+    if (row) return { ok: true, user: Accounts.public(row), session: this.createSession(row.id) };
+    const now = this.now();
+    for (const [t, v] of this.googleTickets) if (v.expires <= now) this.googleTickets.delete(t);
+    const ticket = randomBytes(24).toString('base64url');
+    this.googleTickets.set(ticket, { sub, expires: now + GOOGLE_TICKET_MS });
+    return { ok: true, needsNickname: true, ticket };
+  }
+
+  registerGoogle({ ticket, nickname }) {
+    const t = typeof ticket === 'string' ? this.googleTickets.get(ticket) : null;
+    if (!t || t.expires <= this.now())
+      return { ok: false, error: 'O login com o Google expirou. Entre com o Google de novo.', status: 400 };
+    // duas abas na mesma hora: a segunda só entra na conta que a primeira criou
+    if (this.q.byGoogle.get(t.sub)) {
+      this.googleTickets.delete(ticket);
+      return this.loginGoogle(t.sub);
+    }
+    const error = nicknameError(nickname);
+    if (error) return { ok: false, error, status: 400 };
+    if (this.nicknameTaken(nickname)) return { ok: false, error: NICK_TAKEN, status: 409 };
+    const result = this.createUser({ nickname, googleSub: t.sub });
+    if (result.ok) this.googleTickets.delete(ticket);
+    return result;
+  }
+
+  /** @returns {Promise<AuthResult>} */
   async login({ nickname, password }) {
     const pass = String(password ?? '');
     const row =
@@ -150,15 +193,22 @@ export class Accounts {
     if (typeof token === 'string' && token) this.q.deleteSession.run(sha256(token));
   }
 
-  // Apaga a conta e todas as sessões dela (ON DELETE CASCADE). Conta com senha pede a senha:
-  // uma sessão roubada sozinha não basta.
-  /** @returns {Promise<{ ok: true } | { ok: false, error: string, status: number }>} */
-  /** @param {number} userId @param {{ password?: string }} [options] */
-  async deleteAccount(userId, { password } = {}) {
+  // Apaga a conta e todas as sessões dela (ON DELETE CASCADE). Uma sessão roubada sozinha não
+  // basta: pede a senha ou, em conta do Google, entrar com o Google de novo (`googleSub`, já
+  // conferido pela API).
+  /**
+   * @param {number} userId @param {{ password?: string, googleSub?: string | null }} [options]
+   * @returns {Promise<{ ok: true } | { ok: false, error: string, status: number }>}
+   */
+  async deleteAccount(userId, { password, googleSub } = {}) {
     const row = /** @type {UserRow | undefined} */ (this.q.byId.get(userId));
     if (!row) return { ok: false, error: 'Conta não encontrada', status: 404 };
-    if (row.password_hash && !(await verifyPassword(String(password ?? ''), row.password_hash)))
-      return { ok: false, error: 'Senha incorreta', status: 401 };
+    const byGoogle = !!row.google_sub && googleSub === row.google_sub;
+    const byPassword = !!row.password_hash && !!password && (await verifyPassword(String(password), row.password_hash));
+    if (!byGoogle && !byPassword)
+      return row.password_hash
+        ? { ok: false, error: 'Senha incorreta', status: 401 }
+        : { ok: false, error: 'Confirme com o Google para apagar a conta', status: 401 };
     this.q.deleteUser.run(userId);
     return { ok: true };
   }

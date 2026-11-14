@@ -754,6 +754,40 @@ select:focus {
   font-size: var(--fs-sm);
 }
 
+.account-main {
+  display: grid;
+  gap: 14px;
+}
+
+/* o botão oficial do Google (desenhado por ele, num iframe) e o "ou" que separa do formulário */
+.google-box {
+  display: grid;
+  gap: 12px;
+}
+
+.google-btn {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.account-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.account-or::before,
+.account-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 /* apagar a conta fica escondido atrás de um clique, longe dos botões de sempre */
 .account-danger {
   border-top: 1px solid var(--line);

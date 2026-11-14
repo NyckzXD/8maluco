@@ -44,6 +44,7 @@ Tudo o mais vem de variáveis de ambiente:
 | `MAX_CONNECTIONS_PER_IP` | `20` | Conexões simultâneas por IP. Uma família na mesma rede de casa cabe com folga. |
 | `SNAPSHOT_FILE` | `data/rooms.json` | Onde as salas ficam gravadas entre um processo e outro. Precisa estar num disco que sobreviva ao deploy (veja abaixo). `off` desliga. |
 | `DATABASE_FILE` | `data/oito-maluco.db` | Banco SQLite das contas (apelido, hash da senha, sessões). Tem que ficar no mesmo disco persistente do `SNAPSHOT_FILE` (por exemplo `/data/oito-maluco.db`): sem volume, cada deploy apaga todas as contas. |
+| `GOOGLE_CLIENT_ID` | vazio | Liga o "Entrar com o Google" (veja "Login com o Google" abaixo). Vazio, o botão não aparece e só vale apelido e senha. |
 
 - **Limites por conexão** (`RATE_LIMITS` em `server/index.js`): 5 salas criadas por minuto, 12 tentativas de entrar por minuto, 30 pedidos da lista de salas por minuto, 10 jogadas, compras ou passes a cada 5s, e 20 a cada 10s nos outros eventos. Mensagens maiores que 16KB derrubam a conexão de quem mandou.
 - **Desligamento e volta**: no `SIGTERM` (o que as plataformas mandam no deploy) e no Ctrl+C, o servidor avisa todas as salas ("O servidor vai reiniciar. A partida continua quando ele voltar!"), para os timers dos bots, grava as salas em `SNAPSHOT_FILE` e fecha. Ao subir, ele lê o arquivo, apaga-o e recria as salas com todo mundo desconectado. A partida fica parada até a primeira pessoa voltar; aí a vez de quem estava jogando recomeça com o prazo cheio. Os clientes reconectam sozinhos e voltam pelo token para o mesmo lugar, com as mesmas cartas. Gravações com mais de 10 minutos são ignoradas. O arquivo tem os tokens dos jogadores, por isso a pasta `data/` fica fora do git. Uma queda sem aviso (falta de memória, `kill -9`) não grava nada, e aí as partidas se perdem.
@@ -69,6 +70,21 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 
 **Se um dia precisar de mais de uma instância:** as salas teriam que sair da memória para um lugar compartilhado (Redis), os eventos teriam que passar entre as instâncias com o `@socket.io/redis-adapter`, e o balanceador precisaria de sessão fixa (*sticky sessions*). Os timers dos bots também precisariam de um dono por sala. É uma mudança grande, que só vale a pena se uma máquina grande não der mais conta.
 
+### Login com o Google
+
+O botão é o oficial do Google (Google Identity Services). O navegador recebe um token assinado do Google, o servidor confere a assinatura, o emissor, o destinatário e a validade (`server/google.js`) e guarda só o `sub`, o id fixo da pessoa no Google. Nada de e-mail, nome ou foto. Na primeira vez a pessoa escolhe o apelido.
+
+Para ligar:
+
+1. No [Google Cloud Console](https://console.cloud.google.com/), crie (ou escolha) um projeto.
+2. Em **APIs e serviços → Tela de consentimento OAuth** (no console novo, **Google Auth Platform → Branding**), preencha o nome do app e o e-mail de suporte. O público é **Externo**. Os escopos padrão (`openid`, `email`, `profile`) bastam: não precisa pedir nada a mais.
+3. Em **Credenciais → Criar credenciais → ID do cliente OAuth**, tipo **Aplicativo da Web**. Em **Origens JavaScript autorizadas**, ponha `http://localhost:3000` (desenvolvimento) e o endereço publicado (por exemplo `https://8maluco.onrender.com`). Não precisa de URI de redirecionamento.
+4. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) para a variável `GOOGLE_CLIENT_ID` do servidor. Ele não é segredo: vai para o navegador pelo `/api/config`.
+
+- O Google só aceita origens `https` ou `http://localhost`. Pela rede de casa (`http://192.168.x.x:3000`) o botão não funciona; o login com apelido e senha funciona.
+- Enquanto o app estiver em modo **Teste** na tela de consentimento, só entram os e-mails da lista de testadores. Para abrir para todo mundo, publique o app (com só os escopos padrão, o Google não pede verificação).
+- O app Capacitor vai precisar de um plugin nativo de login do Google (o Google bloqueia o login dentro de WebView) e dos IDs de cliente Android/iOS no servidor.
+
 ## Estrutura
 
 | Pasta | O que tem |
@@ -77,7 +93,7 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 | `shared/bot.js` | Jogador automático (bots e jogada automática quando o tempo acaba ou alguém cai). |
 | `shared/names.js` | Regras de apelido que valem no servidor e na tela (nomes "Robô …" são só dos bots) e as de apelido e senha de conta. |
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
-| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). Contas em `/api` (`api.js`: cadastro, entrar, sair, `/me`, apagar conta; `auth.js`: senha com scrypt e sessões; `db.js`: o SQLite e as migrações). No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
+| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). Contas em `/api` (`api.js`: cadastro, entrar, sair, `/me`, apagar conta; `auth.js`: senha com scrypt, sessões e contas do Google; `google.js`: confere o token do Google; `db.js`: o SQLite e as migrações). No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
 | `client/` | Interface web (`index.html`, `style.css` e os módulos em `src/`, JS puro sem framework), responsiva para celular. Entrada do Vite (`vite.config.js`). |
 | `client/src/` | Um módulo por parte da tela. `main.js` é a entrada (conexão e convite) e carrega os outros; `core.js` tem atalhos do DOM, o socket e o estado da sala, que os outros leem direto e só mudam pelas funções `set...`. Telas: `home`, `account` (entrar, criar conta, sair e apagar; a sessão vai no handshake do socket), `howto`, `avatar-editor`, `lobby`, `results`. Mesa: `table` (assentos e voos), `deal`, `pile`, `hand`, `card-tip`, `drag`, `suit-picker`, `scores`, `clock`, `render` (desenha cada atualização). Gerais: `modals`, `chat`, `reactions`, `cards` (desenho das cartas e ícones), `audio`. |
 | `public/` | Arquivos que vão para o build do jeito que estão, sempre no mesmo caminho: fontes, ícones, cartas, sons, `manifest.json` e o service worker (PWA). |
