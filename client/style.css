@@ -5242,3 +5242,25 @@ body.is-dragging * {
 .hand.dealing .card {
   pointer-events: none;
 }
+
+/* Balão de mensagem do chat: o mesmo cartão da reação, com texto livre quebrando linha
+   (até 4 linhas; o resto fica no chat). */
+.reaction.chat-bubble {
+  display: block;
+  max-width: min(220px, calc(100vw - 16px));
+  padding: 5px 11px;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.chat-bubble-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
