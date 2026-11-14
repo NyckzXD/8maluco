@@ -29,7 +29,7 @@ function roomWithPlayer() {
 }
 
 test('só aceita reações da lista', () => {
-  assert.ok(REACTIONS.length >= 4 && REACTIONS.length <= 6);
+  assert.ok(REACTIONS.length >= 4 && REACTIONS.length <= 8);
   for (const r of REACTIONS) assert.ok(isReaction(r.id));
   for (const bad of ['', 'xss<script>', null, 42, {}, 'BOA']) assert.equal(isReaction(bad), false);
 

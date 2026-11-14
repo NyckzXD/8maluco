@@ -21,6 +21,8 @@ function buildReactMenu() {
     b.type = 'button';
     b.dataset.id = r.id;
     b.append(reactionFace(r.id), el('span', null, r.label));
+    // nome comprido ("Conheceu o Silas") ocupa a linha inteira, com a carinha do lado
+    if (r.label.length > 10) b.classList.add('react-opt-wide');
     b.addEventListener('click', () => {
       closeReactMenu({ focus: true });
       emit('reaction', { id: r.id });
@@ -92,6 +94,19 @@ function reactionAnchor(memberId) {
   return $(`#memberList .seat[data-id="${memberId}"]`);
 }
 
+// O balão nasce centrado no avatar; perto da borda (o seu avatar, no canto da sua barra no
+// celular, ou um assento na beirada da mesa) ele escorrega para dentro da tela, e a ponta
+// continua apontando para o avatar.
+const EDGE = 8;
+function keepOnScreen(bubble, anchor) {
+  const a = anchor.getBoundingClientRect();
+  const w = bubble.offsetWidth; // largura sem o scale da animação
+  const center = a.left + a.width / 2;
+  const left = Math.min(Math.max(EDGE, center - w / 2), innerWidth - EDGE - w);
+  const shift = Math.round(left - (center - w / 2));
+  if (shift) bubble.style.setProperty('--shift', `${shift}px`);
+}
+
 export function showReaction(from, id) {
   const label = reactionLabel(id);
   if (!label) return;
@@ -104,5 +119,6 @@ export function showReaction(from, id) {
   bubble.style.setProperty('--life', `${REACTION_MS}ms`);
   bubble.append(reactionFace(id), el('span', null, label));
   anchor.append(bubble);
+  keepOnScreen(bubble, anchor);
   setTimeout(() => bubble.remove(), REACTION_MS);
 }

@@ -1,7 +1,7 @@
 // Reações rápidas: um balão em cima do avatar de quem reagiu, visto por toda a mesa.
 // Fica em /shared porque o servidor valida o id (só passa o que está nesta lista) e o
 // navegador desenha os botões e o balão a partir dela. O desenho de cada uma é o símbolo
-// SVG `#r-<id>` do sprite em public/app.js.
+// SVG `#r-<id>` do sprite em client/src/cards.js.
 
 export const REACTIONS = [
   { id: 'boa', label: 'Boa!' },
@@ -10,6 +10,7 @@ export const REACTIONS = [
   { id: 'grr', label: 'Grr!' },
   { id: 'uau', label: 'Uau!' },
   { id: 'vai', label: 'Vai logo!' },
+  { id: 'silas', label: 'Conheceu o Silas' },
 ];
 
 // Por pessoa: no máximo `max` reações dentro de `windowMs` (dá para uma rajada curta, sem flood).
