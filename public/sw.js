@@ -7,7 +7,7 @@
 // - /assets/ (JS e CSS do build, com hash no nome): cache primeiro. Um build novo gera nomes
 //   novos, e a página nova (que vem da rede) já pede os arquivos novos.
 // - fontes, ícones, cartas e sons: cache primeiro. Quase nunca mudam; se mudarem, suba VERSION.
-// - /socket.io/ (o tempo real) nunca passa pelo cache.
+// - /socket.io/ (o tempo real) e /api/ (contas) nunca passam pelo cache.
 
 const VERSION = 'v3';
 const CACHE = `8maluco-${VERSION}`;
@@ -90,6 +90,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/socket.io/')) return;
   if (url.pathname === '/health') return;
+  if (url.pathname.startsWith('/api/')) return; // contas: sempre da rede
 
   // Qualquer página (/?sala=ABCDE inclusive) é a mesma casca: guarda e serve como "/".
   if (request.mode === 'navigate') {

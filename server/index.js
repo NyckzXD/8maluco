@@ -4,6 +4,9 @@ import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Server } from 'socket.io';
+import { createApi } from './api.js';
+import { Accounts } from './auth.js';
+import { openDatabase } from './db.js';
 import { RoomManager, takeSlot } from './rooms.js';
 import { loadSnapshot, saveSnapshot } from './snapshot.js';
 
@@ -41,6 +44,8 @@ export function configFromEnv(env = process.env) {
     maxConnectionsPerIp: Number(env.MAX_CONNECTIONS_PER_IP) || 20,
     // onde as salas ficam entre um processo e outro; "off" desliga (o reinício perde as partidas)
     snapshotFile: env.SNAPSHOT_FILE === 'off' ? null : env.SNAPSHOT_FILE || `${root}data/rooms.json`,
+    // contas (SQLite); precisa do mesmo disco persistente do SNAPSHOT_FILE. ":memory:" nos testes
+    databaseFile: env.DATABASE_FILE || `${root}data/oito-maluco.db`,
   };
 }
 
@@ -78,6 +83,7 @@ export function originAllowed(origin, host, allowed) {
  *   client?: string | import('express').RequestHandler | null,
  *   timing?: object,
  *   rateLimits?: Record<string, { max: number, windowMs: number, error?: string }>,
+ *   authLimits?: Partial<typeof import('./api.js').AUTH_LIMITS>,
  * }} [options]
  */
 export function createGameServer(options = {}) {
@@ -88,6 +94,20 @@ export function createGameServer(options = {}) {
   // gzip/brotli nos arquivos de texto (app.js e style.css passam de 100KB cada); imagens e
   // fontes já vêm comprimidas e o pacote as deixa como estão
   app.use(compression());
+  // Contas: o banco só abre no primeiro uso (os testes que não mexem em conta não criam arquivo);
+  // em produção, a subida já chama accounts() para um disco com problema aparecer logo.
+  let accounts = null;
+  const getAccounts = () => (accounts ??= new Accounts(openDatabase(config.databaseFile)));
+  // antes do cliente: no desenvolvimento, o Vite responderia /api/... com a página
+  app.use(
+    '/api',
+    createApi({
+      accounts: getAccounts,
+      allowedOrigins: config.allowedOrigins,
+      originAllowed: (origin, host) => originAllowed(origin, host, config.allowedOrigins),
+      limits: config.authLimits,
+    }),
+  );
   const client = options.client ?? `${root}dist`;
   if (typeof client === 'function') app.use(client);
   else if (client && existsSync(client)) app.use(express.static(client));
@@ -249,12 +269,15 @@ export function createGameServer(options = {}) {
         // um instante para o aviso chegar antes de cortar as conexões
         setTimeout(() => {
           io.close();
-          server.close(() => resolve());
+          server.close(() => {
+            accounts?.db.close();
+            resolve();
+          });
         }, 500);
       },
     ));
 
-  return { app, server, io, rooms, config, shutdown };
+  return { app, server, io, rooms, config, shutdown, accounts: getAccounts };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
@@ -271,6 +294,8 @@ if (isMain) {
     client = vite.middlewares;
   }
   const game = createGameServer({ client });
+  const pruned = game.accounts().prune();
+  console.log(`Contas em ${game.config.databaseFile}${pruned ? ` (${pruned} sessão(ões) vencida(s) apagada(s))` : ''}`);
   // salas gravadas no último desligamento: voltam antes de abrir a porta
   if (game.config.snapshotFile) {
     const restored = loadSnapshot(game.rooms, game.config.snapshotFile);
