@@ -45,7 +45,7 @@ import {
 import { codeInput, extractCode, joinRoom, nameInput, refreshRooms, showJoinError } from './home.js';
 import { leaveRoom } from './lobby.js';
 import { closeModal, hideModal, modalStack, openModal } from './modals.js';
-import { showReaction } from './reactions.js';
+import { showChatBubble, showReaction } from './reactions.js';
 import { render } from './render.js';
 import { show } from './table.js';
 
@@ -87,7 +87,11 @@ for (const type of ['pointerdown', 'keydown']) {
   );
 }
 
-socket.on('chat', addChat);
+socket.on('chat', (msg) => {
+  addChat(msg);
+  // mensagem de jogador (não do sistema nem do histórico de jogadas) também vira balão no avatar
+  if (msg?.fromId) showChatBubble(msg.fromId, msg.text);
+});
 socket.on('reaction', ({ from, id } = {}) => showReaction(from, id));
 socket.on('chat:history', (msgs) => {
   for (const log of $$('.chat-log')) log.replaceChildren();

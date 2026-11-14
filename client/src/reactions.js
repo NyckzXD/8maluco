@@ -122,3 +122,22 @@ export function showReaction(from, id) {
   keepOnScreen(bubble, anchor);
   setTimeout(() => bubble.remove(), REACTION_MS);
 }
+
+// Mensagens do chat também viram balão em cima do avatar de quem escreveu, para a mesa toda
+// ler sem abrir o chat. Fica mais tempo quanto maior o texto (o chat aceita até 200 letras).
+const chatBubbleMs = (text) => Math.min(7000, 2500 + text.length * 60);
+
+export function showChatBubble(from, text) {
+  const anchor = reactionAnchor(from);
+  if (!anchor || !text) return;
+  anchor.querySelector(':scope > .reaction')?.remove();
+  const ms = chatBubbleMs(text);
+  // o texto já é anunciado pelo log do chat; o balão é só visual
+  const bubble = el('div', 'reaction chat-bubble');
+  bubble.setAttribute('aria-hidden', 'true');
+  bubble.style.setProperty('--life', `${ms}ms`);
+  bubble.append(el('span', 'chat-bubble-text', text));
+  anchor.append(bubble);
+  keepOnScreen(bubble, anchor);
+  setTimeout(() => bubble.remove(), ms);
+}
