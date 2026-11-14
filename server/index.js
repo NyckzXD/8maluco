@@ -91,8 +91,12 @@ export function createGameServer(options = {}) {
   const client = options.client ?? `${root}dist`;
   if (typeof client === 'function') app.use(client);
   else if (client && existsSync(client)) app.use(express.static(client));
-  else if (client && config.production)
-    console.warn(`[client] ${client} não existe: rode "npm run build" antes de "npm start"`);
+  const missingClient = typeof client === 'string' && !existsSync(client) && config.production;
+  if (missingClient)
+    console.error(
+      `[client] ${client} não existe: o deploy precisa rodar "npm run build" antes do "npm start" ` +
+        '(no Render: Build Command = "npm ci --include=dev && npm run build")',
+    );
 
   const server = createServer(app);
   const io = new Server(server, {
@@ -109,6 +113,17 @@ export function createGameServer(options = {}) {
   app.get('/health', (_req, res) =>
     res.json({ ok: true, ...rooms.stats(), connections: io.engine.clientsCount, uptime: Math.round(process.uptime()) }),
   );
+
+  // Publicado sem o build: em vez de um "Cannot GET /" mudo, diz o que falta (o /health continua respondendo).
+  if (missingClient)
+    app.use((_req, res) =>
+      res
+        .status(503)
+        .type('text')
+        .send(
+          '8 Maluco: a página não foi gerada neste deploy. Rode "npm run build" no build (veja o README, "Publicando").',
+        ),
+    );
 
   // Conexões por IP: barra quem abre conexões sem parar (cada uma ocupa memória e timers).
   const perIp = new Map();

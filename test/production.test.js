@@ -166,3 +166,11 @@ test('desligamento avisa as salas, para os timers e fecha', async () => {
   await done;
   assert.equal(s.server.listening, false);
 });
+
+test('publicado sem o build: a página explica o que falta e o /health continua no ar', async () => {
+  const s = await start({ client: 'pasta-que-nao-existe', production: true });
+  const page = await fetch(`${s.url}/`);
+  assert.equal(page.status, 503);
+  assert.match(await page.text(), /npm run build/);
+  assert.equal((await (await fetch(`${s.url}/health`)).json()).ok, true);
+});
