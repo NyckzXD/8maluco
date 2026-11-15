@@ -47,6 +47,9 @@ function updateClock() {
   bar.classList.toggle('low', p < 0.2);
   $('i', bar).style.transform = `scaleX(${p})`;
   const total = state.settings.turnSeconds;
+  // Tique dos últimos segundos: nos tempos curtos (5s, 10s), só na metade final, senão a vez
+  // inteira seria tique e o aviso falado tomaria a vez toda.
+  const tickFrom = Math.min(TICK_FROM_S, Math.ceil(total / 2));
   const secsLeft = left == null ? total : Math.ceil(left / 1000);
   if (bar.getAttribute('aria-valuenow') !== String(secsLeft)) {
     bar.setAttribute('aria-valuemax', String(total));
@@ -54,20 +57,20 @@ function updateClock() {
     bar.setAttribute('aria-valuetext', `${secsLeft} segundos restantes`);
   }
   secs.classList.toggle('on', on);
-  secs.classList.toggle('low', on && s <= TICK_FROM_S);
+  secs.classList.toggle('low', on && s <= tickFrom);
   secs.textContent = on ? `${s}s` : '';
   $('#seats .seat.turn .ring')?.style.setProperty('--p', p);
   const myRing = $('#meInfo .ring');
   myRing?.style.setProperty('--p', p);
-  myRing?.classList.toggle('low', on && s <= TICK_FROM_S);
+  myRing?.classList.toggle('low', on && s <= tickFrom);
 
   // Últimos segundos: um tique (e uma vibração) por segundo.
-  if (on && s > 0 && s <= TICK_FROM_S) {
+  if (on && s > 0 && s <= tickFrom) {
     if (s !== lastTick) {
       lastTick = s;
       sounds.tick();
       navigator.vibrate?.(30);
-      if (s === TICK_FROM_S) speak(`Faltam ${TICK_FROM_S} segundos`);
+      if (s === tickFrom) speak(`Faltam ${tickFrom} segundos`);
     }
   } else lastTick = null;
 }

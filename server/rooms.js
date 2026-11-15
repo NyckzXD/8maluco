@@ -8,6 +8,7 @@ import { BOT_NAME_ERROR, RESERVED_NAME_ERROR, isBotName } from '../shared/names.
 import { RANKED_MIN_HUMANS } from '../shared/ranking.js';
 
 export const MAX_PLAYERS = 8; // lugares na mesa
+export const TURN_SECONDS = [5, 10, 15, 30, 45, 60]; // opções de tempo por vez (o seletor do lobby)
 export const MAX_SPECTATORS = 4; // e mais estes na plateia (só assistem até abrir lugar)
 const ROUND_BREAK_MS = 9000; // só usado quando não sobrou nenhum humano conectado para clicar em "pronto"
 const BOT_DELAY_MS = [3000, 5000]; // bots esperam pelo menos 3s para dar tempo de acompanhar
@@ -526,7 +527,7 @@ class Room {
   updateSettings(byId, patch) {
     if (byId !== this.hostId) return { ok: false, error: 'Só o anfitrião muda as configurações' };
     if (typeof patch.isPublic === 'boolean') this.settings.isPublic = patch.isPublic;
-    if ([15, 30, 45, 60].includes(patch.turnSeconds)) this.settings.turnSeconds = patch.turnSeconds;
+    if (TURN_SECONDS.includes(patch.turnSeconds)) this.settings.turnSeconds = patch.turnSeconds;
     this.broadcast();
     return { ok: true };
   }

@@ -253,6 +253,19 @@ test('tempo esgotado: o jogo joga pela pessoa e avisa no chat', () => {
   r.dispose();
 });
 
+test('tempo curto (5s): o prazo é de 5s, mais a distribuição das cartas na primeira vez', () => {
+  const { r, enter } = setup();
+  const ana = enter('ana', 'Ana');
+  enter('bia', 'Bia');
+  r.updateSettings(ana.id, { turnSeconds: 5 });
+  r.start(ana.id);
+  const seq = r.turnSeq;
+  assert.equal(r.deadline - Date.now(), 5_000 + 3500);
+  mock.timers.tick(5_000 + 3500 + 1);
+  assert.ok(r.turnSeq > seq, 'a vez andou com a jogada automática');
+  r.dispose();
+});
+
 test('configurações: só o anfitrião e só valores conhecidos', () => {
   const { r, enter } = setup();
   const ana = enter('ana');
@@ -262,5 +275,10 @@ test('configurações: só o anfitrião e só valores conhecidos', () => {
   assert.deepEqual(r.settings, { isPublic: true, turnSeconds: 30 });
   r.updateSettings(ana.id, { turnSeconds: 60, isPublic: false });
   assert.deepEqual(r.settings, { isPublic: false, turnSeconds: 60 });
+  // os tempos curtos também valem
+  r.updateSettings(ana.id, { turnSeconds: 5 });
+  assert.equal(r.settings.turnSeconds, 5);
+  r.updateSettings(ana.id, { turnSeconds: 10 });
+  assert.equal(r.settings.turnSeconds, 10);
   r.dispose();
 });
