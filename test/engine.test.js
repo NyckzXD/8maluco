@@ -185,7 +185,7 @@ test('8 entra em qualquer pinta e escolhe a próxima pinta', () => {
   assert.equal(canPlay(s, c('3', 'C')), false);
 });
 
-test('Joker: todos menos quem jogou compram 1 e a pinta de baixo continua', () => {
+test('Joker: todos menos quem jogou compram 1 e a pinta e o número de baixo continuam', () => {
   const s = table([[joker(), c('2', 'S')], filler(), filler(), filler()]);
   const r = playCard(s, 'p0', joker().id);
   assert.ok(r.ok);
@@ -194,8 +194,20 @@ test('Joker: todos menos quem jogou compram 1 e a pinta de baixo continua', () =
     [1, 3, 3, 3],
   );
   assert.equal(s.activeSuit, 'H');
+  assert.equal(s.activeRank, '5');
   assert.equal(canPlay(s, c('2', 'H')), true);
-  assert.equal(canPlay(s, c('5', 'S')), false);
+  assert.equal(canPlay(s, c('5', 'S')), true);
+  assert.equal(canPlay(s, c('6', 'S')), false);
+});
+
+test('Joker sobre Joker: continua valendo a carta de baixo do primeiro', () => {
+  const s = table([[joker(0), c('2', 'S')], [joker(1), c('3', 'S'), c('4', 'S')], filler(), filler()]);
+  playCard(s, 'p0', joker(0).id);
+  playCard(s, 'p1', joker(1).id);
+  assert.equal(s.activeSuit, 'H');
+  assert.equal(s.activeRank, '5');
+  assert.equal(canPlay(s, c('5', 'C')), true);
+  assert.equal(canPlay(s, c('6', 'S')), false);
 });
 
 test('comprar sem carta jogável passa a vez sozinho', () => {
@@ -238,11 +250,20 @@ test('fim da rodada soma os pontos de quem ficou com cartas', () => {
   );
 });
 
-test('a carta que bate ainda aplica o efeito (9 no último lance)', () => {
-  const s = table([[c('9', 'H')], [c('2', 'C')], filler(), filler()]);
-  s.drawPile = [c('K', 'S', 1), c('Q', 'S', 2)];
-  playCard(s, 'p0', c('9', 'H').id);
-  assert.equal(s.players[1].score, 22);
+test('a carta que bate não faz ninguém comprar (9, 7 e Joker no último lance)', () => {
+  for (const last of [c('9', 'H'), c('7', 'H'), joker()]) {
+    const s = table([[last], [c('2', 'C')], [c('3', 'C')], [c('4', 'C')]]);
+    s.drawPile = [c('K', 'S', 1), c('Q', 'S', 2), c('J', 'S', 3)];
+    const r = playCard(s, 'p0', last.id);
+    assert.ok(r.ok);
+    assert.equal(s.phase, 'roundOver');
+    assert.equal(s.drawPile.length, 3);
+    assert.ok(!r.events.some((e) => e.type === 'penalty' || e.type === 'skip'));
+    assert.deepEqual(
+      s.players.map((p) => p.score),
+      [0, 2, 3, 4],
+    );
+  }
 });
 
 test('quem passa de 100 é eliminado e o último que sobra vence', () => {
