@@ -1387,13 +1387,15 @@ input[aria-invalid='true'] {
   text-align: center;
 }
 
+/* lista vazia (ou erro ao carregar): uma frase só, no meio do card. A coluna única desfaz as
+   quatro colunas das linhas do ranking, que espremiam o texto na primeira. */
 .ranking-list .empty {
-  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
-  gap: 6px;
-  padding: 28px 12px;
+  padding: 40px 12px;
   background: none;
   text-align: center;
+  font-weight: 700;
   color: var(--silver-300);
 }
 

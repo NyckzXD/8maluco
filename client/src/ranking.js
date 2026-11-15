@@ -42,9 +42,7 @@ async function loadRanking() {
     return;
   }
   if (!res.top.length) {
-    const empty = el('li', 'empty');
-    empty.append(el('b', null, 'Ninguém no ranking ainda'), el('span', null, 'Junte a galera e seja o primeiro!'));
-    list.append(empty);
+    list.append(el('li', 'empty', 'Ninguém no ranking ainda'));
   }
   for (const r of res.top) {
     const li = row(r);
