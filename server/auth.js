@@ -112,6 +112,8 @@ export class Accounts {
     };
     /** @type {LeaderRow[] | null} */
     this.leaderCache = null; // refeito só quando muda (partida gravada, conta apagada)
+    /** @type {Set<number> | null} */
+    this.topSet = null; // quem está em 1º (o selo TOP 1 na mesa), refeito junto com o ranking
   }
 
   // ---------- ranking ----------
@@ -128,6 +130,17 @@ export class Accounts {
       }
     })();
     this.leaderCache = null;
+    this.topSet = null;
+  }
+
+  // Está em 1º no ranking? (empate em 1º: todos; ninguém com vitória ainda: ninguém)
+  isTop1(userId) {
+    this.topSet ??= new Set(
+      this.leaderboard()
+        .filter((r) => r.rank === 1 && r.wins > 0)
+        .map((r) => r.id),
+    );
+    return this.topSet.has(userId);
   }
 
   /** @returns {LeaderRow[]} */
@@ -269,6 +282,7 @@ export class Accounts {
         : { ok: false, error: 'Confirme com o Google para apagar a conta', status: 401 };
     this.q.deleteUser.run(userId);
     this.leaderCache = null;
+    this.topSet = null;
     return { ok: true };
   }
 

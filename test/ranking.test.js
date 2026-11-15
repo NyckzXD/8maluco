@@ -250,3 +250,50 @@ test('/api/leaderboard: os primeiros e a sua posição', async () => {
   assert.equal(mine.me.rank, 3);
   assert.equal(mine.me.games, 2);
 });
+
+// ---------- TOP 1 ----------
+
+test('TOP 1: quem está em 1º (empate divide), ninguém sem vitória, e muda com a partida nova', async () => {
+  const { accounts, ids } = await accountsWith('Lia', 'Max', 'Nina');
+  // ranking vazio: ninguém é TOP 1
+  assert.equal(accounts.isTop1(ids.Lia), false);
+  // só derrotas valendo: ninguém tem vitória, ninguém é TOP 1
+  accounts.recordGame(game(true, [seat(ids.Lia, false), seat(ids.Max, false)]));
+  assert.equal(accounts.isTop1(ids.Lia), false);
+  accounts.recordGame(game(true, [seat(ids.Lia, true), seat(ids.Max, false)]));
+  assert.equal(accounts.isTop1(ids.Lia), true);
+  assert.equal(accounts.isTop1(ids.Max), false);
+  // a Nina empata em vitórias e partidas: as duas em 1º
+  accounts.recordGame(game(true, [seat(ids.Nina, true)]));
+  accounts.recordGame(game(true, [seat(ids.Nina, false)]));
+  assert.equal(accounts.isTop1(ids.Lia), true);
+  assert.equal(accounts.isTop1(ids.Nina), true);
+  // mais uma vitória da Nina: só ela
+  accounts.recordGame(game(true, [seat(ids.Nina, true)]));
+  assert.equal(accounts.isTop1(ids.Lia), false);
+  assert.equal(accounts.isTop1(ids.Nina), true);
+  // conta apagada sai do topo
+  assert.ok((await accounts.deleteAccount(ids.Nina, { password: 'senha-de-teste' })).ok);
+  assert.equal(accounts.isTop1(ids.Lia), true);
+  accounts.db.close();
+});
+
+test('TOP 1 aparece na sala só para a conta que está em 1º', () => {
+  const manager = new RoomManager(fakeIo(), { isTop1: (userId) => userId === 1 });
+  const room = manager.create();
+  room.join(fakeSocket('s0', ana), { token: 't0', name: 'x' });
+  room.join(fakeSocket('s1', bia), { token: 't1', name: 'x' });
+  room.join(fakeSocket('s2'), { token: 't2', name: 'Convidado' });
+  room.addBot(room.hostId);
+  const view = room.viewFor(room.members[0].id, []);
+  assert.deepEqual(
+    view.members.map((m) => [m.name.startsWith('Robô') ? 'bot' : m.name, m.top1]),
+    [
+      ['Ana', true],
+      ['Bia', false],
+      ['Convidado', false],
+      ['bot', false],
+    ],
+  );
+  room.dispose();
+});

@@ -1,4 +1,5 @@
 // Placar lateral e a sua barra (nome, pontos e aviso da vez).
+import { top1Badge } from './cards.js';
 import { turnRing } from './clock.js';
 import { $, $$, avatar, el, memberOf, state } from './core.js';
 import { selectedId } from './hand.js';
@@ -44,6 +45,7 @@ export function renderMe(g, s, myTurn) {
     if (myTurn) av.prepend(turnRing());
     // os pontos aqui só aparecem no celular; no desktop eles ficam no #meScore, à direita
     const label = el('span', null, 'Você');
+    if (memberOf(me.id)?.top1) label.prepend(top1Badge(), ' ');
     label.append(el('span', 'me-pts', ` · ${me.score} pts`));
     info.append(av, label);
     if (me.id === g.dealerId) info.append(dealerBadge());

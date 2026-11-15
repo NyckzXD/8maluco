@@ -74,17 +74,22 @@ export class RoomManager {
   // `timing` troca os tempos de espera (os testes de rede não querem esperar 5s de verdade).
   // `nicknameTaken` diz se um apelido é de alguma conta (convidado não pode usar).
   // `onGameOver` recebe o resumo de cada partida que teve alguém com conta (o ranking grava).
+  // `isTop1` diz se a conta está em 1º no ranking (o selo TOP 1 ao lado do nome).
   /**
    * @param {any} io
    * @param {{ timing?: object, nicknameTaken?: (name: string) => boolean,
-   *   onGameOver?: (summary: GameSummary) => void }} [options]
+   *   onGameOver?: (summary: GameSummary) => void, isTop1?: (userId: number) => boolean }} [options]
    */
-  constructor(io, { timing = {}, nicknameTaken = (_name) => false, onGameOver = (_summary) => {} } = {}) {
+  constructor(
+    io,
+    { timing = {}, nicknameTaken = (_name) => false, onGameOver = (_summary) => {}, isTop1 = (_userId) => false } = {},
+  ) {
     this.io = io;
     this.rooms = new Map();
     this.timing = { hostGraceMs: HOST_GRACE_MS, ...timing };
     this.nicknameTaken = nicknameTaken;
     this.onGameOver = onGameOver;
+    this.isTop1 = isTop1;
   }
 
   create({ isPublic = true } = {}) {
@@ -903,6 +908,7 @@ class Room {
         color: m.color,
         isBot: m.isBot,
         account: !!m.userId, // entrou com conta (o nome é o apelido dela)
+        top1: !!m.userId && this.manager.isTop1(m.userId), // 1º do ranking
         connected: m.connected,
         away: !!m.away,
       })),

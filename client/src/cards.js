@@ -74,11 +74,25 @@ export function icon(name, className = '') {
 }
 
 // Nome com um ícone de robô na frente quando é bot.
-export function nameWithBot(className, name, isBot) {
+export function nameWithBot(className, name, isBot, { top1 = false } = {}) {
   const node = el('div', className);
   if (isBot) node.append(icon('bot'), ' ');
-  node.append(name);
+  if (!top1) {
+    node.append(name);
+    return node;
+  }
+  // 1º do ranking: o selo fica ao lado e o nome é que encolhe (com reticências) se faltar espaço
+  node.classList.add('has-top1');
+  node.append(top1Badge(), el('span', 'nm-text', name));
   return node;
+}
+
+// Selo "TOP 1": quem está em 1º no ranking de vitórias.
+export function top1Badge() {
+  const badge = el('span', 'top1-badge', 'TOP 1');
+  badge.prepend(icon('trophy'));
+  badge.title = '1º lugar no ranking de vitórias';
+  return badge;
 }
 
 export function suitIcon(suit, className) {

@@ -2812,6 +2812,43 @@ input[aria-invalid='true'] {
   text-shadow: var(--text-shadow);
 }
 
+/* 1º do ranking: selo dourado ao lado do nome; o nome encolhe primeiro */
+.seat-name.has-top1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.seat-name.has-top1 .nm-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top1-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px 1px 4px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--card-ink);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-shadow: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.top1-badge .icon {
+  width: 12px;
+  height: 12px;
+}
+
 /* embaixo do nome: o selo com as cartas na mão (grande) e os pontos (pequeno) */
 .seat .seat-info {
   display: flex;

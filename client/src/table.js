@@ -67,7 +67,7 @@ export function renderSeats(g, s, hit) {
       away.title = 'Ausente: o jogo está jogando por ele';
       av.append(away);
     }
-    const name = nameWithBot('seat-name', p.name, m?.isBot);
+    const name = nameWithBot('seat-name', p.name, m?.isBot, { top1: m?.top1 });
     const info = el('div', 'seat-info');
     if (p.eliminated) info.textContent = 'fora';
     else {

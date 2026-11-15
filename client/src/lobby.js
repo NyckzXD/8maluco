@@ -168,7 +168,7 @@ export function renderLobby(s) {
             : realM.id === s.hostId
               ? 'anfitrião'
               : '';
-    li.append(av, nameWithBot('seat-name', realM.name, realM.isBot), el('span', 'seat-sub', sub));
+    li.append(av, nameWithBot('seat-name', realM.name, realM.isBot, { top1: realM.top1 }), el('span', 'seat-sub', sub));
     if (isHost && realM.id !== s.me) {
       const kick = el('button', 'kick');
       kick.append(icon('x'));

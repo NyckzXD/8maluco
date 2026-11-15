@@ -141,6 +141,7 @@ export function createGameServer(options = {}) {
     nicknameTaken: (name) => !!accounts?.nicknameTaken(name),
     // só chega aqui partida com alguém logado, e logar já abriu o banco
     onGameOver: (summary) => getAccounts().recordGame(summary),
+    isTop1: (userId) => !!accounts?.isTop1(userId),
   });
 
   app.get('/health', (_req, res) =>
