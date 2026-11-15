@@ -112,7 +112,7 @@ Para ligar:
 - 9 cartas para cada um. Quem dá as cartas na primeira rodada é sorteado; depois o carteador passa para a direita a cada rodada, até o fim da partida.
 - Nenhuma carta é virada: quem está à direita de quem deu as cartas abre o monte com a carta que quiser, e o jogo segue para a direita (anti-horário).
 - Joga carta da mesma pinta ou do mesmo número do monte. Sem jogada, compra 1. Se a carta comprada servir, pode jogar; se não servir, a vez passa sozinha.
-- **Ás** pula o próximo. **7**: o da esquerda compra 1 (numa mesa de dois, o outro também perde a vez e quem jogou o 7 joga de novo). **8** entra em qualquer carta e escolhe a pinta. **9**: o da direita compra 2 e perde a vez. **Joker** entra em qualquer carta, todos os outros compram 1, e a pinta de baixo continua.
+- **Ás** pula o próximo. **7**: o da esquerda compra 1 (numa mesa de dois, o outro também perde a vez e quem jogou o 7 joga de novo). **8** entra em qualquer carta e escolhe a pinta. **9**: o da direita compra 2 e perde a vez. **Joker** entra em qualquer carta, todos os outros compram 1, e a pinta e o número da carta de baixo continuam valendo.
 - Quem termina as cartas fecha a rodada. Os outros somam: Ás 1, 2–10 o próprio número, Valete/Dama/Rei 10, Joker 11. Chegou a 100, está fora. O último que sobrar vence.
 
 ### Decisões que a regra não definia (fácil de mudar em `shared/engine.js`)
