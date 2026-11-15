@@ -4,6 +4,10 @@ import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Server } from 'socket.io';
+import { createApi } from './api.js';
+import { Accounts } from './auth.js';
+import { openDatabase } from './db.js';
+import { googleVerifier } from './google.js';
 import { RoomManager, takeSlot } from './rooms.js';
 import { loadSnapshot, saveSnapshot } from './snapshot.js';
 
@@ -41,6 +45,10 @@ export function configFromEnv(env = process.env) {
     maxConnectionsPerIp: Number(env.MAX_CONNECTIONS_PER_IP) || 20,
     // onde as salas ficam entre um processo e outro; "off" desliga (o reinício perde as partidas)
     snapshotFile: env.SNAPSHOT_FILE === 'off' ? null : env.SNAPSHOT_FILE || `${root}data/rooms.json`,
+    // contas (SQLite); precisa do mesmo disco persistente do SNAPSHOT_FILE. ":memory:" nos testes
+    databaseFile: env.DATABASE_FILE || `${root}data/oito-maluco.db`,
+    // "Entrar com o Google": o Client ID do Google Cloud (README). Sem ele, o botão nem aparece.
+    googleClientId: env.GOOGLE_CLIENT_ID?.trim() || null,
   };
 }
 
@@ -78,6 +86,8 @@ export function originAllowed(origin, host, allowed) {
  *   client?: string | import('express').RequestHandler | null,
  *   timing?: object,
  *   rateLimits?: Record<string, { max: number, windowMs: number, error?: string }>,
+ *   authLimits?: Partial<typeof import('./api.js').AUTH_LIMITS>,
+ *   verifyGoogle?: (credential: unknown) => Promise<string | null>,
  * }} [options]
  */
 export function createGameServer(options = {}) {
@@ -88,6 +98,23 @@ export function createGameServer(options = {}) {
   // gzip/brotli nos arquivos de texto (app.js e style.css passam de 100KB cada); imagens e
   // fontes já vêm comprimidas e o pacote as deixa como estão
   app.use(compression());
+  // Contas: o banco só abre no primeiro uso (os testes que não mexem em conta não criam arquivo);
+  // em produção, a subida já chama accounts() para um disco com problema aparecer logo.
+  let accounts = null;
+  const getAccounts = () => (accounts ??= new Accounts(openDatabase(config.databaseFile)));
+  // antes do cliente: no desenvolvimento, o Vite responderia /api/... com a página
+  app.use(
+    '/api',
+    createApi({
+      accounts: getAccounts,
+      allowedOrigins: config.allowedOrigins,
+      originAllowed: (origin, host) => originAllowed(origin, host, config.allowedOrigins),
+      limits: config.authLimits,
+      googleClientId: config.googleClientId,
+      // os testes trocam o verificador (não dá para pedir token de verdade ao Google)
+      verifyGoogle: options.verifyGoogle ?? (config.googleClientId ? googleVerifier(config.googleClientId) : null),
+    }),
+  );
   const client = options.client ?? `${root}dist`;
   if (typeof client === 'function') app.use(client);
   else if (client && existsSync(client)) app.use(express.static(client));
@@ -108,7 +135,13 @@ export function createGameServer(options = {}) {
     pingInterval: 20_000,
     pingTimeout: 30_000,
   });
-  const rooms = new RoomManager(io, { timing: config.timing });
+  const rooms = new RoomManager(io, {
+    timing: config.timing,
+    // sem banco aberto não há conta nenhuma (em produção a subida já abre)
+    nicknameTaken: (name) => !!accounts?.nicknameTaken(name),
+    // só chega aqui partida com alguém logado, e logar já abriu o banco
+    onGameOver: (summary) => getAccounts().recordGame(summary),
+  });
 
   app.get('/health', (_req, res) =>
     res.json({ ok: true, ...rooms.stats(), connections: io.engine.clientsCount, uptime: Math.round(process.uptime()) }),
@@ -138,6 +171,21 @@ export function createGameServer(options = {}) {
       if (left > 0) perIp.set(ip, left);
       else perIp.delete(ip);
     });
+    next();
+  });
+
+  // Conta: a sessão vem no handshake (`io({ auth: { session } })`). Sessão inválida ou vencida
+  // não barra ninguém, só entra como convidado (o cliente descobre pelo /api/me e limpa a dele).
+  io.use((socket, next) => {
+    const session = socket.handshake.auth?.session;
+    socket.data.user = null;
+    if (typeof session === 'string' && session) {
+      try {
+        socket.data.user = getAccounts().userForSession(session);
+      } catch (err) {
+        console.error('[auth] sessão do socket:', err);
+      }
+    }
     next();
   });
 
@@ -249,16 +297,26 @@ export function createGameServer(options = {}) {
         // um instante para o aviso chegar antes de cortar as conexões
         setTimeout(() => {
           io.close();
-          server.close(() => resolve());
+          server.close(() => {
+            accounts?.db.close();
+            resolve();
+          });
         }, 500);
       },
     ));
 
-  return { app, server, io, rooms, config, shutdown };
+  return { app, server, io, rooms, config, shutdown, accounts: getAccounts };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
+  // Variáveis do arquivo .env na raiz (fora do git; o modelo é o .env.example). O que já vier do
+  // ambiente (o painel da plataforma, o terminal) vale mais que o arquivo. Sem arquivo, segue.
+  try {
+    process.loadEnvFile(`${root}.env`);
+  } catch (err) {
+    if (err?.code !== 'ENOENT') console.error('[env] não deu para ler o .env:', err.message);
+  }
   const PORT = Number(process.env.PORT) || 3000;
   // Um erro que escapou fica no log em vez de derrubar todas as salas.
   process.on('uncaughtException', (err) => console.error('[uncaughtException]', err));
@@ -271,6 +329,8 @@ if (isMain) {
     client = vite.middlewares;
   }
   const game = createGameServer({ client });
+  const pruned = game.accounts().prune();
+  console.log(`Contas em ${game.config.databaseFile}${pruned ? ` (${pruned} sessão(ões) vencida(s) apagada(s))` : ''}`);
   // salas gravadas no último desligamento: voltam antes de abrir a porta
   if (game.config.snapshotFile) {
     const restored = loadSnapshot(game.rooms, game.config.snapshotFile);

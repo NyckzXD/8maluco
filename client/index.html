@@ -85,6 +85,14 @@
                 />
                 <p id="nameError" class="field-error hidden"></p>
               </div>
+              <button
+                id="accountBtn"
+                type="button"
+                class="btn btn-text btn-small account-btn"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#i-user" /></svg
+                ><span id="accountBtnText">Entrar ou criar conta</span>
+              </button>
             </div>
 
             <nav class="home-menu" aria-label="Jogar">
@@ -92,11 +100,18 @@
                 <svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg
                 >Criar sala
               </button>
-              <button id="roomsBtn" class="btn btn-big">
-                <svg class="icon" aria-hidden="true">
-                  <use href="#i-users" /></svg
-                >Salas abertas
-              </button>
+              <div class="menu-pair">
+                <button id="roomsBtn" class="btn btn-big">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#i-users" /></svg
+                  >Salas abertas
+                </button>
+                <button id="rankingBtn" class="btn btn-big">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#i-trophy" /></svg
+                  >Ranking
+                </button>
+              </div>
               <div class="join-row">
                 <input
                   id="codeInput"
@@ -593,6 +608,7 @@
         <header class="results-head">
           <h2 id="roundTitle"></h2>
           <p id="roundSub" class="results-sub"></p>
+          <p id="rankNote" class="rank-note"></p>
         </header>
         <!-- Um jogador por linha: as cartas que sobraram, os pontos da rodada e o total até o limite. -->
         <ol id="roundRows" class="results-list"></ol>
@@ -615,6 +631,35 @@
           <p id="rematchWait" class="wait-line" aria-live="polite"></p>
           <button id="againBtn" class="btn btn-text">Voltar para a sala</button>
         </div>
+      </div>
+    </div>
+
+    <div id="rankingModal" class="modal hidden">
+      <div
+        class="modal-box wide ranking-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rankingTitle"
+        aria-describedby="rankingDesc"
+        tabindex="-1"
+      >
+        <header class="rooms-head">
+          <div>
+            <h2 id="rankingTitle">Ranking de vitórias</h2>
+            <p id="rankingDesc" class="modal-sub"></p>
+          </div>
+          <button
+            id="refreshRanking"
+            class="btn btn-small btn-felt"
+            title="Atualizar"
+            aria-label="Atualizar ranking"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-refresh" /></svg>
+          </button>
+        </header>
+        <div id="rankingMe" class="ranking-me hidden"></div>
+        <ol id="rankingList" class="ranking-list"></ol>
+        <button class="btn btn-text" data-close>Fechar</button>
       </div>
     </div>
 
@@ -645,6 +690,161 @@
         </header>
         <ul id="roomList" class="room-list"></ul>
         <button class="btn btn-text" data-close>Fechar</button>
+      </div>
+    </div>
+
+    <!-- Conta: entrar ou criar (convidado) e "minha conta" (logado). account.js cuida dos dois. -->
+    <div id="authModal" class="modal hidden">
+      <div
+        class="modal-box account-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="authTitle"
+        aria-describedby="authDesc"
+        tabindex="-1"
+      >
+        <h2 id="authTitle">Sua conta</h2>
+        <p id="authDesc" class="modal-sub">
+          Com conta, seu apelido fica só seu e suas vitórias vão contar no
+          ranking.
+        </p>
+        <div id="authMain" class="account-main">
+        <!-- o botão oficial do Google entra aqui (só se o servidor tiver GOOGLE_CLIENT_ID) -->
+        <div id="googleBox" class="google-box hidden">
+          <div id="googleBtn" class="google-btn"></div>
+          <p class="account-or"><span>ou com apelido e senha</span></p>
+        </div>
+        <div class="account-tabs" role="tablist" aria-label="Entrar ou criar conta">
+          <button
+            id="authTabLogin"
+            type="button"
+            class="account-tab"
+            role="tab"
+            data-mode="login"
+            aria-selected="true"
+            aria-controls="authForm"
+          >
+            Entrar
+          </button>
+          <button
+            id="authTabRegister"
+            type="button"
+            class="account-tab"
+            role="tab"
+            data-mode="register"
+            aria-selected="false"
+            aria-controls="authForm"
+            tabindex="-1"
+          >
+            Criar conta
+          </button>
+        </div>
+        <form id="authForm" class="account-form" role="tabpanel" novalidate>
+          <label for="authNick" class="field-label">Apelido</label>
+          <input
+            id="authNick"
+            name="username"
+            maxlength="16"
+            autocomplete="username"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-describedby="authError"
+            data-autofocus
+          />
+          <label for="authPass" class="field-label">Senha</label>
+          <input
+            id="authPass"
+            name="password"
+            type="password"
+            maxlength="128"
+            autocomplete="current-password"
+            aria-describedby="authHint authError"
+          />
+          <p id="authHint" class="account-hint hidden">
+            Apelido de 3 a 16 letras e senha com pelo menos 8 caracteres. Guarde
+            bem a senha: sem e-mail, não dá para recuperar.
+          </p>
+          <p id="authError" class="field-error hidden"></p>
+          <button id="authSubmit" type="submit" class="btn btn-primary">
+            Entrar
+          </button>
+        </form>
+        </div>
+        <!-- primeira vez com o Google: falta só o apelido -->
+        <form id="googleNickForm" class="account-form hidden" novalidate>
+          <p class="account-hint">
+            Primeira vez por aqui com o Google? Escolha o apelido que vai
+            aparecer na mesa e no ranking.
+          </p>
+          <label for="googleNick" class="field-label">Apelido</label>
+          <input
+            id="googleNick"
+            name="nickname"
+            maxlength="16"
+            autocomplete="nickname"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-describedby="googleNickHint googleNickError"
+          />
+          <p id="googleNickHint" class="account-hint">
+            De 3 a 16 letras: letras, números, espaço, ponto, hífen ou _.
+          </p>
+          <p id="googleNickError" class="field-error hidden"></p>
+          <button id="googleNickSubmit" type="submit" class="btn btn-primary">
+            Criar conta
+          </button>
+        </form>
+        <button type="button" class="btn btn-text" data-close>Agora não</button>
+      </div>
+    </div>
+
+    <div id="accountModal" class="modal hidden">
+      <div
+        class="modal-box account-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="accountTitle"
+        aria-describedby="accountDesc"
+        tabindex="-1"
+      >
+        <h2 id="accountTitle">Minha conta</h2>
+        <p id="accountDesc" class="modal-sub">
+          Você está jogando como <b id="accountNick"></b>.
+        </p>
+        <div class="modal-actions">
+          <button id="logoutBtn" type="button" class="btn">Sair da conta</button>
+          <button type="button" class="btn btn-primary" data-close data-autofocus>
+            Voltar
+          </button>
+        </div>
+        <details id="deleteDetails" class="account-danger">
+          <summary>Apagar minha conta</summary>
+          <form id="deleteForm" class="account-form" novalidate>
+            <p class="account-hint">
+              A conta some de vez e o apelido fica livre para outra pessoa. Não
+              dá para desfazer.
+            </p>
+            <div id="deletePassField" class="account-form">
+              <label for="deletePass" class="field-label">Sua senha</label>
+              <input
+                id="deletePass"
+                name="password"
+                type="password"
+                maxlength="128"
+                autocomplete="current-password"
+                aria-describedby="deleteError"
+              />
+            </div>
+            <div id="deleteGoogleField" class="google-box hidden">
+              <p class="account-hint">Para confirmar, entre com o Google de novo.</p>
+              <div id="googleDeleteBtn" class="google-btn"></div>
+            </div>
+            <p id="deleteError" class="field-error hidden"></p>
+            <button id="deleteSubmit" type="submit" class="btn btn-primary">
+              Apagar minha conta
+            </button>
+          </form>
+        </details>
       </div>
     </div>
 

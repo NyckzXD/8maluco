@@ -9,7 +9,9 @@ import './reactions.js';
 import './cards.js';
 import './audio.js';
 import './chat.js';
+import './account.js';
 import './home.js';
+import './ranking.js';
 import './avatar-editor.js';
 import './howto.js';
 import './lobby.js';
@@ -154,7 +156,8 @@ socket.on('connect', async () => {
   }
 });
 
-socket.on('disconnect', () => $('#netStatus').classList.remove('hidden'));
+// reconexão de propósito (entrou ou saiu da conta) não é queda: não mostra o aviso
+socket.on('disconnect', (reason) => reason !== 'io client disconnect' && $('#netStatus').classList.remove('hidden'));
 
 // O servidor vai reiniciar (deploy): avisa antes da conexão cair; a reconexão cuida do resto.
 socket.on('server:restart', ({ message } = {}) =>

@@ -669,6 +669,150 @@ select:focus {
   color: var(--red-text);
 }
 
+/* logado: o apelido é o da conta (só de leitura; tocar nele abre "Minha conta") */
+.profile input[readonly] {
+  border-color: var(--surface-3);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.account-btn {
+  justify-self: center;
+  margin-top: -6px;
+}
+
+/* ---------- conta (entrar / criar / minha conta) ---------- */
+
+.account-box {
+  max-width: 400px;
+}
+
+/* Entrar | Criar conta: duas abas no mesmo material das abas do avatar */
+.account-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.account-tab {
+  padding: 9px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--silver-300);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+@media (hover: hover) {
+  .account-tab:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+}
+
+.account-tab:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+}
+
+/* a aba escolhida vira papel, como no editor de avatar */
+.account-tab[aria-selected='true'] {
+  background: var(--card-face);
+  color: var(--card-ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-form {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
+.account-form > .btn {
+  margin-top: 8px;
+}
+
+.account-form input {
+  width: 100%;
+}
+
+.account-form .field-label {
+  margin-top: 4px;
+}
+
+.account-hint {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.account-main {
+  display: grid;
+  gap: 14px;
+}
+
+/* o botão oficial do Google (desenhado por ele, num iframe) e o "ou" que separa do formulário */
+.google-box {
+  display: grid;
+  gap: 12px;
+}
+
+.google-btn {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.account-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.account-or::before,
+.account-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* apagar a conta fica escondido atrás de um clique, longe dos botões de sempre */
+.account-danger {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  text-align: left;
+}
+
+.account-danger summary {
+  cursor: pointer;
+  color: var(--red-text);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-align: center;
+}
+
+.account-danger summary:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.account-danger[open] summary {
+  margin-bottom: 10px;
+}
+
 input[aria-invalid='true'] {
   border-color: var(--primary);
 }
@@ -693,6 +837,20 @@ input[aria-invalid='true'] {
   gap: 14px;
   width: 100%;
   min-width: 0;
+}
+
+/* Salas abertas | Ranking: lado a lado, para o menu não ficar mais alto */
+.menu-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* metade da largura: letra um passo menor e numa linha só */
+.home-menu .menu-pair .btn-big {
+  padding-inline: 12px;
+  font-size: var(--fs-lg);
+  white-space: nowrap;
 }
 
 .home-menu .btn-big {
@@ -1125,6 +1283,125 @@ input[aria-invalid='true'] {
 
 .room-list.enter li:nth-child(n + 4) {
   animation-delay: 150ms;
+}
+
+/* ---------- ranking ---------- */
+
+.ranking-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  max-height: min(440px, 52dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: left;
+  scrollbar-width: thin;
+}
+
+.ranking-list li,
+.ranking-me .rank-row {
+  display: grid;
+  grid-template-columns: 2.5ch auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+/* você na lista: borda clara, para achar de longe */
+.ranking-list li.mine,
+.ranking-me .rank-row {
+  box-shadow: inset 0 0 0 2px var(--silver-300);
+}
+
+.rank-pos {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  text-align: center;
+  color: var(--silver);
+}
+
+/* pódio: ouro, prata e o cobre do couro da mesa */
+.ranking-list li:nth-child(1) .rank-pos {
+  color: var(--gold);
+}
+
+.ranking-list li:nth-child(2) .rank-pos {
+  color: var(--silver-300);
+}
+
+.ranking-list li:nth-child(3) .rank-pos {
+  color: #d08a5a;
+}
+
+.rank-name {
+  display: grid;
+  min-width: 0;
+}
+
+.rank-name b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-name small {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.rank-wins {
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.rank-wins b {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+}
+
+.rank-wins small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.ranking-me {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.ranking-me > p {
+  margin: 0;
+  color: var(--silver-300);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.ranking-list .empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 12px;
+  background: none;
+  text-align: center;
+  color: var(--silver-300);
+}
+
+/* no fim da partida: se valeu para o ranking */
+.rank-note {
+  margin: 4px 0 0;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.rank-note:empty {
+  display: none;
 }
 
 @keyframes room-in {
