@@ -2,7 +2,7 @@
 import { SUIT_INFO } from '../../shared/engine.js';
 import { sounds } from './audio.js';
 import { renderCard, suitIcon } from './cards.js';
-import { $, $$, el, nameOf } from './core.js';
+import { $, $$, RANK_NAMES, el, nameOf } from './core.js';
 import { deal } from './deal.js';
 import { syncDiscardTarget } from './hand.js';
 import { reducedMotion } from './suit-picker.js';
@@ -99,9 +99,13 @@ export function renderCenter(prev, g, myTurn, origin) {
   } else {
     const sym = el('b', suit.color === 'red' ? 'red' : '');
     sym.append(suitIcon(g.activeSuit, 'badge-suit'));
-    const label = g.activeRank === '8' ? 'Pediu' : g.activeRank === 'JOKER' ? 'Continua' : 'Pinta';
-    badge.append(document.createTextNode(`${label}: `), sym, document.createTextNode(` ${suit.name}`));
+    const onJoker = g.top?.rank === 'JOKER';
+    const label = onJoker ? 'Continua' : g.activeRank === '8' ? 'Pediu' : 'Pinta';
+    // Sobre o Joker o número de baixo também vale (o 8 entra em tudo, então não precisa dizer).
+    const rank =
+      onJoker && g.activeRank && g.activeRank !== '8' ? ` ou ${RANK_NAMES[g.activeRank] ?? g.activeRank}` : '';
+    badge.append(document.createTextNode(`${label}: `), sym, document.createTextNode(` ${suit.name}${rank}`));
   }
-  badge.classList.toggle('changed', g.activeRank === '8' || g.activeRank === 'JOKER');
+  badge.classList.toggle('changed', g.activeRank === '8' || g.top?.rank === 'JOKER');
   syncDiscardTarget();
 }

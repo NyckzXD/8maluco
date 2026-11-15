@@ -247,9 +247,10 @@ export function playCard(state, playerId, cardId, chosenSuit) {
   // Bateu: a rodada acaba aqui. A carta final não tem efeito (9, 7 e Joker não fazem
   // ninguém comprar, Ás não pula), e a contagem usa as mãos como estavam.
   if (player.hand.length === 0) {
-    if (card.rank !== JOKER)
+    if (card.rank !== JOKER) {
       state.activeSuit = card.rank === '8' && SUITS.includes(chosenSuit) ? chosenSuit : card.suit;
-    state.activeRank = card.rank;
+      state.activeRank = card.rank;
+    }
     endRound(state, i, events);
     return { ok: true, events };
   }
@@ -289,9 +290,8 @@ export function playCard(state, playerId, cardId, chosenSuit) {
       state.activeRank = card.rank;
       events.push({ type: 'suit', playerId, suit: state.activeSuit });
       break;
-    case JOKER: // todos os outros compram 1; a pinta de baixo continua valendo
+    case JOKER: // todos os outros compram 1; a pinta e o número da carta de baixo continuam valendo
       for (let k = nextActive(state, i); k !== i; k = nextActive(state, k)) penalty(state, k, 1, events, JOKER);
-      state.activeRank = JOKER;
       break;
     default:
       state.activeSuit = card.suit;
