@@ -1,4 +1,5 @@
 // Resultado da rodada, fim de partida e revanche.
+import { RANKED_MIN_HUMANS } from '../../shared/ranking.js';
 import { icon, renderCard, sortHand } from './cards.js';
 import { $, $$, avatar, el, emit, memberOf, nameOf } from './core.js';
 import { hideModal, openModal } from './modals.js';
@@ -90,6 +91,21 @@ function waitDots() {
   return dots;
 }
 
+// Fim da partida: se ela valeu para o ranking (e o que faltou, se não valeu).
+function renderRankNote(g, s, over) {
+  const me = s.members.find((m) => m.id === s.me);
+  const seated = g.players.some((p) => p.id === s.me);
+  let text = '';
+  if (over && seated && me?.account)
+    text = s.ranked
+      ? g.winnerId === s.me
+        ? '+1 vitória no ranking!'
+        : 'Esta partida contou para o ranking.'
+      : `Esta não valeu para o ranking: precisa de ${RANKED_MIN_HUMANS} pessoas na mesa (bots não contam).`;
+  else if (over && seated && s.ranked) text = 'Entre numa conta para suas vitórias contarem no ranking.';
+  $('#rankNote').textContent = text;
+}
+
 export function renderRoundModal(g, s) {
   const modal = $('#roundModal');
   const lr = g.lastRound;
@@ -118,6 +134,7 @@ export function renderRoundModal(g, s) {
       ? `Fim de jogo na rodada ${lr.round}. Os outros chegaram a ${limit} pontos.`
       : `Fim da rodada ${lr.round}. Quem chegar a ${limit} pontos está fora.`;
     modal.classList.toggle('game-over', over);
+    renderRankNote(g, s, over);
     rows.replaceChildren();
     rows.classList.remove('settled');
     const results = [...lr.results].sort(

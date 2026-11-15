@@ -21,7 +21,7 @@ function readUser() {
 export let user = store.get('om_session') ? readUser() : null;
 
 // Pedido para /api com a sessão. Nunca joga erro: sem rede, devolve { ok: false, error }.
-async function api(method, path, body) {
+export async function api(method, path, body) {
   const session = store.get('om_session');
   try {
     const res = await fetch(`/api${path}`, {

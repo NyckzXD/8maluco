@@ -157,6 +157,22 @@ export function createApi({
     }),
   );
 
+  // Ranking: os primeiros e, com sessão, a posição de quem pediu (mesmo fora dos primeiros).
+  api.get(
+    '/leaderboard',
+    handle((req, res) => {
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+      const all = accounts().leaderboard();
+      const user = bearer(req) ? accounts().userForSession(bearer(req)) : null;
+      res.json({
+        ok: true,
+        total: all.length,
+        top: all.slice(0, limit),
+        me: (user && all.find((r) => r.id === user.id)) ?? null,
+      });
+    }),
+  );
+
   api.get(
     '/me',
     signedIn((_req, res, _body, user) => res.json({ ok: true, user })),

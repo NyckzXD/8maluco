@@ -55,6 +55,15 @@ const dummy = async () => (dummyHash ??= await hashPassword(randomBytes(16).toSt
  */
 
 /** @typedef {{ ok: true, user: object, session: string } | { ok: false, error: string, status: number }} AuthResult */
+/** @typedef {{ id: number, nickname: string, avatar: object | null, rank: number, wins: number, games: number, rounds: number }} LeaderRow */
+
+const parseAvatar = (text) => {
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
+  }
+};
 
 const sha256 = (text) => createHash('sha256').update(text).digest('hex');
 
@@ -83,7 +92,56 @@ export class Accounts {
       deleteSession: db.prepare('DELETE FROM sessions WHERE token_hash = ?'),
       pruneUser: db.prepare('DELETE FROM sessions WHERE user_id = ? AND expires_at <= ?'),
       prune: db.prepare('DELETE FROM sessions WHERE expires_at <= ?'),
+      insertGame: db.prepare('INSERT INTO games (room_code, finished_at, ranked, humans, bots) VALUES (?, ?, ?, ?, ?)'),
+      // conta apagada no meio da partida: o SELECT não acha ninguém e a linha não entra
+      insertGamePlayer: db.prepare(
+        'INSERT INTO game_players (game_id, user_id, won, rounds_won) SELECT ?, id, ?, ? FROM users WHERE id = ?',
+      ),
+      setAvatar: db.prepare('UPDATE users SET avatar = ? WHERE id = ?'),
+      // Todo mundo que já jogou partida valendo: mais vitórias primeiro; empate, quem precisou de
+      // menos partidas; depois o apelido. RANK() dá a mesma posição para quem empatou de verdade.
+      leaderboard: db.prepare(`
+        SELECT u.id, u.nickname, u.avatar,
+          SUM(gp.won) AS wins, COUNT(*) AS games, SUM(gp.rounds_won) AS rounds,
+          RANK() OVER (ORDER BY SUM(gp.won) DESC, COUNT(*) ASC) AS rank
+        FROM game_players gp
+        JOIN games g ON g.id = gp.game_id AND g.ranked = 1
+        JOIN users u ON u.id = gp.user_id
+        GROUP BY u.id
+        ORDER BY rank, u.nickname_key`),
     };
+    /** @type {LeaderRow[] | null} */
+    this.leaderCache = null; // refeito só quando muda (partida gravada, conta apagada)
+  }
+
+  // ---------- ranking ----------
+
+  // Grava uma partida que acabou (resumo do Room.finishRecord). O avatar de cada um vai junto
+  // para a conta, para o ranking mostrar a cara de quem está lá.
+  /** @param {import('./rooms.js').GameSummary} summary */
+  recordGame({ code, ranked, humans, bots, players }) {
+    this.db.transaction(() => {
+      const gameId = this.q.insertGame.run(code, this.now(), ranked ? 1 : 0, humans, bots).lastInsertRowid;
+      for (const p of players) {
+        this.q.insertGamePlayer.run(gameId, p.won ? 1 : 0, p.roundsWon, p.userId);
+        if (p.avatar) this.q.setAvatar.run(JSON.stringify(p.avatar), p.userId);
+      }
+    })();
+    this.leaderCache = null;
+  }
+
+  /** @returns {LeaderRow[]} */
+  leaderboard() {
+    this.leaderCache ??= this.q.leaderboard.all().map((/** @type {any} */ r) => ({
+      id: r.id,
+      nickname: r.nickname,
+      avatar: parseAvatar(r.avatar),
+      rank: r.rank,
+      wins: r.wins,
+      games: r.games,
+      rounds: r.rounds,
+    }));
+    return this.leaderCache;
   }
 
   // O que sai para o navegador: nada de hash, sub do Google ou chave interna.
@@ -210,6 +268,7 @@ export class Accounts {
         ? { ok: false, error: 'Senha incorreta', status: 401 }
         : { ok: false, error: 'Confirme com o Google para apagar a conta', status: 401 };
     this.q.deleteUser.run(userId);
+    this.leaderCache = null;
     return { ok: true };
   }
 

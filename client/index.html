@@ -100,11 +100,18 @@
                 <svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg
                 >Criar sala
               </button>
-              <button id="roomsBtn" class="btn btn-big">
-                <svg class="icon" aria-hidden="true">
-                  <use href="#i-users" /></svg
-                >Salas abertas
-              </button>
+              <div class="menu-pair">
+                <button id="roomsBtn" class="btn btn-big">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#i-users" /></svg
+                  >Salas abertas
+                </button>
+                <button id="rankingBtn" class="btn btn-big">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#i-trophy" /></svg
+                  >Ranking
+                </button>
+              </div>
               <div class="join-row">
                 <input
                   id="codeInput"
@@ -601,6 +608,7 @@
         <header class="results-head">
           <h2 id="roundTitle"></h2>
           <p id="roundSub" class="results-sub"></p>
+          <p id="rankNote" class="rank-note"></p>
         </header>
         <!-- Um jogador por linha: as cartas que sobraram, os pontos da rodada e o total até o limite. -->
         <ol id="roundRows" class="results-list"></ol>
@@ -623,6 +631,35 @@
           <p id="rematchWait" class="wait-line" aria-live="polite"></p>
           <button id="againBtn" class="btn btn-text">Voltar para a sala</button>
         </div>
+      </div>
+    </div>
+
+    <div id="rankingModal" class="modal hidden">
+      <div
+        class="modal-box wide ranking-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rankingTitle"
+        aria-describedby="rankingDesc"
+        tabindex="-1"
+      >
+        <header class="rooms-head">
+          <div>
+            <h2 id="rankingTitle">Ranking de vitórias</h2>
+            <p id="rankingDesc" class="modal-sub"></p>
+          </div>
+          <button
+            id="refreshRanking"
+            class="btn btn-small btn-felt"
+            title="Atualizar"
+            aria-label="Atualizar ranking"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-refresh" /></svg>
+          </button>
+        </header>
+        <div id="rankingMe" class="ranking-me hidden"></div>
+        <ol id="rankingList" class="ranking-list"></ol>
+        <button class="btn btn-text" data-close>Fechar</button>
       </div>
     </div>
 

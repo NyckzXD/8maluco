@@ -139,6 +139,8 @@ export function createGameServer(options = {}) {
     timing: config.timing,
     // sem banco aberto não há conta nenhuma (em produção a subida já abre)
     nicknameTaken: (name) => !!accounts?.nicknameTaken(name),
+    // só chega aqui partida com alguém logado, e logar já abriu o banco
+    onGameOver: (summary) => getAccounts().recordGame(summary),
   });
 
   app.get('/health', (_req, res) =>

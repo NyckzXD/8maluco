@@ -101,7 +101,7 @@ test('as contas ficam no arquivo entre um processo e outro', async () => {
   assert.ok((await accounts.register({ nickname: 'Caio', password: PASS })).ok);
   accounts.db.close();
   accounts = new Accounts(openDatabase(file));
-  assert.equal(accounts.db.pragma('user_version', { simple: true }), 1);
+  assert.equal(accounts.db.pragma('user_version', { simple: true }), 2);
   const res = await accounts.login({ nickname: 'caio', password: PASS });
   assert.ok(res.ok);
   accounts.db.close();

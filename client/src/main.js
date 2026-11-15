@@ -11,6 +11,7 @@ import './audio.js';
 import './chat.js';
 import './account.js';
 import './home.js';
+import './ranking.js';
 import './avatar-editor.js';
 import './howto.js';
 import './lobby.js';

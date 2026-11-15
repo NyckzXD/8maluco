@@ -5,6 +5,7 @@ import { chooseMove } from '../shared/bot.js';
 import { randomAvatar, sanitizeAvatar } from '../shared/avatar.js';
 import { REACTION_LIMIT, isReaction } from '../shared/reactions.js';
 import { BOT_NAME_ERROR, RESERVED_NAME_ERROR, isBotName } from '../shared/names.js';
+import { RANKED_MIN_HUMANS } from '../shared/ranking.js';
 
 export const MAX_PLAYERS = 8; // lugares na mesa
 export const MAX_SPECTATORS = 4; // e mais estes na plateia (só assistem até abrir lugar)
@@ -21,6 +22,11 @@ const EMPTY_ROOM_MS = 5 * 60_000;
 const SNAPSHOT_VERSION = 1;
 const SNAPSHOT_MAX_AGE_MS = 10 * 60_000; // salas gravadas há mais que isso não voltam
 const RESTORE_HOST_GRACE_MS = 15_000; // depois de reiniciar, o anfitrião tem mais tempo para voltar
+
+/**
+ * @typedef {{ code: string, ranked: boolean, humans: number, bots: number,
+ *   players: { userId: number, won: boolean, roundsWon: number, avatar: object | null }[] }} GameSummary
+ */
 
 export const BOT_NAMES = [
   'Robô Scarlet',
@@ -66,12 +72,18 @@ const clean = (text, max) =>
 export class RoomManager {
   // `timing` troca os tempos de espera (os testes de rede não querem esperar 5s de verdade).
   // `nicknameTaken` diz se um apelido é de alguma conta (convidado não pode usar).
-  /** @param {any} io @param {{ timing?: object, nicknameTaken?: (name: string) => boolean }} [options] */
-  constructor(io, { timing = {}, nicknameTaken = (_name) => false } = {}) {
+  // `onGameOver` recebe o resumo de cada partida que teve alguém com conta (o ranking grava).
+  /**
+   * @param {any} io
+   * @param {{ timing?: object, nicknameTaken?: (name: string) => boolean,
+   *   onGameOver?: (summary: GameSummary) => void }} [options]
+   */
+  constructor(io, { timing = {}, nicknameTaken = (_name) => false, onGameOver = (_summary) => {} } = {}) {
     this.io = io;
     this.rooms = new Map();
     this.timing = { hostGraceMs: HOST_GRACE_MS, ...timing };
     this.nicknameTaken = nicknameTaken;
+    this.onGameOver = onGameOver;
   }
 
   create({ isPublic = true } = {}) {
@@ -292,6 +304,7 @@ class Room {
       game: this.game,
       ready: [...this.ready],
       rematchVotes: [...this.rematchVotes],
+      record: this.record ?? null,
       banned: [...this.banned],
     };
   }
@@ -306,6 +319,7 @@ class Room {
     room.chat = Array.isArray(d.chat) ? d.chat : [];
     room.game = d.game ?? null;
     room.ready = new Set(d.ready ?? []);
+    room.record = d.record ?? null;
     room.rematchVotes = new Set(d.rematchVotes ?? []);
     room.banned = new Set(d.banned ?? []);
     room.resumePending = room.game?.phase === 'playing';
@@ -571,8 +585,47 @@ class Room {
     this.ready.clear();
     // na mesa entra quem couber, pela ordem de chegada; o resto continua na plateia
     this.game = createGame(this.members.slice(0, MAX_PLAYERS).map((m) => ({ id: m.id, name: m.name })));
+    this.startRecord();
     this.system(message);
     this.apply(startRound(this.game));
+  }
+
+  // ---------- ranking ----------
+  // Quem sentou no começo da partida: a conta de cada lugar (quem sai no meio ainda conta a
+  // partida, sem vitória) e se a mesa tinha gente o bastante para valer no ranking.
+
+  startRecord() {
+    const players = this.game.players.map((p) => {
+      const m = this.member(p.id);
+      return { id: p.id, userId: m?.userId ?? null, isBot: !!m?.isBot, roundsWon: 0 };
+    });
+    const humans = players.filter((p) => !p.isBot).length;
+    this.record = { players, humans, ranked: humans >= RANKED_MIN_HUMANS, done: false };
+  }
+
+  // Fim da partida: manda o resumo para o ranking (só se tinha alguém com conta).
+  finishRecord(winnerId) {
+    const rec = this.record;
+    if (!rec || rec.done) return;
+    rec.done = true;
+    const accounts = rec.players.filter((p) => p.userId);
+    if (!accounts.length) return;
+    try {
+      this.manager.onGameOver({
+        code: this.code,
+        ranked: rec.ranked,
+        humans: rec.humans,
+        bots: rec.players.length - rec.humans,
+        players: accounts.map((p) => ({
+          userId: p.userId,
+          won: p.id === winnerId,
+          roundsWon: p.roundsWon,
+          avatar: this.member(p.id)?.avatar ?? null,
+        })),
+      });
+    } catch (err) {
+      console.error(`[ranking] sala ${this.code}:`, err);
+    }
   }
 
   // ---------- revanche ----------
@@ -684,11 +737,16 @@ class Room {
     newTurn ??= events.some((e) => ['play', 'pass', 'roundStart', 'left'].includes(e.type));
 
     const end = events.find((e) => e.type === 'roundEnd');
+    if (end) {
+      const seat = this.record?.players.find((p) => p.id === end.winnerId);
+      if (seat) seat.roundsWon++;
+    }
     if (end) this.system(`${this.nameOf(end.winnerId)} bateu e venceu a rodada ${end.round}!`);
     for (const e of events)
       if (e.type === 'left' && g.phase !== 'gameOver') this.system(`${this.nameOf(e.playerId)} saiu da mesa`);
     const over = events.find((e) => e.type === 'gameOver');
     if (over) {
+      this.finishRecord(over.winnerId);
       this.system(`${this.nameOf(over.winnerId)} é o grande vencedor!`);
       this.rematchVotes.clear();
     }
@@ -835,6 +893,7 @@ class Room {
       settings: this.settings,
       maxPlayers: MAX_PLAYERS,
       maxSpectators: MAX_SPECTATORS,
+      ranked: !!this.record?.ranked, // a partida atual (ou a que acabou) vale para o ranking
       spectators: this.members.filter((m) => this.spectating(m.id)).map((m) => m.id),
       members: this.members.map((m) => ({
         id: m.id,

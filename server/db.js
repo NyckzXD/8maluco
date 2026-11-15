@@ -25,6 +25,25 @@ const MIGRATIONS = [
   );
   CREATE INDEX sessions_user ON sessions(user_id);
   `,
+  // 2: partidas, para o ranking (só as que tiveram alguém com conta)
+  `
+  CREATE TABLE games (
+    id INTEGER PRIMARY KEY,
+    room_code TEXT NOT NULL,
+    finished_at INTEGER NOT NULL,
+    ranked INTEGER NOT NULL,              -- 1: tinha gente o bastante (shared/ranking.js)
+    humans INTEGER NOT NULL,
+    bots INTEGER NOT NULL
+  );
+  CREATE TABLE game_players (
+    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    won INTEGER NOT NULL,
+    rounds_won INTEGER NOT NULL,
+    PRIMARY KEY (game_id, user_id)
+  );
+  CREATE INDEX game_players_user ON game_players(user_id);
+  `,
 ];
 
 /** @param {string} file caminho do arquivo, ou ":memory:" (testes) */
