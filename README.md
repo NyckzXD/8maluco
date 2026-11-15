@@ -119,7 +119,7 @@ Para ligar:
 
 - **Baralho**: 52 cartas + 2 Jokers. Entra mais um baralho a cada 3 jogadores (de 4 a 6 jogadores, 2 baralhos; de 7 a 8, 3). Sem isso, as mesas grandes ficavam sem cartas e travavam. Se até o monte acabar, entra um baralho novo.
 - **Abrir o monte com especial**: vale o efeito normal. Se abrir com Joker, não há pinta embaixo, então o próximo joga qualquer carta.
-- **A carta que bate ainda vale**: bater com um 9 faz o próximo comprar 2 antes da contagem dos pontos.
+- **A carta que bate não tem efeito**: bater com 9, 7 ou Joker encerra a rodada na hora, sem ninguém comprar, e a contagem usa as mãos como estavam.
 - **Tempo por vez**: 30s por padrão, configurável. Se o tempo acaba, o jogo faz uma jogada automática. Jogador desconectado joga no automático até voltar.
 - Mesa com 2 a 8 jogadores.
 

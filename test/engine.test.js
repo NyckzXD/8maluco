@@ -238,11 +238,20 @@ test('fim da rodada soma os pontos de quem ficou com cartas', () => {
   );
 });
 
-test('a carta que bate ainda aplica o efeito (9 no último lance)', () => {
-  const s = table([[c('9', 'H')], [c('2', 'C')], filler(), filler()]);
-  s.drawPile = [c('K', 'S', 1), c('Q', 'S', 2)];
-  playCard(s, 'p0', c('9', 'H').id);
-  assert.equal(s.players[1].score, 22);
+test('a carta que bate não faz ninguém comprar (9, 7 e Joker no último lance)', () => {
+  for (const last of [c('9', 'H'), c('7', 'H'), joker()]) {
+    const s = table([[last], [c('2', 'C')], [c('3', 'C')], [c('4', 'C')]]);
+    s.drawPile = [c('K', 'S', 1), c('Q', 'S', 2), c('J', 'S', 3)];
+    const r = playCard(s, 'p0', last.id);
+    assert.ok(r.ok);
+    assert.equal(s.phase, 'roundOver');
+    assert.equal(s.drawPile.length, 3);
+    assert.ok(!r.events.some((e) => e.type === 'penalty' || e.type === 'skip'));
+    assert.deepEqual(
+      s.players.map((p) => p.score),
+      [0, 2, 3, 4],
+    );
+  }
 });
 
 test('quem passa de 100 é eliminado e o último que sobra vence', () => {
