@@ -769,6 +769,10 @@ select:focus {
   display: flex;
   justify-content: center;
   min-height: 44px;
+  /* O botão vem num iframe do Google, cuja página não declara color-scheme (vale claro). O
+     :root do jogo é dark, e o iframe herdaria isso: com os dois diferentes, o Chrome pinta um
+     fundo branco opaco atrás do iframe. Claro aqui deixa os dois iguais e o fundo transparente. */
+  color-scheme: light;
 }
 
 .account-or {
