@@ -100,7 +100,7 @@ export function renderCenter(prev, g, myTurn, origin) {
     const sym = el('b', suit.color === 'red' ? 'red' : '');
     sym.append(suitIcon(g.activeSuit, 'badge-suit'));
     const onJoker = g.top?.rank === 'JOKER';
-    const label = onJoker ? 'Continua' : g.activeRank === '8' ? 'Pediu' : 'Pinta';
+    const label = onJoker ? 'Continua' : g.activeRank === '8' ? 'Pediu' : 'Naipe';
     // Sobre o Joker o número de baixo também vale (o 8 entra em tudo, então não precisa dizer).
     const rank =
       onJoker && g.activeRank && g.activeRank !== '8' ? ` ou ${RANK_NAMES[g.activeRank] ?? g.activeRank}` : '';
