@@ -55,6 +55,19 @@ function setUser(next, session) {
   }
 }
 
+// O servidor encerrou a sessão desta conexão (saiu da conta noutra aba ou aparelho, ou a conta
+// foi apagada): volta a ser convidado aqui também. O servidor derruba a conexão logo depois; ela
+// volta como convidado e, se estava numa sala, entra de novo pelo token, como numa queda.
+let endingHere = false; // esta aba está saindo ou apagando a conta: o setUser dela cuida de tudo
+socket.on('session:ended', ({ reason } = {}) => {
+  if (endingHere || !store.get('om_session')) return;
+  user = null;
+  store.remove('om_session');
+  store.remove('om_user');
+  renderAccount();
+  flash(reason === 'deleted' ? 'A conta foi apagada.' : 'Você saiu da conta.', { info: true });
+});
+
 // A tela inicial com e sem conta: logado, o apelido é o da conta (o campo fica só de leitura).
 export function renderAccount() {
   const input = /** @type {HTMLInputElement} */ ($('#nameInput'));
@@ -293,7 +306,9 @@ nickForm.addEventListener('submit', async (e) => {
 // ---------- minha conta ----------
 
 $('#logoutBtn').addEventListener('click', async () => {
+  endingHere = true;
   await api('POST', '/auth/logout');
+  endingHere = false;
   gis()?.disableAutoSelect(); // o Google não entra sozinho de novo nesta conta
   closeModal('accountModal');
   setUser(null, null);
@@ -345,7 +360,9 @@ deleteForm.addEventListener('submit', async (e) => {
 async function deleteAccount(body) {
   const btn = /** @type {HTMLButtonElement} */ ($('#deleteSubmit'));
   btn.disabled = true;
+  endingHere = true;
   const res = await api('DELETE', '/account', body);
+  endingHere = false;
   btn.disabled = false;
   if (!res.ok) {
     if (res.code === 'session') {

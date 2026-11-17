@@ -157,7 +157,11 @@ socket.on('connect', async () => {
 });
 
 // reconexão de propósito (entrou ou saiu da conta) não é queda: não mostra o aviso
-socket.on('disconnect', (reason) => reason !== 'io client disconnect' && $('#netStatus').classList.remove('hidden'));
+socket.on('disconnect', (reason) => {
+  // o servidor só derruba de propósito quando a sessão da conta acabou (account.js): volta como convidado
+  if (reason === 'io server disconnect') socket.connect();
+  else if (reason !== 'io client disconnect') $('#netStatus').classList.remove('hidden');
+});
 
 // O servidor vai reiniciar (deploy): avisa antes da conexão cair; a reconexão cuida do resto.
 socket.on('server:restart', ({ message } = {}) =>

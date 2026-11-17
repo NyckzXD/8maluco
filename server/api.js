@@ -40,6 +40,7 @@ function limiter({ max, windowMs }) {
  *   limits?: Partial<typeof AUTH_LIMITS>,
  *   googleClientId?: string | null,
  *   verifyGoogle?: ((credential: unknown) => Promise<string | null>) | null,
+ *   onSessionEnded?: (ended: { token?: string | null, userId?: number | null }) => void,
  * }} options
  */
 export function createApi({
@@ -49,6 +50,7 @@ export function createApi({
   limits = {},
   googleClientId = null,
   verifyGoogle = null,
+  onSessionEnded = () => {},
 }) {
   const L = { ...AUTH_LIMITS, ...limits };
   const loginIp = limiter(L.loginIp);
@@ -152,7 +154,9 @@ export function createApi({
   api.post(
     '/auth/logout',
     handle((req, res) => {
-      accounts().logout(bearer(req));
+      const token = bearer(req);
+      accounts().logout(token);
+      if (token) onSessionEnded({ token });
       res.json({ ok: true });
     }),
   );
@@ -184,7 +188,10 @@ export function createApi({
       // conta do Google confirma entrando com o Google de novo (o sub sai do token, nunca do pedido)
       const googleSub = verifyGoogle && body.credential ? await verifyGoogle(body.credential) : null;
       const password = typeof body.password === 'string' ? body.password : '';
-      send(res, await accounts().deleteAccount(user.id, { password, googleSub }));
+      const result = await accounts().deleteAccount(user.id, { password, googleSub });
+      // todas as sessões da conta sumiram junto (CASCADE): as conexões abertas também caem
+      if (result.ok) onSessionEnded({ userId: user.id });
+      send(res, result);
     }),
   );
 

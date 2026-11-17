@@ -9,7 +9,7 @@ import { Accounts } from './auth.js';
 import { openDatabase } from './db.js';
 import { googleVerifier } from './google.js';
 import { RoomManager, takeSlot } from './rooms.js';
-import { loadSnapshot, saveSnapshot } from './snapshot.js';
+import { loadSnapshot, saveSnapshot, startSnapshots } from './snapshot.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -50,6 +50,41 @@ export function configFromEnv(env = process.env) {
     // "Entrar com o Google": o Client ID do Google Cloud (README). Sem ele, o botão nem aparece.
     googleClientId: env.GOOGLE_CLIENT_ID?.trim() || null,
   };
+}
+
+// Content-Security-Policy da página. Tudo vem da própria origem (fontes em /fonts, cartas, sons,
+// o tempo real em /socket.io), menos o "Entrar com o Google" (script, estilo, iframe e chamadas
+// em accounts.google.com/gsi) e as fotos de perfil dele. `data:` cobre os SVGs dentro do CSS;
+// 'unsafe-inline' no estilo é pelos style="" que o cliente monta (cards.js, lobby.js) e pelo
+// Vite, que injeta o CSS em <style> no desenvolvimento. Fora de produção, o HMR do Vite fala
+// por WebSocket noutra porta, então o connect-src libera ws: lá.
+export function contentSecurityPolicy({ production = true } = {}) {
+  const gsi = 'https://accounts.google.com/gsi/';
+  return [
+    "default-src 'self'",
+    `script-src 'self' ${gsi}client`,
+    `style-src 'self' 'unsafe-inline' ${gsi}style`,
+    "img-src 'self' data: blob: https://*.googleusercontent.com",
+    "font-src 'self' data:",
+    `connect-src 'self' ${gsi}${production ? '' : ' ws: wss:'}`,
+    `frame-src ${gsi}`,
+    "media-src 'self' blob: data:",
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
+
+// Cache dos arquivos do cliente: /assets/ tem hash no nome (um build novo gera nomes novos),
+// então guarda por um ano; a página, o manifest e o service worker sempre revalidam, para o
+// build novo chegar logo. O resto (fontes, cartas, sons) fica no padrão do express (ETag).
+export function setStaticCache(res, file) {
+  const path = file.replaceAll('\\', '/');
+  if (/\/assets\//.test(path)) res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  else if (/\.html$|\/sw\.js$|\/manifest\.json$/.test(path)) res.set('Cache-Control', 'no-cache');
 }
 
 // IP de quem conectou. Atrás de proxy, o x-forwarded-for tem o IP real na posição de quem
@@ -98,6 +133,16 @@ export function createGameServer(options = {}) {
   // gzip/brotli nos arquivos de texto (app.js e style.css passam de 100KB cada); imagens e
   // fontes já vêm comprimidas e o pacote as deixa como estão
   app.use(compression());
+  // Cabeçalhos de segurança em tudo: CSP, nada de ser posto em iframe de outro site, nada de o
+  // navegador adivinhar o tipo do arquivo.
+  const csp = contentSecurityPolicy({ production: config.production });
+  app.use((_req, res, next) => {
+    res.set('Content-Security-Policy', csp);
+    res.set('X-Frame-Options', 'DENY');
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
   // Contas: o banco só abre no primeiro uso (os testes que não mexem em conta não criam arquivo);
   // em produção, a subida já chama accounts() para um disco com problema aparecer logo.
   let accounts = null;
@@ -113,11 +158,13 @@ export function createGameServer(options = {}) {
       googleClientId: config.googleClientId,
       // os testes trocam o verificador (não dá para pedir token de verdade ao Google)
       verifyGoogle: options.verifyGoogle ?? (config.googleClientId ? googleVerifier(config.googleClientId) : null),
+      // saiu da conta ou apagou: as conexões abertas com ela não continuam valendo
+      onSessionEnded: (ended) => endSessions(ended),
     }),
   );
   const client = options.client ?? `${root}dist`;
   if (typeof client === 'function') app.use(client);
-  else if (client && existsSync(client)) app.use(express.static(client));
+  else if (client && existsSync(client)) app.use(express.static(client, { setHeaders: setStaticCache }));
   const missingClient = typeof client === 'string' && !existsSync(client) && config.production;
   if (missingClient)
     console.error(
@@ -180,15 +227,37 @@ export function createGameServer(options = {}) {
   io.use((socket, next) => {
     const session = socket.handshake.auth?.session;
     socket.data.user = null;
+    socket.data.session = null;
     if (typeof session === 'string' && session) {
       try {
         socket.data.user = getAccounts().userForSession(session);
+        if (socket.data.user) socket.data.session = session;
       } catch (err) {
         console.error('[auth] sessão do socket:', err);
       }
     }
     next();
   });
+
+  // Sessão encerrada (logout: aquele token; conta apagada: todas as sessões da conta). As conexões
+  // que entraram com ela deixam de valer na hora: o servidor avisa (`session:ended`, o cliente
+  // limpa a sessão guardada) e derruba a conexão; o cliente reconecta como convidado e volta
+  // para a sala pelo token, como numa queda. Devolve quantas conexões caíram.
+  /** @param {{ token?: string | null, userId?: number | null }} ended */
+  function endSessions({ token = null, userId = null }) {
+    let count = 0;
+    for (const socket of io.sockets.sockets.values()) {
+      const { user, session } = socket.data;
+      if (!user) continue;
+      if (!((token && session === token) || (userId != null && user.id === userId))) continue;
+      socket.data.user = null;
+      socket.data.session = null;
+      socket.emit('session:ended', { reason: userId != null ? 'deleted' : 'logout' });
+      socket.disconnect(true);
+      count++;
+    }
+    return count;
+  }
 
   io.on('connection', (socket) => {
     const reply = (ack, result) => ack && ack(result ?? { ok: true });
@@ -279,9 +348,18 @@ export function createGameServer(options = {}) {
   // Desligamento limpo: avisa as salas, para os timers, grava as salas (com `snapshotFile`),
   // fecha as conexões e a porta.
   let closing = null;
+  // Gravação periódica das salas (um crash ou kill não perde tudo); o desligamento para o timer
+  // e grava uma última vez.
+  /** @type {ReturnType<typeof startSnapshots> | null} */
+  let autosave = null;
+  const startAutosave = (file = config.snapshotFile, intervalMs = undefined) => {
+    if (file && !autosave) autosave = startSnapshots(rooms, file, { intervalMs });
+    return autosave;
+  };
   const shutdown = ({ snapshotFile = null } = {}) =>
     (closing ??= new Promise(
       /** @param {(value?: void) => void} resolve */ (resolve) => {
+        autosave?.stop();
         rooms.shutdown(
           snapshotFile
             ? 'O servidor vai reiniciar. A partida continua quando ele voltar!'
@@ -306,7 +384,7 @@ export function createGameServer(options = {}) {
       },
     ));
 
-  return { app, server, io, rooms, config, shutdown, accounts: getAccounts };
+  return { app, server, io, rooms, config, shutdown, startAutosave, endSessions, accounts: getAccounts };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
@@ -336,6 +414,7 @@ if (isMain) {
   if (game.config.snapshotFile) {
     const restored = loadSnapshot(game.rooms, game.config.snapshotFile);
     if (restored) console.log(`${restored} sala(s) de volta do último desligamento`);
+    game.startAutosave();
   }
   game.server.listen(PORT, () => {
     console.log(`8 Maluco rodando em http://localhost:${PORT}`);
