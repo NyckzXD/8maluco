@@ -278,9 +278,3 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
     - payloads malformados em todos os 17 eventos, depois disso uma sala nova funciona (26).
 
     O `test/server.test.js` foi absorvido aqui, e as referências a ele nas tarefas 26 e 27 foram atualizadas. Rodei o arquivo 10 vezes seguidas, sem nenhuma falha.
-
-
-
-
-
-Colocar Voz do charles no game
