@@ -673,8 +673,16 @@ class Room {
     // quem caiu não entra na revanche (como na volta para a sala)
     for (const m of this.members.filter((x) => !x.isBot && !x.connected)) {
       clearTimeout(m.graceTimer);
+      // o anfitrião caiu e ficou de fora: o cargo passa antes de ele sair (como no leave())
+      const heir = m.id === this.hostId ? this.nextHuman(m.id, (x) => x.connected) : undefined;
       this.members = this.members.filter((x) => x.id !== m.id);
       this.system(`${m.name} saiu da sala`);
+      if (heir) this.setHost(heir.id);
+      else if (heir === null) {
+        // ninguém conectado para assumir: o próximo que entrar vira anfitrião (join())
+        clearTimeout(this.hostTimer);
+        this.hostId = null;
+      }
     }
     if (this.members.length < 2) return false;
     this.newGame('Revanche! Mesma mesa, partida nova. Boa sorte!');
