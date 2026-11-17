@@ -77,7 +77,7 @@
   --red-600: #c4141b;
   --red-700: #8e0e13;
   --red-900: #3a0608;
-  --black: #0a0908;
+  --black: #040303;
   --silver: #c2c1c2;
   --silver-300: #dcdbdc;
 
@@ -96,8 +96,8 @@
   --accent: var(--racing-red);
   --red-text: var(--red-400);
   /* mesa: feltro verde de carteado e borda de couro escuro */
-  --felt: #17543c;
-  --felt-dark: #0e3a29;
+  --felt: #1b7148;
+  --felt-dark: #0f4a2f;
   --felt-print: rgba(255, 255, 255, 0.07);
   --rail: #1c1311;
   --rail-edge: #2e201c;
@@ -192,7 +192,7 @@ body::before {
 
 /* Na mesa a estampa some quase toda, para não competir com o feltro. */
 body:has(> #game:not(.hidden))::before {
-  opacity: 0.4;
+  opacity: 0.18;
 }
 
 /* sem o atraso do toque duplo para zoom nos controles */
@@ -642,18 +642,26 @@ select:focus {
   }
 }
 
-.profile input {
-  width: 100%;
-  font-weight: 600;
-  text-align: center;
-}
-
-/* apelido: rótulo visível em cima e erro logo embaixo do campo */
+/* apelido: é obrigatório para jogar, então abre o menu, do tamanho dos botões, com o rótulo
+   visível em cima e o erro logo embaixo do campo */
 .name-field {
   display: grid;
   gap: 6px;
   width: 100%;
   text-align: center;
+}
+
+.name-field input {
+  width: 100%;
+  min-height: 60px;
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  text-align: center;
+}
+
+.name-field .field-label {
+  font-size: var(--fs-md);
+  color: #fff;
 }
 
 .field-label {
@@ -670,7 +678,7 @@ select:focus {
 }
 
 /* logado: o apelido é o da conta (só de leitura; tocar nele abre "Minha conta") */
-.profile input[readonly] {
+.name-field input[readonly] {
   border-color: var(--surface-3);
   background: var(--surface-2);
   cursor: pointer;
@@ -2026,11 +2034,12 @@ input[aria-invalid='true'] {
 /* ---------- mesa ---------- */
 
 /* A 1ª coluna é um "espelho" vazio do painel lateral (placar/chat), para que
-   a mesa fique centralizada na tela. Ela cresce de 0 a 300px conforme a tela
-   alarga, então em telas médias a mesa não perde espaço. */
+   a mesa fique centralizada na tela. Ela só cresce (de 0 a 300px) com o que sobra depois que
+   a coluna do meio tem largura para a mão inicial de 9 cartas aberta, sem sobrepor. */
 .game-layout {
   --side-w: 300px;
-  --mirror-w: clamp(0px, 100vw - 1000px, var(--side-w));
+  --hand-w: calc(var(--card-w) * 9 + 96px);
+  --mirror-w: clamp(0px, 100vw - var(--side-w) - var(--hand-w) - 48px, var(--side-w));
   display: grid;
   grid-template-columns: var(--mirror-w) minmax(0, 1fr) var(--side-w);
   height: 100dvh;
@@ -2117,6 +2126,12 @@ input[aria-invalid='true'] {
     inset 0 0 0 2px var(--rail-edge),
     inset 0 6px 24px rgba(0, 0, 0, 0.55),
     var(--shadow-lg);
+}
+
+/* Na partida não há assento embaixo (você fica na barra, fora da mesa): o feltro desce até
+   perto dela em vez de deixar um vão. Na sala de espera o seu lugar fica ali, e a folga continua. */
+.table:not(.lobby-table) .felt {
+  bottom: 1%;
 }
 
 /* costura no meio da borda de couro */
@@ -2782,6 +2797,7 @@ input[aria-invalid='true'] {
    placeSeat() para o assento não sair da mesa */
 .table {
   --seat-half: 50px;
+  --seat-half-w: 56px; /* meia largura do assento e uma folga da borda */
   container: table / size;
 }
 
@@ -3553,6 +3569,10 @@ input[aria-invalid='true'] {
   box-shadow:
     0 0 0 3px var(--primary),
     var(--shadow);
+}
+
+.hand.rows.my-turn .card.playable {
+  transform: translateY(-6px);
 }
 
 @media (hover: hover) {
@@ -5111,6 +5131,7 @@ body.is-dragging * {
 
   .table {
     --seat-half: 48px;
+    --seat-half-w: 47px;
   }
 
   /* assento estreito: o selo de cartas em cima e os pontos embaixo */

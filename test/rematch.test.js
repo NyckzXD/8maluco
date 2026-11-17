@@ -99,3 +99,17 @@ test('voltar para a sala apaga os pedidos de revanche', () => {
   assert.equal(room.rematchVotes.size, 0);
   room.dispose();
 });
+
+test('anfitrião que caiu fica de fora da revanche e o cargo passa para quem ficou', () => {
+  const { room, ids } = finishedRoom({ humans: 3, bots: 0 });
+  const [host, ana, bia] = ids;
+  room.disconnect(host, 's0');
+  room.rematch(ana);
+  room.rematch(bia);
+  assert.equal(room.game.phase, 'playing');
+  assert.equal(room.member(host), undefined);
+  assert.equal(room.hostId, ana);
+  room.game.phase = 'gameOver';
+  assert.deepEqual(room.backToLobby(ana), { ok: true });
+  room.dispose();
+});
