@@ -21,8 +21,9 @@ export function seatPosition(offset, total) {
 
 // Põe o assento no lugar. Na vertical ele fica sempre inteiro dentro da mesa (--seat-half é
 // meia altura do assento): em mesas baixas o de cima não sobe por cima da barra do topo.
+// Na horizontal vale o mesmo com --seat-half-w: no celular os assentos laterais não encostam na borda.
 export function placeSeat(seat, { x, y }) {
-  seat.style.left = `${x}%`;
+  seat.style.left = `clamp(var(--seat-half-w, 0px), ${x}%, 100% - var(--seat-half-w, 0px))`;
   seat.style.top = `clamp(var(--seat-half), ${y}%, 100% - var(--seat-half))`;
 }
 

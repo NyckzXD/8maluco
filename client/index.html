@@ -73,18 +73,6 @@
                   ><svg class="icon"><use href="#i-pencil" /></svg
                 ></span>
               </button>
-              <div class="name-field">
-                <label for="nameInput" class="field-label">Seu apelido</label>
-                <input
-                  id="nameInput"
-                  name="nickname"
-                  maxlength="16"
-                  placeholder="Ex.: Edna, Jussara…"
-                  autocomplete="nickname"
-                  aria-describedby="nameError"
-                />
-                <p id="nameError" class="field-error hidden"></p>
-              </div>
               <button
                 id="accountBtn"
                 type="button"
@@ -96,6 +84,18 @@
             </div>
 
             <nav class="home-menu" aria-label="Jogar">
+            <div class="name-field">
+              <label for="nameInput" class="field-label">Seu apelido</label>
+              <input
+                id="nameInput"
+                name="nickname"
+                maxlength="16"
+                placeholder="Ex.: Edna, Jussara…"
+                autocomplete="nickname"
+                aria-describedby="nameError"
+              />
+              <p id="nameError" class="field-error hidden"></p>
+            </div>
               <button id="createBtn" class="btn btn-primary btn-big">
                 <svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg
                 >Criar sala

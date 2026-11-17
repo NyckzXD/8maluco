@@ -51,6 +51,7 @@ function layoutHand() {
     i += size;
   }
   hand.replaceChildren(...rowEls);
+  hand.classList.toggle('rows', rows > 1);
   hand.style.setProperty('--overlap', `${Math.max(overlapFor(base + (extra ? 1 : 0)), -cardW * 0.72)}px`);
   focused?.focus({ preventScroll: true });
 }
