@@ -96,8 +96,8 @@
   --accent: var(--racing-red);
   --red-text: var(--red-400);
   /* mesa: feltro verde de carteado e borda de couro escuro */
-  --felt: #17543c;
-  --felt-dark: #0e3a29;
+  --felt: #1b7148;
+  --felt-dark: #0f4a2f;
   --felt-print: rgba(255, 255, 255, 0.07);
   --rail: #1c1311;
   --rail-edge: #2e201c;
@@ -191,8 +191,12 @@ body::before {
 }
 
 /* Na mesa a estampa some quase toda, para não competir com o feltro. */
+body:has(> #game:not(.hidden)) {
+  background-color: #040303;
+}
+
 body:has(> #game:not(.hidden))::before {
-  opacity: 0.4;
+  opacity: 0.18;
 }
 
 /* sem o atraso do toque duplo para zoom nos controles */
