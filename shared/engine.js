@@ -123,6 +123,9 @@ export function createGame(players, { rules = {}, seed, dealer } = {}) {
     hasDrawn: false,
     lastRound: null,
     winnerId: null,
+    // Histórico público da rodada (o que qualquer um na mesa viu): jogadas, compras e castigos.
+    // Nada de carta escondida aqui; o bot usa para deduzir o que cada um não tem na mão.
+    log: [],
   };
   state.dealer = dealer ?? Math.floor(random(state) * players.length);
   return state;
@@ -140,6 +143,7 @@ export function startRound(state) {
   state.decks = decks;
   state.drawPile = shuffle(state, buildDeck(decks, rules.jokersPerDeck));
   state.discard = [];
+  state.log = [];
   for (const p of state.players) p.hand = [];
 
   // Distribui uma carta por vez, começando pela direita de quem dá as cartas.
@@ -213,8 +217,14 @@ function takeCards(state, i, n) {
   return taken;
 }
 
+// Anota no histórico público. Salas gravadas antes de existir o histórico chegam sem ele.
+function logPublic(state, entry) {
+  (state.log ??= []).push(entry);
+}
+
 function penalty(state, i, n, events, reason) {
   const taken = takeCards(state, i, n);
+  logPublic(state, { t: 'take', p: i, n: taken.length });
   events.push({ type: 'penalty', playerId: state.players[i].id, count: taken.length, reason });
 }
 
@@ -241,6 +251,7 @@ export function playCard(state, playerId, cardId, chosenSuit) {
 
   player.hand.splice(ci, 1);
   state.discard.push(card);
+  logPublic(state, { t: 'play', p: i, rank: card.rank, suit: card.suit });
   /** @type {GameEvent[]} */
   const events = [{ type: 'play', playerId, card }];
 
@@ -308,12 +319,16 @@ export function drawCard(state, playerId) {
   if (err) return fail(err);
   if (state.hasDrawn) return fail('Você já comprou nesta vez');
   const i = state.turn;
+  const { activeSuit: suit, activeRank: rank } = state;
   const taken = takeCards(state, i, 1);
   state.hasDrawn = true;
   /** @type {GameEvent[]} */
   const events = [{ type: 'draw', playerId, count: taken.length }];
   // Se mesmo depois de comprar não há o que jogar, a vez passa sozinha.
-  if (!state.players[i].hand.some((c) => canPlay(state, c))) {
+  const stuck = !state.players[i].hand.some((c) => canPlay(state, c));
+  // `auto`: a vez passou sozinha, então todo mundo viu que nada na mão dele servia.
+  logPublic(state, { t: 'draw', p: i, suit, rank, auto: stuck });
+  if (stuck) {
     events.push(...advance(state, playerId));
   }
   return { ok: true, events, drawn: taken[0] ?? null };

@@ -5,6 +5,7 @@ import { suitIcon } from './cards.js';
 import { cardsLabel, logLine, logPlay } from './chat.js';
 import { $, avatarArt, cardName, el, memberOf, nameOf, speak, state } from './core.js';
 import { animateDraws, cancelDeal, deal, prepareDeal, runDeal } from './deal.js';
+import { renderAnalysis } from './analysis.js';
 import { renderHand, waveHand } from './hand.js';
 import { renderLobby } from './lobby.js';
 import { hideModal } from './modals.js';
@@ -151,6 +152,7 @@ function renderGame(prev, s) {
   const play = prev?.game && s.events.find((e) => e.type === 'play' && e.card.id === g.top?.id);
   renderCenter(prev, g, myTurn, play ? playOrigin(play, s) : null);
   renderHand(prev, g, s, myTurn);
+  renderAnalysis(s);
   if (prev?.game) {
     animateDraws(s.events, g, s);
     showEffectTargets(s.events, s);

@@ -9,6 +9,7 @@ import { Accounts } from './auth.js';
 import { openDatabase } from './db.js';
 import { googleVerifier } from './google.js';
 import { RoomManager, takeSlot } from './rooms.js';
+import { nicknameKey } from '../shared/names.js';
 import { loadSnapshot, saveSnapshot, startSnapshots } from './snapshot.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -26,6 +27,8 @@ export const RATE_LIMITS = {
   'game:play': { max: 10, windowMs: 5_000 },
   'game:draw': { max: 10, windowMs: 5_000 },
   'game:pass': { max: 10, windowMs: 5_000 },
+  // cada análise pensa ~0,4s: poucas por vez bastam
+  'game:analyze': { max: 6, windowMs: 10_000 },
   default: { max: 20, windowMs: 10_000 },
 };
 
@@ -49,6 +52,11 @@ export function configFromEnv(env = process.env) {
     databaseFile: env.DATABASE_FILE || `${root}data/oito-maluco.db`,
     // "Entrar com o Google": o Client ID do Google Cloud (README). Sem ele, o botão nem aparece.
     googleClientId: env.GOOGLE_CLIENT_ID?.trim() || null,
+    // contas (apelidos, separados por vírgula) que veem a análise do bot forte na própria vez
+    analysisUsers: (env.ANALYSIS_USERS ?? '')
+      .split(',')
+      .map((s) => nicknameKey(s))
+      .filter(Boolean),
   };
 }
 
@@ -189,6 +197,7 @@ export function createGameServer(options = {}) {
     // só chega aqui partida com alguém logado, e logar já abriu o banco
     onGameOver: (summary) => getAccounts().recordGame(summary),
     isTop1: (userId) => !!accounts?.isTop1(userId),
+    isAnalyst: (user) => (config.analysisUsers ?? []).includes(nicknameKey(user.nickname)),
   });
 
   app.get('/health', (_req, res) =>
@@ -332,6 +341,7 @@ export function createGameServer(options = {}) {
     inRoom('game:draw', (room, me) => room.act(me, { type: 'draw' }));
     inRoom('game:pass', (room, me) => room.act(me, { type: 'pass' }));
     inRoom('game:ready', (room, me) => room.setReady(me));
+    inRoom('game:analyze', (room, me) => room.analyze(me));
     // o cliente avisa que a pessoa mexeu na tela enquanto estava ausente (o touch acima já resolve)
     inRoom('presence', () => ({ ok: true }));
 

@@ -24,6 +24,7 @@ import './drag.js';
 import './suit-picker.js';
 import './scores.js';
 import './results.js';
+import './analysis.js';
 import './render.js';
 import './clock.js';
 

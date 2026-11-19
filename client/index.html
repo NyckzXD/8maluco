@@ -451,6 +451,40 @@
               <p id="lastMove" class="last-move" aria-live="polite"></p>
             </div>
             <div id="toasts" class="toasts" aria-live="polite"></div>
+            <section id="analysis" class="analysis hidden" aria-label="Análise do bot">
+              <!-- escondida: só este botão fica na mesa -->
+              <button
+                id="analysisShow"
+                type="button"
+                class="btn btn-small analysis-show"
+                aria-controls="analysisPanel"
+                aria-expanded="false"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#i-bot" /></svg>
+                Mostrar análise
+              </button>
+              <div id="analysisPanel" class="analysis-panel">
+                <div class="analysis-head">
+                  <span class="analysis-title">
+                    <svg class="icon" aria-hidden="true"><use href="#i-bot" /></svg>
+                    Análise do bot
+                  </span>
+                  <label class="analysis-auto"
+                    ><input id="analysisAuto" type="checkbox" /> sempre</label
+                  >
+                  <button
+                    id="analysisHide"
+                    type="button"
+                    class="analysis-hide"
+                    title="Esconder análise"
+                    aria-label="Esconder análise"
+                  >
+                    <svg class="icon" aria-hidden="true"><use href="#i-x" /></svg>
+                  </button>
+                </div>
+                <div id="analysisBody" class="analysis-body" aria-live="polite"></div>
+              </div>
+            </section>
           </div>
 
           <div class="me-bar">

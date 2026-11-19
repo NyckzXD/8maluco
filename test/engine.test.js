@@ -318,7 +318,7 @@ test('bots terminam partidas inteiras sem travar', () => {
         continue;
       }
       const id = s.players[s.turn].id;
-      const m = chooseMove(s, id);
+      const m = chooseMove(s, id, { maxRollouts: 60 }); // pensa pouco: o teste é só de não travar
       const r =
         m.type === 'play' ? playCard(s, id, m.cardId, m.suit) : m.type === 'draw' ? drawCard(s, id) : passTurn(s, id);
       assert.ok(r.ok, r.error);

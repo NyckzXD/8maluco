@@ -45,6 +45,7 @@ Tudo o mais vem de variáveis de ambiente. Em casa, o jeito mais fácil é um ar
 | `SNAPSHOT_FILE` | `data/rooms.json` | Onde as salas ficam gravadas entre um processo e outro. Precisa estar num disco que sobreviva ao deploy (veja abaixo). `off` desliga. |
 | `DATABASE_FILE` | `data/oito-maluco.db` | Banco SQLite das contas (apelido, hash da senha, sessões). Tem que ficar no mesmo disco persistente do `SNAPSHOT_FILE` (por exemplo `/data/oito-maluco.db`): sem volume, cada deploy apaga todas as contas. |
 | `GOOGLE_CLIENT_ID` | vazio | Liga o "Entrar com o Google" (veja "Login com o Google" abaixo). Vazio, o botão não aparece e só vale apelido e senha. |
+| `ANALYSIS_USERS` | vazio | Apelidos de conta, separados por vírgula, que veem na própria vez o que o bot forte jogaria (veja "Análise do bot" abaixo). Vazio, ninguém vê. |
 
 - **Limites por conexão** (`RATE_LIMITS` em `server/index.js`): 5 salas criadas por minuto, 12 tentativas de entrar por minuto, 30 pedidos da lista de salas por minuto, 10 jogadas, compras ou passes a cada 5s, e 20 a cada 10s nos outros eventos. Mensagens maiores que 16KB derrubam a conexão de quem mandou.
 - **Desligamento e volta**: no `SIGTERM` (o que as plataformas mandam no deploy) e no Ctrl+C, o servidor avisa todas as salas ("O servidor vai reiniciar. A partida continua quando ele voltar!"), para os timers dos bots, grava as salas em `SNAPSHOT_FILE` e fecha. Ao subir, ele lê o arquivo, apaga-o e recria as salas com todo mundo desconectado. A partida fica parada até a primeira pessoa voltar; aí a vez de quem estava jogando recomeça com o prazo cheio. Os clientes reconectam sozinhos e voltam pelo token para o mesmo lugar, com as mesmas cartas. Gravações com mais de 10 minutos são ignoradas. O arquivo tem os tokens dos jogadores, por isso a pasta `data/` fica fora do git. Uma queda sem aviso (falta de memória, `kill -9`) não grava nada, e aí as partidas se perdem.
@@ -90,16 +91,16 @@ Para ligar:
 | Pasta | O que tem |
 | --- | --- |
 | `shared/engine.js` | Regras do jogo, sem rede nem tela. Funciona no servidor e pode ir para o app. |
-| `shared/bot.js` | Jogador automático (bots e jogada automática quando o tempo acaba ou alguém cai). |
+| `shared/bot.js` | Os bots: a heurística simples (`chooseMoveBasic`, que joga nas salas) e a busca forte (`chooseMove`/`evaluateMoves`, usada na análise). Veja "Como o bot joga" abaixo. |
 | `shared/ranking.js` | Regra do ranking (partida vale com 3 ou mais pessoas na mesa; bots não contam), usada pelo servidor e pela tela. |
 | `shared/names.js` | Regras de apelido que valem no servidor e na tela (nomes "Robô …" são só dos bots) e as de apelido e senha de conta. |
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
 | `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). Contas em `/api` (`api.js`: cadastro, entrar, sair, `/me`, apagar conta; `auth.js`: senha com scrypt, sessões e contas do Google; `google.js`: confere o token do Google; no fim de cada partida com alguém logado, a sala manda o resumo para o banco, e `/api/leaderboard` monta o ranking; `db.js`: o SQLite e as migrações). No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
 | `client/` | Interface web (`index.html`, `style.css` e os módulos em `src/`, JS puro sem framework), responsiva para celular. Entrada do Vite (`vite.config.js`). |
-| `client/src/` | Um módulo por parte da tela. `main.js` é a entrada (conexão e convite) e carrega os outros; `core.js` tem atalhos do DOM, o socket e o estado da sala, que os outros leem direto e só mudam pelas funções `set...`. Telas: `home`, `ranking` (os primeiros e a sua posição), `account` (entrar, criar conta, sair e apagar; a sessão vai no handshake do socket), `howto`, `avatar-editor`, `lobby`, `results`. Mesa: `table` (assentos e voos), `deal`, `pile`, `hand`, `card-tip`, `drag`, `suit-picker`, `scores`, `clock`, `render` (desenha cada atualização). Gerais: `modals`, `chat`, `reactions`, `cards` (desenho das cartas e ícones), `audio`. |
+| `client/src/` | Um módulo por parte da tela. `main.js` é a entrada (conexão e convite) e carrega os outros; `core.js` tem atalhos do DOM, o socket e o estado da sala, que os outros leem direto e só mudam pelas funções `set...`. Telas: `home`, `ranking` (os primeiros e a sua posição), `account` (entrar, criar conta, sair e apagar; a sessão vai no handshake do socket), `howto`, `avatar-editor`, `lobby`, `results`. Mesa: `table` (assentos e voos), `deal`, `pile`, `hand`, `card-tip`, `drag`, `suit-picker`, `scores`, `clock`, `render` (desenha cada atualização). Gerais: `modals`, `chat`, `reactions`, `cards` (desenho das cartas e ícones), `audio`, `analysis` (o painel da análise do bot). |
 | `public/` | Arquivos que vão para o build do jeito que estão, sempre no mesmo caminho: fontes, ícones, cartas, sons, `manifest.json` e o service worker (PWA). |
 | `dist/` | Saída do `npm run build` (fora do git). |
-| `test/` | Testes com `node:test`: regras (`engine`), salas (`rooms`, `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`), avatar, e rede de ponta a ponta com clientes socket.io reais (`multiplayer`, `production`, `restart`). |
+| `test/` | Testes com `node:test`: regras (`engine`), bots (`bot`, `analysis`), salas (`rooms`, `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`), avatar, e rede de ponta a ponta com clientes socket.io reais (`multiplayer`, `production`, `restart`). |
 
 ### PWA
 
@@ -122,6 +123,42 @@ Para ligar:
 - **A carta que bate não tem efeito**: bater com 9, 7 ou Joker encerra a rodada na hora, sem ninguém comprar, e a contagem usa as mãos como estavam.
 - **Tempo por vez**: 30s por padrão, configurável. Se o tempo acaba, o jogo faz uma jogada automática. Jogador desconectado joga no automático até voltar.
 - Mesa com 2 a 8 jogadores.
+
+## Como o bot joga
+
+Há dois bots em `shared/bot.js`:
+
+- **Simples** (`chooseMoveBasic`): uma heurística rápida (livra-se das cartas que valem mais, guarda o 8, ataca com 9, Ás e 7 quando o próximo está quase batendo). É ele que joga nas salas, inclusive a jogada automática de quem fica sem tempo ou cai.
+- **Forte** (`chooseMove` / `evaluateMoves`): não joga nas salas. Aparece só como análise ao vivo para as contas liberadas (veja "Análise do bot" abaixo).
+
+O forte faz busca Monte Carlo com mundos sorteados, a técnica usada em jogos de cartas com informação escondida:
+
+1. **Só vê o que um jogador atento veria**: a própria mão, as cartas que já caíram no monte, quantas cartas cada um tem e o histórico público da rodada (`state.log`, gravado pelo motor). Quem comprou sem jogar não tinha nada da pinta nem do número do monte, nem 8, nem Joker; o bot guarda isso para as cartas que a pessoa já tinha, e esquece quando a dedução se mostra errada. Ele nunca olha a mão dos outros nem a ordem do baralho (há um teste que garante isso).
+2. **Sorteia mundos possíveis**: distribui as cartas que ele não vê entre os adversários (respeitando o que deduziu) e o baralho.
+3. **Simula cada jogada até o fim da rodada** em cada mundo, com uma heurística rápida para todos. Cada jogada candidata (cada carta, o 8 com cada naipe, comprar ou passar) passa pelos mesmos mundos com a mesma sorte, e as que ficam claramente atrás são largadas no caminho para sobrar tempo para as que estão perto.
+4. **Escolhe a de melhor resultado médio**: os pontos que ele leva (zero se bate), os pontos que os adversários levam e o risco de alguém passar de 100.
+
+Pensa até 20 mil simulações ou 150 ms por jogada (`BOT_DEFAULTS`); dá para mudar por chamada (`chooseMove(state, id, { maxRollouts, maxMs })`). `evaluateMoves` devolve a nota de cada jogada, útil para depurar. A heurística antiga continua em `chooseMoveBasic`.
+
+Contra o bot simples, numa mesa com mais N−1 deles, o bot forte ganha a partida bem mais que a fatia justa de 1/N:
+
+| Jogadores na mesa | Partidas | Vitórias do bot forte | Fatia justa |
+| --- | --- | --- | --- |
+| 2 | 240 | 87% | 50% |
+| 3 | 200 | 70% | 33% |
+| 4 | 160 | 49% | 25% |
+| 6 | 60 | 42% | 17% |
+
+Gasta de 40 a 70 ms por jogada em média.
+
+### Análise do bot
+
+Para aprender a jogar melhor: na sua vez, um painel no canto da mesa mostra o que o bot forte jogaria e quanto cada opção perde para a melhor ("−2,3" = em média, termina a rodada 2,3 pontos pior). A carta sugerida fica marcada na mão. Depois que você joga, o painel compara a sua jogada com a do bot.
+
+- **Quem vê**: só as contas cujo apelido está em `ANALYSIS_USERS` (sem acento nem caixa: `ANALYSIS_USERS=Zé` libera "ze"). Convidados nunca veem. O servidor confere no `game:analyze`, então esconder o painel na tela não é a única barreira.
+- **Quando**: só na sua vez, ao vivo; nada é gravado. Com "sempre" marcado, a análise vem sozinha a cada vez; sem, aparece o botão "O que o bot jogaria?". O botão × esconde o painel e deixa só um "Mostrar análise" no canto; escondida, nada aparece (nem a carta marcada) e nada é pedido ao servidor, mesmo com "sempre". A escolha fica guardada no navegador.
+- **Custo**: cada análise pensa até 400 ms (`ANALYSIS_MS` em `server/rooms.js`) e é reaproveitada se você pedir de novo na mesma situação. Limite de 6 pedidos a cada 10 s.
+- **Atenção**: é ajuda de verdade durante a partida, inclusive nas que valem ranking.
 
 ## Próximo passo: app mobile
 

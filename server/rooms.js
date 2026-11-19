@@ -1,7 +1,9 @@
 // Salas estilo "Gartic": código curto, lista de salas públicas, anfitrião, bots e chat.
 import { randomUUID } from 'node:crypto';
 import { createGame, startRound, playCard, drawCard, passTurn, removePlayer, viewFor } from '../shared/engine.js';
-import { chooseMove } from '../shared/bot.js';
+// Bots da mesa jogam com a heurística simples; a busca forte (evaluateMoves) só aparece como
+// análise para as contas liberadas (ANALYSIS_USERS), na vez delas.
+import { chooseMoveBasic, evaluateMoves } from '../shared/bot.js';
 import { randomAvatar, sanitizeAvatar } from '../shared/avatar.js';
 import { REACTION_LIMIT, isReaction } from '../shared/reactions.js';
 import { BOT_NAME_ERROR, RESERVED_NAME_ERROR, isBotName } from '../shared/names.js';
@@ -23,6 +25,7 @@ const EMPTY_ROOM_MS = 5 * 60_000;
 const SNAPSHOT_VERSION = 1;
 const SNAPSHOT_MAX_AGE_MS = 10 * 60_000; // salas gravadas há mais que isso não voltam
 const RESTORE_HOST_GRACE_MS = 15_000; // depois de reiniciar, o anfitrião tem mais tempo para voltar
+const ANALYSIS_MS = 400; // quanto a análise pensa (mais que o bot da mesa: é só sob pedido)
 
 /**
  * @typedef {{ code: string, ranked: boolean, humans: number, bots: number,
@@ -75,14 +78,22 @@ export class RoomManager {
   // `nicknameTaken` diz se um apelido é de alguma conta (convidado não pode usar).
   // `onGameOver` recebe o resumo de cada partida que teve alguém com conta (o ranking grava).
   // `isTop1` diz se a conta está em 1º no ranking (o selo TOP 1 ao lado do nome).
+  // `isAnalyst` diz se a conta pode ver a análise do bot forte na própria vez (ANALYSIS_USERS).
   /**
    * @param {any} io
    * @param {{ timing?: object, nicknameTaken?: (name: string) => boolean,
-   *   onGameOver?: (summary: GameSummary) => void, isTop1?: (userId: number) => boolean }} [options]
+   *   onGameOver?: (summary: GameSummary) => void, isTop1?: (userId: number) => boolean,
+   *   isAnalyst?: (user: { id: number, nickname: string }) => boolean }} [options]
    */
   constructor(
     io,
-    { timing = {}, nicknameTaken = (_name) => false, onGameOver = (_summary) => {}, isTop1 = (_userId) => false } = {},
+    {
+      timing = {},
+      nicknameTaken = (_name) => false,
+      onGameOver = (_summary) => {},
+      isTop1 = (_userId) => false,
+      isAnalyst = (_user) => false,
+    } = {},
   ) {
     this.io = io;
     this.rooms = new Map();
@@ -90,6 +101,7 @@ export class RoomManager {
     this.nicknameTaken = nicknameTaken;
     this.onGameOver = onGameOver;
     this.isTop1 = isTop1;
+    this.isAnalyst = isAnalyst;
   }
 
   create({ isPublic = true } = {}) {
@@ -206,6 +218,7 @@ class Room {
     this.hostTimer = null; // anfitrião desconectado: quando o cargo passa para outro
     this.hostOrphan = false; // nenhum humano conectado para assumir: o próximo que entrar assume
     this.turnSeq = 0; // conta as vezes: distingue "esta vez" de "a próxima vez do mesmo jogador"
+    this.analysis = null; // última análise do bot forte (Room.analyze), reaproveitada na mesma vez
   }
 
   // ---------- membros ----------
@@ -267,6 +280,8 @@ class Room {
       this.system(`${m.name} entrou na sala`);
     }
     if (user) this.yieldName(m);
+    // vale para esta conexão: outra conta (ou sair da conta) no mesmo lugar perde o acesso
+    m.analyst = !!user && this.manager.isAnalyst(user);
     m.socketId = socket.id;
     m.connected = true;
     clearTimeout(m.graceTimer);
@@ -712,6 +727,36 @@ class Room {
     return { ok: true };
   }
 
+  // O que o bot forte jogaria agora, na vez de quem pediu. Só para as contas liberadas.
+  // A mesma situação (mesma vez, antes ou depois de comprar) devolve a análise já feita.
+  analyze(memberId) {
+    const m = this.member(memberId);
+    if (!m?.analyst) return { ok: false, error: 'Análise não liberada para esta conta' };
+    const g = this.game;
+    if (!g || g.phase !== 'playing' || g.players[g.turn]?.id !== memberId)
+      return { ok: false, error: 'A análise é só na sua vez' };
+    const key = `${g.round}:${this.turnSeq}:${g.hasDrawn ? 1 : 0}:${g.players[g.turn].hand.length}`;
+    if (this.analysis?.key !== key) {
+      const { moves, samples } = evaluateMoves(g, memberId, { maxMs: ANALYSIS_MS, maxRollouts: 60000 });
+      const best = moves.find((x) => x.best);
+      this.analysis = {
+        key,
+        samples,
+        moves: moves
+          .map(({ move, value, samples: n, best: isBest }) => ({
+            ...move,
+            // diferença para a melhor, em pontos de resultado médio da rodada (0 = a melhor)
+            loss: isBest ? 0 : Math.max(0, best.value - value),
+            value,
+            samples: n,
+            best: isBest,
+          }))
+          .sort((a, b) => b.value - a.value),
+      };
+    }
+    return { ok: true, key, samples: this.analysis.samples, moves: this.analysis.moves };
+  }
+
   setReady(memberId) {
     const g = this.game;
     if (!g || g.phase !== 'roundOver') return { ok: false, error: 'A rodada ainda não acabou' };
@@ -849,7 +894,7 @@ class Room {
     const events = [];
     for (let i = 0; i < 3; i++) {
       if (!g || g.phase !== 'playing' || g.players[g.turn].id !== playerId) break;
-      const move = chooseMove(g, playerId);
+      const move = chooseMoveBasic(g, playerId);
       const r =
         move.type === 'play'
           ? playCard(g, playerId, move.cardId, move.suit)
@@ -920,6 +965,8 @@ class Room {
         connected: m.connected,
         away: !!m.away,
       })),
+      // a conta de quem recebe pode pedir a análise do bot forte (game:analyze)
+      analyst: !!this.member(memberId)?.analyst,
       game: this.game ? viewFor(this.game, memberId) : null,
       deadline: this.deadline,
       turnMs: this.turnMs,
