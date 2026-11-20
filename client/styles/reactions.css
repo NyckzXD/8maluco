@@ -1,0 +1,215 @@
+/* ---------- reações rápidas ---------- */
+
+/* menu que abre embaixo do botão "Reagir": as carinhas com o nome, numa placa flutuante */
+.react-menu {
+  position: fixed;
+  z-index: 25;
+  display: grid;
+  grid-template-columns: repeat(3, 76px);
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-lg);
+  animation: react-menu-in 0.16s ease-out;
+}
+
+@keyframes react-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+.react-opt {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-height: 72px;
+  padding: 8px 4px 6px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.12s;
+}
+
+@media (hover: hover) {
+  .react-opt:hover {
+    background: var(--surface-3);
+  }
+
+  .react-opt:hover .react-face {
+    transform: scale(1.12) rotate(-6deg);
+  }
+}
+
+.react-opt:active {
+  transform: scale(0.94);
+}
+
+/* nome comprido: a linha inteira, carinha do lado do texto */
+.react-opt-wide {
+  grid-column: 1 / -1;
+  grid-auto-flow: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+}
+
+.react-opt:focus-visible {
+  outline: 2px solid var(--silver-300);
+  outline-offset: -2px;
+}
+
+.react-face {
+  width: 36px;
+  height: 36px;
+  transition: transform 0.15s;
+}
+
+/* O balão: um cartão de papel em cima do avatar, com a ponta apontando para ele. O --life
+   (REACTION_MS, de shared/reactions.js) é o tempo total: entra, fica e some no fim.
+   O --shift (keepOnScreen, em client/src/reactions.js) empurra o balão para dentro da tela
+   quando o avatar está na beirada; a ponta e o ponto de onde ele cresce ficam no avatar. */
+.reaction {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  padding: 3px 11px 3px 4px;
+  border-radius: var(--r-pill);
+  background: var(--card-face);
+  color: var(--card-ink);
+  font-family: var(--font-hud);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  line-height: 1.1;
+  text-shadow: none;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  max-width: calc(100vw - 16px);
+  transform-origin: calc(50% - var(--shift, 0px)) 100%;
+  translate: calc(-50% + var(--shift, 0px)) 0;
+  animation: reaction-life var(--life, 2s) ease-out forwards;
+}
+
+.reaction::after {
+  content: '';
+  position: absolute;
+  left: clamp(14px, calc(50% - var(--shift, 0px)), calc(100% - 14px));
+  top: 100%;
+  border: 6px solid transparent;
+  border-top-color: var(--card-face);
+  translate: -50% -1px;
+}
+
+.reaction .react-face {
+  width: 28px;
+  height: 28px;
+}
+
+@keyframes reaction-life {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  10% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  18% {
+    transform: none;
+  }
+  85% {
+    transform: none;
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-menu {
+    animation: none;
+  }
+
+  /* sem pulo nem subida: só aparece e some no fim */
+  .reaction {
+    animation-name: reaction-fade;
+  }
+
+  @keyframes reaction-fade {
+    0%,
+    85% {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes callout-seat {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  12% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  20% {
+    transform: none;
+  }
+  80% {
+    transform: none;
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-callout,
+  .callout {
+    animation: none;
+  }
+}
+
+/* Balão de mensagem do chat: o mesmo cartão da reação, com texto livre quebrando linha
+   (até 4 linhas; o resto fica no chat). */
+.reaction.chat-bubble {
+  display: block;
+  max-width: min(220px, calc(100vw - 16px));
+  padding: 5px 11px;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.chat-bubble-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}

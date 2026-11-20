@@ -1,0 +1,278 @@
+/* ---------- tela inicial ---------- */
+
+/* menu de jogo: o logo em cima, os dois painéis no meio (ocupando a altura que sobra) e o
+   crédito embaixo */
+.home-wrap {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: max(32px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  align-items: center;
+  gap: 40px;
+}
+
+.home-head {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  align-self: end;
+}
+
+.logo {
+  margin: 0;
+  text-align: center;
+  color: #fff;
+  font-size: clamp(3.4rem, 10vw, 6.5rem);
+  line-height: 1;
+  letter-spacing: 1px;
+  text-shadow: 0 5px 0 var(--red-700);
+}
+
+.logo-8 {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3em;
+  height: 1.6em;
+  background: #fff;
+  color: var(--red);
+  border-radius: 0.2em;
+  transform: rotate(-8deg);
+  text-shadow: none;
+  box-shadow: 0 6px 0 var(--red-700);
+  margin-right: 0.15em;
+}
+
+.tagline {
+  margin: 0;
+  text-align: center;
+  color: var(--silver);
+  font-size: var(--fs-xl);
+  font-weight: 500;
+}
+
+/* Dois painéis lado a lado, cada um num degrau de tom acima do fundo (sem contorno nem
+   sombra): você e os botões de jogar | o passo a passo. */
+.home-stage {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 20px;
+}
+
+.play-panel,
+.howto-section {
+  min-height: min(440px, 52dvh);
+  padding: 40px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.play-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 40px;
+}
+
+.profile {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: 220px;
+}
+
+@media (min-width: 861px) {
+  .play-panel .avatar-xl {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+/* desktop baixo (notebook de 720–820px de altura): logo menor e menos respiro, para os
+   painéis e o crédito caberem sem rolar */
+@media (min-width: 861px) and (max-height: 820px) {
+  .home-wrap {
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    gap: 24px;
+  }
+
+  .logo {
+    font-size: 4.5rem;
+  }
+
+  .tagline {
+    font-size: var(--fs-lg);
+  }
+
+  .play-panel,
+  .howto-section {
+    padding: 28px 32px;
+  }
+
+  .howto-section .howto-card {
+    margin: 0 0 6px;
+  }
+}
+
+/* notebook estreito: os dois painéis um embaixo do outro, centralizados */
+@media (min-width: 861px) and (max-width: 1100px) {
+  .home-stage {
+    grid-template-columns: minmax(0, 680px);
+    justify-content: center;
+  }
+
+  .play-panel,
+  .howto-section {
+    min-height: 0;
+  }
+}
+
+/* apelido: é obrigatório para jogar, então abre o menu, do tamanho dos botões, com o rótulo
+   visível em cima e o erro logo embaixo do campo */
+.name-field {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  text-align: center;
+}
+
+.name-field input {
+  width: 100%;
+  min-height: 60px;
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  text-align: center;
+}
+
+.name-field .field-label {
+  font-size: var(--fs-md);
+  color: #fff;
+}
+
+.field-label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--silver);
+}
+
+.field-error {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--red-text);
+}
+
+/* logado: o apelido é o da conta (só de leitura; tocar nele abre "Minha conta") */
+.name-field input[readonly] {
+  border-color: var(--surface-3);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.account-btn {
+  justify-self: center;
+  margin-top: -6px;
+}
+
+/* a pilha de botões do menu */
+/* minmax(0, 1fr): sem isso o campo de código (largura intrínseca do <input>) alarga a coluna
+   e os botões vazam pela direita no celular */
+.home-menu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Salas abertas | Ranking: lado a lado, para o menu não ficar mais alto */
+.menu-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* metade da largura: letra um passo menor e numa linha só */
+.home-menu .menu-pair .btn-big {
+  padding-inline: 12px;
+  font-size: var(--fs-lg);
+  white-space: nowrap;
+}
+
+.home-menu .btn-big {
+  min-height: 60px;
+  font-size: var(--fs-xl);
+}
+
+/* o "Entrar" estica até a altura do campo */
+.join-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.join-row input {
+  font-family: var(--font-hud);
+  flex: 1;
+  min-width: 0;
+  min-height: 60px;
+  border-color: var(--surface-3);
+  background: var(--black);
+  box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.6);
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.join-row input:focus {
+  border-color: var(--silver-300);
+  box-shadow:
+    inset 0 3px 0 rgba(0, 0, 0, 0.6),
+    0 0 0 3px rgba(220, 219, 220, 0.2);
+}
+
+/* o código digitado fica em caixa alta e espaçado (é um código); o "Código" de exemplo não */
+.join-row input::placeholder {
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.join-row .btn {
+  min-height: 60px;
+  padding-inline: 24px;
+}
+
+.home-foot {
+  align-self: end;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.copyright {
+  margin: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.copyright .heart {
+  color: var(--racing-red);
+}
+
+.copyright .heart-glyph {
+  width: 0.9em;
+  height: 0.9em;
+  vertical-align: -0.1em;
+  fill: currentColor;
+}

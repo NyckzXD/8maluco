@@ -1,0 +1,396 @@
+/* assentos */
+/* --seat-half: meia altura do assento (avatar, anel de tempo, nome e cartas), usada em
+   placeSeat() para o assento não sair da mesa */
+.table {
+  --seat-half: 50px;
+  --seat-half-w: 56px; /* meia largura do assento e uma folga da borda */
+  container: table / size;
+}
+
+.seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 104px;
+  text-align: center;
+  color: #fff;
+  z-index: 2;
+}
+
+.seat .avatar {
+  width: 52px;
+  height: 52px;
+}
+
+.seat .seat-name {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: var(--text-shadow);
+}
+
+/* 1º do ranking: selo dourado ao lado do nome; o nome encolhe primeiro */
+.seat-name.has-top1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.seat-name.has-top1 .nm-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top1-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px 1px 4px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--card-ink);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-shadow: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.top1-badge .icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* embaixo do nome: o selo com as cartas na mão (grande) e os pontos (pequeno) */
+.seat .seat-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seat-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px 2px 6px;
+  border-radius: var(--r-pill);
+  background: var(--veil-strong);
+  color: #fff;
+  font-family: var(--font-hud);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.seat-count .mini-card {
+  width: 11px;
+  height: 15px;
+  margin: 0;
+}
+
+/* uma carta só: está para bater */
+.seat-count.last {
+  background: var(--primary);
+  animation: last-card 0.5s ease-out 2;
+}
+
+@keyframes last-card {
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-count.last {
+    animation: none;
+  }
+}
+
+.seat-pts {
+  color: var(--silver-300);
+  font-weight: 600;
+  text-shadow: var(--text-shadow);
+}
+
+.mini-card {
+  display: inline-block;
+  width: 9px;
+  height: 12px;
+  border-radius: calc(var(--r-card) / 4);
+  background: var(--back);
+  border: 1px solid var(--cream);
+  vertical-align: -1px;
+  margin-right: 2px;
+}
+
+/* quem joga agora: o avatar balança e ganha o anel de tempo (.ring) */
+.seat.turn .avatar,
+.me-info.turn .avatar {
+  animation: bob 1s ease-in-out infinite;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.seat.out {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+/* Anel de tempo como um relógio: o vermelho é o tempo que resta e vai sumindo no
+   sentido horário, a partir do meio-dia, deixando à mostra o trilho claro.
+   --p vai de 1 (cheio) a 0 e é atualizado pelo updateClock() a cada 200ms;
+   registrado com @property, ele desliza entre uma atualização e outra. */
+@property --p {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+.seat .ring,
+.me-info .ring {
+  --ring-w: 5px;
+  position: absolute;
+  inset: calc(-1 * var(--ring-w) - 2px);
+  border-radius: 50%;
+  background: conic-gradient(rgba(255, 255, 255, 0.16) calc((1 - var(--p)) * 360deg), var(--primary) 0);
+  -webkit-mask: radial-gradient(
+    closest-side,
+    transparent calc(100% - var(--ring-w)),
+    #000 calc(100% - var(--ring-w) + 0.5px)
+  );
+  mask: radial-gradient(closest-side, transparent calc(100% - var(--ring-w)), #000 calc(100% - var(--ring-w) + 0.5px));
+  transition: --p 0.2s linear;
+  pointer-events: none;
+}
+
+.badge {
+  font-family: var(--font-hud);
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  font-size: var(--fs-xs);
+  background: var(--silver-300);
+  color: var(--black);
+  border-radius: var(--r-pill);
+  padding: 0 5px;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.badge.offline {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+}
+
+.badge.offline .icon {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.5;
+}
+
+/* ausente: deixou o tempo acabar duas vezes; o jogo joga por ele até ele voltar */
+.badge.away {
+  left: 50%;
+  right: auto;
+  bottom: -8px;
+  transform: translateX(-50%);
+  background: var(--gold);
+  white-space: nowrap;
+}
+
+/* o mesmo aviso na sua barra, ao lado do "Você" */
+.away-note {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  background: var(--gold);
+  color: var(--black);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+/* botão de carteador (disco prata com "D", como no pôquer): à esquerda do avatar,
+   do lado de fora do anel de tempo (que vai até 6px além do avatar) */
+.badge.dealer {
+  top: 50%;
+  bottom: auto;
+  left: -35px;
+  right: auto;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--black);
+  background: var(--silver-300);
+  color: var(--black);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.seat.left .badge.dealer {
+  left: auto;
+  right: -35px;
+}
+
+/* na sua barra o disco fica na linha, depois do "Você · N pts" */
+.me-info .badge.dealer {
+  position: static;
+  translate: none;
+  flex: none;
+}
+
+.hit {
+  animation: shake 0.45s;
+}
+
+@keyframes shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.toasts {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  pointer-events: none;
+  z-index: 5;
+  width: max-content;
+  max-width: 90%;
+}
+
+/* entrada e saída dos avisos de rodapé (.flash) */
+@keyframes toast-in {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* letreiro dos eventos grandes: placa escura sobre o feltro, título grande e uma linha embaixo */
+.table-callout {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 10px 26px 12px;
+  border-radius: var(--r-md);
+  /* quase opaco: o que está embaixo não aparece "fantasma" através do letreiro */
+  background: rgba(6, 18, 12, 0.95);
+  color: #fff;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  animation:
+    callout-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3),
+    callout-out 0.4s ease-in 2.1s forwards;
+}
+
+.table-callout strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-3xl);
+  line-height: 1.1;
+}
+
+.table-callout span {
+  font-weight: 600;
+  color: var(--silver-300);
+}
+
+@keyframes callout-in {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+
+@keyframes callout-out {
+  to {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
+/* aviso no avatar de quem foi afetado: aparece em cima do rosto e sobe sumindo */
+.callout {
+  position: absolute;
+  left: 50%;
+  top: 26px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  color: #fff;
+  font-family: var(--font-hud);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: none;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  translate: -50% -50%;
+  animation: callout-seat 2.2s ease-out forwards;
+}
+
+/* pinta pedida: um "cartão" creme com a pinta na cor do baralho */
+.callout.suit {
+  background: var(--card-face);
+  color: var(--card-ink);
+  font-size: var(--fs-lg);
+}
+
+.callout-suit {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentColor;
+}
+
+.callout-suit.red {
+  color: var(--card-red);
+}
+
+#meInfo .avatar .callout {
+  top: 50%;
+}

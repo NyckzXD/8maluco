@@ -1,0 +1,120 @@
+/* ---------- ranking ---------- */
+
+.ranking-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  max-height: min(440px, 52dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: left;
+  scrollbar-width: thin;
+}
+
+.ranking-list li,
+.ranking-me .rank-row {
+  display: grid;
+  grid-template-columns: 2.5ch auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+/* você na lista: borda clara, para achar de longe */
+.ranking-list li.mine,
+.ranking-me .rank-row {
+  box-shadow: inset 0 0 0 2px var(--silver-300);
+}
+
+.rank-pos {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  text-align: center;
+  color: var(--silver);
+}
+
+/* pódio: ouro, prata e o cobre do couro da mesa */
+.ranking-list li:nth-child(1) .rank-pos {
+  color: var(--gold);
+}
+
+.ranking-list li:nth-child(2) .rank-pos {
+  color: var(--silver-300);
+}
+
+.ranking-list li:nth-child(3) .rank-pos {
+  color: #d08a5a;
+}
+
+.rank-name {
+  display: grid;
+  min-width: 0;
+}
+
+.rank-name b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-name small {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.rank-wins {
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.rank-wins b {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+}
+
+.rank-wins small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.ranking-me {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.ranking-me > p {
+  margin: 0;
+  color: var(--silver-300);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* lista vazia (ou erro ao carregar): uma frase só, no meio do card. A coluna única desfaz as
+   quatro colunas das linhas do ranking, que espremiam o texto na primeira. */
+.ranking-list .empty {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  padding: 40px 12px;
+  background: none;
+  text-align: center;
+  font-weight: 700;
+  color: var(--silver-300);
+}
+
+/* no fim da partida: se valeu para o ranking */
+.rank-note {
+  margin: 4px 0 0;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.rank-note:empty {
+  display: none;
+}

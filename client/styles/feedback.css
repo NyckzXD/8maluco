@@ -1,0 +1,304 @@
+/* ---------- espera e erro ---------- */
+
+/* três pontinhos pulando, depois de um texto de espera */
+.dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 4px;
+  vertical-align: 0.15em;
+}
+
+.dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+
+.dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes dot-bounce {
+  0%,
+  60%,
+  100% {
+    translate: 0 0;
+    opacity: 0.4;
+  }
+  30% {
+    translate: 0 -5px;
+    opacity: 1;
+  }
+}
+
+.wait-line {
+  margin: 0;
+  color: var(--silver-300);
+  font-weight: 600;
+  text-align: center;
+}
+
+.wait-line:empty {
+  display: none;
+}
+
+/* conexão caiu: a tela escurece e um verso de carta gira no centro */
+.net-status {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--scrim);
+  animation: net-in 0.3s ease-out 0.6s both;
+}
+
+@keyframes net-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.net-box {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 32px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    var(--shadow-float);
+  text-align: center;
+}
+
+.net-box b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-2xl);
+}
+
+.net-box > span:last-child {
+  color: var(--silver-300);
+}
+
+.net-card {
+  --card-w: 56px;
+  --card-h: 80px;
+  margin-bottom: 10px;
+  animation: net-spin 1.4s ease-in-out infinite;
+}
+
+@keyframes net-spin {
+  50% {
+    rotate: y 180deg;
+  }
+  to {
+    rotate: y 360deg;
+  }
+}
+
+/* Confirmações e erro ao entrar: uma arte pequena em cima do título (versos de carta, o avatar
+   de quem sai), com um selo redondo no canto. */
+.modal-art {
+  position: relative;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  margin: 2px 0 6px;
+  animation: art-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) 80ms both;
+}
+
+@keyframes art-in {
+  from {
+    transform: translateY(-10px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+.modal-art .card {
+  --card-w: 60px;
+  --card-h: 86px;
+  box-shadow: var(--shadow);
+}
+
+.join-error-art .card {
+  rotate: -8deg;
+}
+
+/* sair: a mão de cartas em leque, que fica na mesa */
+.leave-art {
+  grid-template-areas: 'c';
+  width: 130px;
+}
+
+.leave-art .card {
+  grid-area: c;
+  transform-origin: 50% 120%;
+}
+
+.leave-art .card:nth-child(1) {
+  rotate: -16deg;
+}
+
+.leave-art .card:nth-child(3) {
+  rotate: 16deg;
+}
+
+.kick-avatar .avatar {
+  width: 88px;
+  height: 88px;
+  font-size: var(--fs-4xl);
+  border-width: 4px;
+  box-shadow: var(--shadow-lg);
+  filter: grayscale(0.35);
+}
+
+.modal-art-badge {
+  position: absolute;
+  right: -12px;
+  bottom: -8px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--felt-dark);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.leave-art .modal-art-badge {
+  right: 2px;
+  bottom: -12px;
+}
+
+.kick-art .modal-art-badge {
+  right: -6px;
+  bottom: -4px;
+}
+
+.confirm-box {
+  max-width: 400px;
+  padding-top: 30px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-art {
+    animation: none;
+  }
+}
+
+/* fora da partida ou assistindo: uma placa no lugar da mão */
+.spectator {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin: auto;
+  padding: 14px 24px;
+  border-radius: var(--r-lg);
+  background: var(--veil);
+  color: #fff;
+  text-align: center;
+}
+
+.spectator b {
+  font-size: var(--fs-lg);
+}
+
+.spectator > span:last-child {
+  color: var(--silver-300);
+}
+
+.spectator-stamp {
+  margin-bottom: 4px;
+  padding: 0 8px;
+  border: 2px solid currentColor;
+  border-radius: var(--r-sm);
+  color: var(--silver-300);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  rotate: -6deg;
+}
+
+.spectator.out .spectator-stamp {
+  color: var(--red-400);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dots i,
+  .net-card {
+    animation: none;
+  }
+}
+
+.flash {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  /* `translate` em vez de `transform`, para não brigar com as animações toast-in/out */
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-3);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 18px 10px 10px;
+  border-radius: var(--r-pill);
+  z-index: 40;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    var(--shadow-lg);
+  animation:
+    toast-in 0.2s,
+    toast-out 0.4s ease-in 2.6s forwards;
+  width: max-content;
+  max-width: 90vw;
+}
+
+.flash-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  line-height: 1;
+}
+
+.flash.info .flash-mark {
+  background: var(--silver-300);
+  color: var(--black);
+  font-family: var(--font-body);
+  font-weight: 800;
+}
+
+.flash.error {
+  animation:
+    toast-in 0.2s,
+    flash-shake 0.4s 0.2s,
+    toast-out 0.4s ease-in 2.6s forwards;
+}
+
+@keyframes flash-shake {
+  25%,
+  75% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}

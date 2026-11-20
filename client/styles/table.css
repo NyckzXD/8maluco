@@ -1,0 +1,760 @@
+/* ---------- mesa ---------- */
+
+/* A 1ª coluna é um "espelho" vazio do painel lateral (placar/chat), para que
+   a mesa fique centralizada na tela. Ela só cresce (de 0 a 300px) com o que sobra depois que
+   a coluna do meio tem largura para a mão inicial de 9 cartas aberta, sem sobrepor. */
+.game-layout {
+  --side-w: 300px;
+  --hand-w: calc(var(--card-w) * 9 + 96px);
+  --mirror-w: clamp(0px, 100vw - var(--side-w) - var(--hand-w) - 48px, var(--side-w));
+  display: grid;
+  grid-template-columns: var(--mirror-w) minmax(0, 1fr) var(--side-w);
+  height: 100dvh;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+
+.game-main {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  gap: 8px;
+}
+
+.game-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #fff;
+}
+
+.round-label {
+  margin: 0;
+  font-family: var(--font-hud);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+}
+
+.top-right {
+  display: flex;
+  gap: 6px;
+}
+
+.side-toggle {
+  display: none;
+  position: relative;
+}
+
+.dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* A mesa ocupa o que sobra (flex: 1) e é ela que cede altura em telas baixas, para a mão
+   caber inteira. O mínimo é o que o assento de cima e os montes precisam empilhados. */
+.table {
+  position: relative;
+  flex: 1;
+  min-height: calc(var(--seat-half) * 2 + var(--card-h) + 10px);
+}
+
+/* desktop baixo (notebook com a janela curta): cartas um pouco menores para mesa e mão caberem */
+@media (min-width: 861px) and (max-height: 580px) {
+  :root {
+    --card-w: 64px;
+    --card-h: 92px;
+  }
+}
+
+/* Mesa de carteado: feltro verde com a trama do tecido (ruído), a luz de um lustre
+   no centro e uma borda de couro acolchoada com costura. */
+.felt {
+  --rail-w: 22px;
+  position: absolute;
+  inset: 8% 6%;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")
+      0 0 / 160px 160px,
+    radial-gradient(ellipse 60% 55% at 50% 45%, var(--felt) 0, var(--felt) 40%, var(--felt-dark) 100%);
+  background-blend-mode: soft-light, normal;
+  border: var(--rail-w) solid var(--rail);
+  box-shadow:
+    0 0 0 2px var(--rail-edge),
+    inset 0 0 0 2px var(--rail-edge),
+    inset 0 6px 24px rgba(0, 0, 0, 0.55),
+    var(--shadow-lg);
+}
+
+/* Na partida não há assento embaixo (você fica na barra, fora da mesa): o feltro desce até
+   perto dela em vez de deixar um vão. Na sala de espera o seu lugar fica ali, e a folga continua. */
+.table:not(.lobby-table) .felt {
+  bottom: 1%;
+}
+
+/* costura no meio da borda de couro */
+.felt::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--rail-w) / -2 - 1px);
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+/* nome do jogo "impresso" no feltro, na parte de baixo (onde fica o seu lugar) */
+.felt-logo {
+  position: absolute;
+  left: 50%;
+  bottom: 13%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3.4vw, 2.4rem);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--felt-print);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Os montes ficam no meio da mesa, com a última jogada logo acima e a pinta logo abaixo,
+   mas nunca encostando no assento de cima: em mesas baixas eles descem (embaixo não há
+   assento, a sua vez fica na barra abaixo da mesa). --lm-room é o espaço da última jogada. */
+.table-center {
+  --lm-room: 54px; /* até duas linhas de 19px + o respiro de 14px */
+  position: absolute;
+  left: 50%;
+  top: max(50%, calc(var(--seat-half) * 2 + var(--lm-room) + var(--card-h) / 2 + 6px));
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Mesa baixa demais para empilhar tudo: a última jogada vai para a esquerda dos montes e a
+   pinta para a direita, e os montes sobem para logo abaixo do assento de cima. */
+@container table (max-height: 320px) {
+  .table-center {
+    --lm-room: 0px;
+  }
+
+  .table-center .active-suit {
+    --suit-shift: translateY(-50%);
+    top: 50%;
+    left: calc(100% + 14px);
+    max-width: 170px;
+  }
+
+  .table-center .last-move {
+    --lm-shift: translateY(-50%);
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 14px);
+    max-width: 140px;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  /* coluna estreita: os trechos quebram linha em vez de vazar para o assento ao lado */
+  .table-center .last-move :is(.lm-who, .lm-fx) {
+    white-space: normal;
+  }
+}
+
+/* "Robô Cida jogou 9♠ · Você compra 2", acima dos montes */
+.last-move {
+  --lm-shift: translateX(-50%);
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: var(--lm-shift);
+  width: max-content;
+  max-width: min(420px, 86cqw);
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--silver-300);
+  text-shadow: var(--text-shadow);
+  pointer-events: none;
+}
+
+.last-move:empty {
+  display: none;
+}
+
+.lm-line {
+  text-wrap: balance;
+  animation: lm-in 0.3s ease-out;
+}
+
+@keyframes lm-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.lm-who {
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lm-who .avatar-art {
+  position: relative;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  vertical-align: -5px;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.7);
+}
+
+/* a carta jogada como uma mini carta: fundo de carta, valor e naipe na cor dele */
+.lm-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--card-face);
+  color: var(--card-ink);
+  font-family: var(--font-hud);
+  font-weight: 800;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
+.lm-card.red {
+  color: var(--card-red);
+}
+
+.lm-card.joker {
+  color: var(--back);
+}
+
+.lm-suit {
+  width: 0.85em;
+  height: 0.85em;
+  fill: currentColor;
+}
+
+.lm-fx {
+  color: #fff;
+  white-space: nowrap;
+}
+
+.lm-sep {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-line {
+    animation: none;
+  }
+}
+
+/* anel de setas "impresso" no feltro em volta dos montes: mostra o sentido do jogo */
+.direction {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 15rem;
+  height: 15rem;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--felt-print);
+  stroke-width: 5;
+  stroke-linecap: round;
+  animation: spin-ccw 14s linear infinite;
+}
+
+.direction .head {
+  fill: var(--felt-print);
+  stroke: none;
+}
+
+/* o anel gira devagar no sentido do jogo (anti-horário) */
+@keyframes spin-ccw {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .direction {
+    animation: none;
+  }
+}
+
+/* seta do 7 / 9: do monte até quem vai comprar */
+.target-arrow {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  overflow: visible;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  transition: opacity 0.3s;
+}
+
+.target-arrow.out {
+  opacity: 0;
+}
+
+.target-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: arrow-draw 0.4s ease-out forwards;
+}
+
+.target-head {
+  fill: var(--primary);
+  animation: fade 0.15s ease-out 0.3s both;
+}
+
+@keyframes arrow-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.pile {
+  position: relative;
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+.draw-pile {
+  cursor: pointer;
+}
+
+.draw-pile .card {
+  box-shadow:
+    2px 2px 0 var(--silver-300),
+    4px 4px 0 var(--silver),
+    6px 6px 10px rgba(0, 0, 0, 0.5);
+}
+
+.draw-pile.can-draw::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: var(--r-card);
+  box-shadow:
+    0 0 0 4px var(--primary),
+    0 0 22px var(--primary);
+  pointer-events: none;
+  opacity: 0;
+  animation: glow 1.2s ease-in-out infinite;
+}
+
+/* sem jogada: o baralho "respira" junto com o brilho, chamando para comprar */
+.draw-pile.can-draw .card {
+  animation: breathe 1.2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    scale: 1.06;
+  }
+}
+
+.draw-pile .card {
+  transition: transform 0.15s;
+}
+
+.draw-pile:not(:disabled):hover .card {
+  transform: translateY(-3px);
+}
+
+.draw-pile:focus-visible {
+  outline: 3px solid var(--silver-300);
+  outline-offset: 6px;
+  border-radius: var(--r-card);
+}
+
+.draw-pile:disabled {
+  cursor: default;
+}
+
+.pile-count {
+  font-family: var(--font-hud);
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  background: var(--silver-300);
+  color: var(--black);
+  border-radius: var(--r-pill);
+  padding: 1px 8px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow);
+}
+
+.discard-pile {
+  width: var(--card-w);
+  height: var(--card-h);
+}
+
+/* lugar do monte antes da primeira carta: só o contorno (o selo embaixo diz quem abre) */
+.empty-pile {
+  width: 100%;
+  height: 100%;
+  border: 3px dashed rgba(194, 193, 194, 0.4);
+  border-radius: var(--r-card);
+}
+
+.discard-pile .card {
+  position: absolute;
+  inset: 0;
+}
+
+.discard-pile .card.new {
+  animation: drop 0.35s ease-out;
+}
+
+@keyframes drop {
+  from {
+    transform: translateY(-60px) scale(1.3) rotate(var(--rot, 0deg));
+    opacity: 0;
+  }
+}
+
+/* ---------- efeitos das cartas especiais no monte ---------- */
+
+/* Ás: a carta dá dois pulinhos */
+.discard-pile .card.fx-hop {
+  animation: fx-hop 0.7s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+@keyframes fx-hop {
+  25% {
+    translate: 0 -30px;
+  }
+  50% {
+    translate: 0 0;
+  }
+  70% {
+    translate: 0 -12px;
+  }
+}
+
+/* 8: a carta gira e a pinta pedida salta do monte */
+.discard-pile .card.fx-spin {
+  animation: fx-spin 0.6s cubic-bezier(0.3, 0.7, 0.3, 1.2);
+}
+
+@keyframes fx-spin {
+  from {
+    rotate: y 0deg;
+  }
+  to {
+    rotate: y 360deg;
+  }
+}
+
+.fx-suit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: calc(var(--card-w) * 0.9);
+  height: calc(var(--card-w) * 0.9);
+  fill: currentColor;
+  color: var(--card-face);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+  translate: -50% -50%;
+  animation: fx-suit 1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.fx-suit.red {
+  color: var(--card-red);
+}
+
+@keyframes fx-suit {
+  from {
+    scale: 0.3;
+    opacity: 0;
+  }
+  30% {
+    scale: 1.5;
+    opacity: 1;
+  }
+  to {
+    scale: 2.4;
+    opacity: 0;
+  }
+}
+
+/* 7 e 9: a carta bate no monte e solta uma onda vermelha */
+.discard-pile .card.fx-thump {
+  animation: fx-thump 0.4s ease-out;
+}
+
+@keyframes fx-thump {
+  30% {
+    scale: 1.14;
+  }
+}
+
+/* Joker: a carta balança e solta uma onda dourada */
+.discard-pile .card.fx-wobble {
+  animation: fx-wobble 0.7s ease-in-out;
+}
+
+@keyframes fx-wobble {
+  20% {
+    rotate: -12deg;
+  }
+  45% {
+    rotate: 10deg;
+  }
+  70% {
+    rotate: -5deg;
+  }
+}
+
+.fx-ring {
+  position: absolute;
+  inset: -6px;
+  z-index: 3;
+  border: 4px solid var(--primary);
+  border-radius: var(--r-md);
+  pointer-events: none;
+  animation: fx-ring 0.8s ease-out forwards;
+}
+
+.fx-ring.gold {
+  border-color: var(--gold);
+}
+
+@keyframes fx-ring {
+  from {
+    scale: 0.9;
+    opacity: 1;
+  }
+  to {
+    scale: 2;
+    opacity: 0;
+  }
+}
+
+/* ---------- sua vez: a mão faz uma onda ---------- */
+.hand.wave .card {
+  animation: hand-wave 0.55s ease-in-out calc(var(--wave, 0) * 45ms);
+}
+
+@keyframes hand-wave {
+  40% {
+    translate: 0 -14px;
+    rotate: -3deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-pile.can-draw .card,
+  .discard-pile .card[class*='fx-'],
+  .hand.wave .card,
+  .fx-suit,
+  .fx-ring {
+    animation: none;
+  }
+
+  .fx-suit,
+  .fx-ring {
+    display: none;
+  }
+}
+
+.card.incoming {
+  visibility: hidden;
+}
+
+/* carta voando de quem jogou até o monte */
+.flyer {
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  perspective: 700px;
+  will-change: transform;
+}
+
+.flyer-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.flyer-inner .card {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.flyer-inner .card.reverse {
+  transform: rotateY(180deg);
+}
+
+.seat.played .avatar::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  animation: ping 1s ease-out forwards;
+  pointer-events: none;
+}
+
+/* nos últimos segundos o seu anel pisca */
+.me-info .ring.low {
+  animation: ring-low 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes ring-low {
+  to {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .me-info .ring.low {
+    animation: none;
+  }
+}
+
+/* quantas cartas o jogador comprou */
+.gain {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: 16px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-hud);
+  font-weight: 800;
+  font-size: var(--fs-sm);
+  padding: 1px 9px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--silver-300);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  animation: gain 1.4s ease-out forwards;
+}
+
+@keyframes gain {
+  from {
+    transform: translateY(8px) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0) scale(1.1);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1);
+  }
+  75% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+}
+
+@keyframes ping {
+  to {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+.active-suit {
+  --suit-shift: translateX(-50%);
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: var(--suit-shift);
+  width: max-content;
+  max-width: min(320px, calc(100vw - 48px));
+  text-align: center;
+  text-wrap: balance;
+  background: var(--veil-strong);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid rgba(194, 193, 194, 0.2);
+  font-weight: 600;
+}
+
+.active-suit b {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xl);
+  vertical-align: -2px;
+}
+
+.active-suit .badge-suit {
+  width: 0.8em;
+  height: 0.8em;
+  vertical-align: -0.05em;
+  fill: currentColor;
+}
+
+.active-suit .red {
+  color: var(--red-300);
+}
+
+.active-suit.changed {
+  background: var(--silver-300);
+  color: var(--black);
+  border-color: var(--primary);
+  animation: pulse 0.6s ease-out 2;
+}
+
+.active-suit.changed .red {
+  color: var(--red-600);
+}
+
+@keyframes pulse {
+  50% {
+    transform: var(--suit-shift) scale(1.15);
+  }
+}
+
+@keyframes glow {
+  50% {
+    opacity: 1;
+  }
+}

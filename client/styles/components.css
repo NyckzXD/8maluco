@@ -1,0 +1,261 @@
+/* ---------- componentes ---------- */
+
+/* Seções da lateral (placar e chat): sem moldura, o conteúdo fica direto sobre o fundo
+   e o espaço entre elas é o que separa. Só a gaveta do celular tem fundo próprio. */
+.panel {
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel h2,
+.panel h3 {
+  margin: 0 0 12px;
+}
+
+.panel h3 {
+  font-size: var(--fs-xl);
+  line-height: 1.1;
+}
+
+.panel .panel-head h3 {
+  margin: 0;
+}
+
+.panel > .panel-head {
+  margin-bottom: 12px;
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--font-hud);
+  font-weight: 700;
+}
+
+/* ícones preenchidos (sprite em app.js); os poucos traços que existem trazem a própria espessura */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  fill: currentColor;
+  stroke: none;
+  vertical-align: -0.2em;
+}
+
+/* Botões: três tipos, cada um com um papel.
+   - .btn-primary: a ação (vermelho). Um por tela, no máximo dois num modal.
+   - .btn: secundário, escuro sólido.
+   - .btn-text: terciário, só o texto (cancelar, fechar, recolher).
+   Os dois primeiros têm um relevo embaixo (--btn-depth) que afunda no clique, como uma tecla. */
+.btn {
+  --btn-face: var(--surface-3);
+  --btn-edge: #0f0d0c;
+  --btn-ink: #fff;
+  --btn-depth: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: 10px 16px;
+  background: var(--btn-face);
+  color: var(--btn-ink);
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 var(--btn-depth) 0 var(--btn-edge);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out,
+    background-color 0.15s;
+}
+
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    --btn-face: #3a3735;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    --btn-face: var(--red-400);
+  }
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--silver-300);
+  outline-offset: 3px;
+}
+
+/* ao clicar a face desce e encosta no relevo */
+.btn:active:not(:disabled) {
+  transform: translateY(var(--btn-depth));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 var(--btn-edge);
+}
+
+/* desabilitado: neutro (cinza), sem a cor da variante */
+.btn:disabled {
+  --btn-face: var(--surface-2);
+  --btn-ink: var(--muted);
+  --btn-edge: var(--surface);
+  cursor: not-allowed;
+}
+
+/* secundário em cima do feltro: escuro translúcido, deixa o verde aparecer */
+.btn-felt {
+  --btn-face: rgba(0, 0, 0, 0.32);
+  --btn-edge: rgba(0, 0, 0, 0.45);
+}
+
+@media (hover: hover) {
+  .btn-felt:hover:not(:disabled) {
+    --btn-face: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* o terciário no feltro: texto claro, sem o cinza que some no verde */
+.felt-box .btn-text {
+  --btn-ink: var(--silver-300);
+}
+
+/* texto de ajuda logo abaixo de um botão desabilitado */
+.start-hint {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.btn-primary {
+  --btn-face: var(--primary);
+  --btn-edge: var(--red-700);
+  --btn-ink: var(--primary-ink);
+  font-weight: 700;
+}
+
+/* terciário: sem fundo e sem relevo; no hover ganha um fundo leve */
+.btn-text {
+  --btn-face: transparent;
+  --btn-edge: transparent;
+  --btn-ink: var(--silver);
+  --btn-depth: 0px;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .btn-text:hover:not(:disabled) {
+    --btn-face: rgba(255, 255, 255, 0.07);
+    --btn-ink: var(--ink);
+  }
+}
+
+.btn-text:active:not(:disabled) {
+  box-shadow: none;
+}
+
+.btn-text:disabled {
+  --btn-face: transparent;
+}
+
+.btn-big {
+  font-size: var(--fs-lg);
+  padding: 14px 22px;
+}
+
+.btn-big:not(.btn-text) {
+  --btn-depth: 5px;
+}
+
+.btn-small {
+  --btn-depth: 3px;
+  position: relative;
+  padding: 6px 12px;
+  font-size: var(--fs-sm);
+}
+
+/* área de toque de pelo menos 44×44px, mesmo com o botão pequeno */
+.btn-small::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+input,
+select {
+  font: inherit;
+  border: 2px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  outline: none;
+  background: var(--black);
+  color: var(--ink);
+  min-width: 0;
+}
+
+input::placeholder {
+  color: var(--muted);
+}
+
+input:focus,
+select:focus {
+  border-color: var(--silver-300);
+  box-shadow: 0 0 0 3px rgba(220, 219, 220, 0.2);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: #fff;
+  text-shadow: var(--text-shadow);
+  border: 3px solid var(--silver-300);
+  flex: none;
+  position: relative;
+}

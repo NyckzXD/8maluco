@@ -1,0 +1,61 @@
+/* ---------- chat ---------- */
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 8px;
+}
+
+.lobby-layout .chat-panel {
+  min-height: 0;
+  padding-top: 6px;
+}
+
+.chat-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 120px;
+  font-size: var(--fs-sm);
+}
+
+.chat-log li {
+  overflow-wrap: anywhere;
+}
+
+.chat-log .system {
+  color: var(--silver);
+  font-weight: 500;
+}
+
+.chat-log .log {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* histórico de jogadas: texto branco, só o nome de quem jogou em vermelho */
+.chat-log .log.play {
+  color: var(--ink);
+}
+
+.chat-log .log-who {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.chat-form {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-form input {
+  flex: 1;
+  padding: 8px 10px;
+}

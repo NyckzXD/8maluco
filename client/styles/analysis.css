@@ -1,0 +1,155 @@
+/* ---------- análise do bot (só contas liberadas em ANALYSIS_USERS) ---------- */
+.analysis {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  width: min(290px, calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+
+/* escondida: só o botão "Mostrar análise"; aberta: só o painel */
+.analysis.open .analysis-show,
+.analysis:not(.open) .analysis-panel {
+  display: none;
+}
+
+.analysis-panel {
+  width: 100%;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.analysis-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 10px;
+}
+
+.analysis-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.analysis-auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.analysis-hide {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.analysis-hide:hover,
+.analysis-hide:focus-visible {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.analysis-body {
+  display: none;
+}
+
+.analysis-body {
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.analysis-body p {
+  margin: 0;
+}
+
+.analysis-best {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.analysis-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.analysis-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 6px;
+  border-radius: var(--r-sm);
+}
+
+.analysis-list li.best {
+  background: var(--surface-3);
+  font-weight: 700;
+}
+
+.analysis-loss {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.analysis-list li.best .analysis-loss {
+  color: var(--gold);
+}
+
+.analysis-note {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.analysis-feedback {
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.analysis-feedback.good {
+  border-left: 3px solid var(--felt);
+}
+
+.analysis-feedback.bad {
+  border-left: 3px solid var(--primary);
+}
+
+/* a carta que o bot jogaria */
+.hand .card.bot-pick {
+  outline: 3px dashed var(--gold);
+  outline-offset: 3px;
+}
+
+.analysis-more {
+  justify-self: start;
+  font-size: var(--fs-xs);
+}

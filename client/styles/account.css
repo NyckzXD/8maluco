@@ -1,0 +1,150 @@
+/* ---------- conta (entrar / criar / minha conta) ---------- */
+
+.account-box {
+  max-width: 400px;
+}
+
+/* Entrar | Criar conta: duas abas no mesmo material das abas do avatar */
+.account-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.account-tab {
+  padding: 9px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--silver-300);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+@media (hover: hover) {
+  .account-tab:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+}
+
+.account-tab:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+}
+
+/* a aba escolhida vira papel, como no editor de avatar */
+.account-tab[aria-selected='true'] {
+  background: var(--card-face);
+  color: var(--card-ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-form {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
+.account-form > .btn {
+  margin-top: 8px;
+}
+
+.account-form input {
+  width: 100%;
+}
+
+.account-form .field-label {
+  margin-top: 4px;
+}
+
+.account-hint {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.account-main {
+  display: grid;
+  gap: 14px;
+}
+
+/* o botão oficial do Google (desenhado por ele, num iframe) e o "ou" que separa do formulário */
+.google-box {
+  display: grid;
+  gap: 12px;
+}
+
+.google-btn {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  /* O botão vem num iframe do Google, cuja página não declara color-scheme (vale claro). O
+     :root do jogo é dark, e o iframe herdaria isso: com os dois diferentes, o Chrome pinta um
+     fundo branco opaco atrás do iframe. Claro aqui deixa os dois iguais e o fundo transparente. */
+  color-scheme: light;
+}
+
+.account-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.account-or::before,
+.account-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* apagar a conta fica escondido atrás de um clique, longe dos botões de sempre */
+.account-danger {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  text-align: left;
+}
+
+.account-danger summary {
+  cursor: pointer;
+  color: var(--red-text);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-align: center;
+}
+
+.account-danger summary:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.account-danger[open] summary {
+  margin-bottom: 10px;
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--primary);
+}
+
+.avatar-xl {
+  width: 160px;
+  height: 160px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-display);
+  border-width: 6px;
+  background: var(--surface-3);
+  box-shadow: var(--shadow-lg);
+}

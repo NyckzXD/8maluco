@@ -1,0 +1,307 @@
+/* ---------- modais ---------- */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 20;
+  animation: fade 0.2s;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Modais: uma placa grafite sem contorno, com um brilho fino no topo, que sobe ao abrir.
+   Papéis: carvão é o menu (salas, avatar, regras, erro ao entrar); feltro é a mesa, só no que
+   acontece durante o jogo (pinta do 8, resultado da rodada, sair e remover jogador), com
+   .felt-box ou .results-box. Dentro do carvão as áreas se separam por degraus de tom
+   (--surface-2, --surface-3), não por preto translúcido. */
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 26px;
+  max-width: 440px;
+  width: 100%;
+  max-height: 90dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    var(--shadow-float);
+  text-align: center;
+  display: grid;
+  gap: 14px;
+  animation: modal-in 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+@keyframes modal-in {
+  from {
+    transform: translateY(16px) scale(0.96);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-box {
+    animation: none;
+  }
+}
+
+.modal-sub {
+  margin: 0;
+  color: var(--silver-300);
+}
+
+/* a mesa: feltro com a borda de couro */
+.felt-box {
+  background: var(--felt-surface);
+  border: 6px solid var(--rail);
+  box-shadow:
+    0 0 0 2px var(--rail-edge),
+    var(--shadow-float);
+}
+
+.modal-box.wide {
+  max-width: 640px;
+}
+
+/* a caixa recebe o foco ao abrir só para o leitor de tela ler o título; não precisa de contorno */
+.modal-box:focus {
+  outline: none;
+}
+
+.modal-box h2 {
+  margin: 0;
+  font-size: var(--fs-2xl);
+  line-height: 1.15;
+}
+
+/* dois botões lado a lado no fim do modal (empilham na tela estreita) */
+.modal-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.suit-box {
+  max-width: 660px;
+}
+
+/* As quatro pintas são quatro 8 de verdade: papel, o índice "8" nos cantos e a pinta grande
+   no meio, com o nome embaixo, no feltro. A largura acompanha a altura da tela, para as
+   cartas caberem acima da mão recolhida. */
+.suit-grid {
+  --suit-w: clamp(64px, calc((100dvh - var(--card-h) - 250px) * 0.714), 132px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, var(--suit-w)));
+  justify-content: center;
+  gap: clamp(8px, 2.5vw, 18px);
+  padding: 10px 0 2px;
+}
+
+.suit-btn {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--card-ink);
+  font: inherit;
+  cursor: pointer;
+  animation: suit-deal 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+.suit-btn.red {
+  color: var(--card-red);
+}
+
+.suit-btn:nth-child(1) {
+  --tilt: -5deg;
+}
+
+.suit-btn:nth-child(2) {
+  --tilt: -1.5deg;
+  animation-delay: 60ms;
+}
+
+.suit-btn:nth-child(3) {
+  --tilt: 1.5deg;
+  animation-delay: 120ms;
+}
+
+.suit-btn:nth-child(4) {
+  --tilt: 5deg;
+  animation-delay: 180ms;
+}
+
+@keyframes suit-deal {
+  from {
+    transform: translateY(-28px) rotate(-12deg);
+    opacity: 0;
+  }
+}
+
+.suit-face {
+  position: relative;
+  /* os cantos medem a carta de verdade (cqw), não o --suit-w: no celular as quatro cartas
+     encolhem abaixo dele para caber na largura, e o canto ficava do tamanho da carta grande */
+  container-type: inline-size;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: calc(var(--r-card) + 2px);
+  border: 1px solid var(--card-edge);
+  background: var(--card-face);
+  box-shadow:
+    inset 0 0 0 4px var(--card-face),
+    inset 0 0 0 5px rgba(0, 0, 0, 0.06),
+    var(--shadow);
+  rotate: var(--tilt, 0deg);
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.4),
+    rotate 0.2s,
+    box-shadow 0.2s;
+}
+
+.suit-glyph {
+  width: 58%;
+  height: auto;
+  aspect-ratio: 1;
+  fill: currentColor;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.08));
+}
+
+/* índice do canto: "8" e a pinta pequena embaixo, como no baralho */
+.suit-corner {
+  position: absolute;
+  top: 6%;
+  left: 8%;
+  display: grid;
+  justify-items: center;
+  font-family: var(--font-display);
+  font-size: 20cqw;
+  line-height: 1;
+}
+
+.suit-corner svg {
+  width: 13cqw;
+  height: 13cqw;
+  margin-top: 2px;
+  fill: currentColor;
+}
+
+.suit-corner.br {
+  inset: auto 8% 6% auto;
+  rotate: 180deg;
+}
+
+.suit-btn small {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--silver-300);
+  transition: color 0.15s;
+}
+
+.suit-btn:hover .suit-face,
+.suit-btn:focus-visible .suit-face {
+  transform: translateY(-12px) scale(1.04);
+  rotate: 0deg;
+  box-shadow:
+    inset 0 0 0 4px var(--card-face),
+    inset 0 0 0 5px rgba(0, 0, 0, 0.06),
+    0 0 0 3px var(--gold),
+    var(--shadow-lg);
+}
+
+.suit-btn:hover small,
+.suit-btn:focus-visible small {
+  color: var(--gold);
+}
+
+.suit-btn:focus-visible {
+  outline: none;
+}
+
+.suit-btn:active .suit-face {
+  transform: translateY(-6px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suit-btn {
+    animation: none;
+  }
+
+  .suit-face {
+    transition: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .suit-btn small {
+    font-size: var(--fs-sm);
+  }
+}
+
+/* Janela de pintas com a mão recolhida logo abaixo. */
+#suitModal {
+  align-content: center;
+  gap: 18px;
+  overflow: hidden;
+}
+
+#suitModal .modal-box {
+  max-height: calc(100dvh - var(--card-h) - 70px);
+}
+
+#suitModal {
+  transition: background 0.25s;
+}
+
+#suitModal .modal-box {
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+#suitModal.closing {
+  background: transparent;
+}
+
+#suitModal.closing .modal-box {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.suit-hand {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 560px);
+  justify-self: center;
+  pointer-events: none;
+}
+
+.suit-hand:empty {
+  display: none;
+}
+
+.suit-hand .card {
+  flex: none;
+  box-shadow: var(--shadow);
+}
+
+.suit-hand .card + .card {
+  margin-left: var(--overlap, -30px);
+}
+
+.hand .card.lifted {
+  visibility: hidden;
+}

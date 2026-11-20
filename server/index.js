@@ -138,7 +138,7 @@ export function createGameServer(options = {}) {
   const config = { ...configFromEnv(), ...options };
   const app = express();
   app.set('trust proxy', config.trustProxy);
-  // gzip/brotli nos arquivos de texto (app.js e style.css passam de 100KB cada); imagens e
+  // gzip/brotli nos arquivos de texto (o JS e o CSS do build passam de 70KB cada); imagens e
   // fontes já vêm comprimidas e o pacote as deixa como estão
   app.use(compression());
   // Cabeçalhos de segurança em tudo: CSP, nada de ser posto em iframe de outro site, nada de o

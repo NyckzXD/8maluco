@@ -1,0 +1,208 @@
+/* ---------- celular ---------- */
+
+@media (max-width: 860px) {
+  :root {
+    --card-w: 58px;
+    --card-h: 84px;
+  }
+
+  .home-wrap {
+    grid-template-rows: auto auto 1fr;
+    gap: 36px;
+    padding: max(40px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+
+  .home-stage {
+    grid-template-columns: minmax(0, 360px);
+    justify-content: center;
+    gap: 28px;
+  }
+
+  /* no celular os painéis viram uma coluna solta sobre o fundo, sem placa */
+  .play-panel,
+  .howto-section {
+    min-height: 0;
+    padding: 0;
+    background: none;
+  }
+
+  .play-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .profile {
+    justify-self: center;
+  }
+
+  .game-layout {
+    grid-template-columns: 1fr;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .game-main {
+    grid-column: auto;
+  }
+
+  /* No celular a mão ganha cartas maiores (a mesa encolhe para dar espaço). */
+  .hand {
+    --card-w: 74px;
+    --card-h: 107px;
+    padding-inline: 0;
+  }
+
+  .side-toggle {
+    display: inline-flex;
+  }
+
+  /* fechada, a gaveta fica fora da tela e invisível (não recebe foco nem é lida) */
+  .side {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(340px, 88vw);
+    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom)) 12px;
+    overscroll-behavior: contain;
+    background: rgba(10, 9, 8, 0.97);
+    border-left: 1px solid var(--line);
+    z-index: 15;
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform 0.25s,
+      visibility 0s 0.25s;
+  }
+
+  .side.open {
+    transform: none;
+    visibility: visible;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+    transition: transform 0.25s;
+  }
+
+  .side-close {
+    display: inline-flex;
+    align-self: flex-end;
+    min-height: 44px;
+  }
+
+  .side-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 14;
+    background: var(--scrim);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .side.open + .side-scrim {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .seat {
+    width: 78px;
+  }
+
+  .table {
+    --seat-half: 48px;
+    --seat-half-w: 47px;
+  }
+
+  /* assento estreito: o selo de cartas em cima e os pontos embaixo */
+  .seat .seat-info {
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .seat-count {
+    font-size: var(--fs-md);
+    padding: 1px 8px 1px 5px;
+  }
+
+  .seat .avatar {
+    width: 40px;
+    height: 40px;
+    font-size: var(--fs-md);
+  }
+
+  .seat .seat-name {
+    font-size: var(--fs-xs);
+  }
+
+  /* sua barra no celular: nome e pontos numa linha, aviso de vez menor */
+  .me-actions {
+    gap: 8px;
+  }
+
+  .me-info > span {
+    white-space: nowrap;
+  }
+
+  .turn-banner {
+    font-size: var(--fs-sm);
+    padding: 5px 12px;
+  }
+
+  /* no celular o avatar do assento tem 40px: o aviso fica no meio dele */
+  .seat > .callout {
+    top: 20px;
+  }
+
+  .direction {
+    width: 11rem;
+    height: 11rem;
+  }
+
+  .table-center {
+    gap: 12px;
+  }
+
+  .felt {
+    --rail-w: 12px;
+    inset: 10% 2%;
+  }
+
+  /* resultado no celular: nome e total em cima, cartas embaixo */
+  .results-box {
+    padding: 20px 14px 16px;
+    border-width: 4px;
+  }
+
+  .res-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'who pts score'
+      'hand hand hand';
+    gap: 8px 10px;
+  }
+
+  .res-who {
+    grid-area: who;
+  }
+
+  .res-hand {
+    grid-area: hand;
+  }
+
+  .res-pts {
+    grid-area: pts;
+  }
+
+  .res-score {
+    grid-area: score;
+    width: 110px;
+  }
+}
+
+@media (max-width: 520px) {
+  .avatar-xl {
+    width: 112px;
+    height: 112px;
+    font-size: var(--fs-5xl);
+  }
+}

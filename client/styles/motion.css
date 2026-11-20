@@ -1,0 +1,25 @@
+/* ---------- movimento reduzido ----------
+   Desliga as animações infinitas (seta, bob, glow, alvo do descarte) e encurta
+   as outras para quase zero. Onde a animação carrega um significado, fica um
+   estado parado no lugar dela. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* o monte sem jogada fica aceso, sem piscar */
+  .draw-pile.can-draw::after {
+    animation: none !important;
+    opacity: 1;
+  }
+}
+
+/* distribuição das cartas no começo da rodada: a mão só fica clicável quando todas chegam */
+.hand.dealing .card {
+  pointer-events: none;
+}

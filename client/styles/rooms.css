@@ -1,0 +1,241 @@
+/* ---------- salas públicas ---------- */
+
+.rooms-box {
+  gap: 16px;
+}
+
+.rooms-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.rooms-head .modal-sub {
+  margin-top: 4px;
+}
+
+.rooms-head .btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+#refreshRooms .icon {
+  transition: rotate 0.4s;
+}
+
+#refreshRooms:active .icon {
+  rotate: 180deg;
+}
+
+.room-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  max-height: min(420px, 50dvh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: left;
+  scrollbar-width: thin;
+}
+
+/* uma mesa por linha: quem criou, o código numa plaquinha, a situação, os lugares e o botão */
+.room-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px 10px 10px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  transition: background 0.15s;
+}
+
+.room-list.enter li {
+  animation: room-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.room-list.enter li:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.room-list.enter li:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.room-list.enter li:nth-child(n + 4) {
+  animation-delay: 150ms;
+}
+
+@keyframes room-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+}
+
+@media (hover: hover) {
+  .room-list li:not(.empty):not(.full):hover {
+    background: var(--surface-3);
+  }
+}
+
+.room-list li.full {
+  opacity: 0.6;
+}
+
+.room-list li > .avatar {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  font-size: var(--fs-xl);
+  border-width: 3px;
+}
+
+.room-list .room-info {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.room-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.room-head .tag {
+  white-space: nowrap;
+}
+
+/* o código numa plaquinha de papel, como uma carta */
+.room-code-sm {
+  padding: 3px 8px 2px;
+  border-radius: 6px;
+  background: var(--card-face);
+  color: var(--card-ink);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-lg);
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.room-seats {
+  display: flex;
+  gap: 4px;
+}
+
+.room-seats i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+}
+
+.room-seats i.on {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+
+.room-list .room-info small {
+  color: var(--silver-300);
+  font-size: var(--fs-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-list li .btn {
+  flex: none;
+  min-width: 84px;
+}
+
+/* nenhuma sala: três versos de carta em leque e um convite para criar a sua, num degrau de tom
+   (sem contorno) e com o mesmo botão principal da tela inicial */
+.room-list .empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 20px 24px;
+  background: var(--surface-2);
+  color: var(--silver-300);
+  text-align: center;
+}
+
+.room-list .empty b {
+  color: var(--ink);
+  font-size: var(--fs-xl);
+}
+
+.room-list .empty .btn {
+  margin-top: 14px;
+  width: min(100%, 300px);
+  min-height: 60px;
+  font-size: var(--fs-xl);
+}
+
+.rooms-empty-art {
+  display: grid;
+  grid-template-areas: 'c';
+  margin-bottom: 10px;
+}
+
+.rooms-empty-art .card {
+  --card-w: 46px;
+  --card-h: 66px;
+  grid-area: c;
+  transform-origin: 50% 120%;
+  box-shadow: var(--shadow);
+}
+
+.rooms-empty-art .card:nth-child(1) {
+  rotate: -14deg;
+}
+
+.rooms-empty-art .card:nth-child(3) {
+  rotate: 14deg;
+}
+
+@media (max-width: 520px) {
+  .room-list li {
+    gap: 10px;
+  }
+
+  .room-list li > .avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .room-list li .btn {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-list.enter li {
+    animation: none;
+  }
+}
+
+.tag {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(194, 193, 194, 0.16);
+  color: var(--silver-300);
+}
+
+.tag.playing {
+  background: rgba(245, 196, 58, 0.16);
+  color: var(--gold);
+}

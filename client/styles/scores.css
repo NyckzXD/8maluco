@@ -1,0 +1,181 @@
+/* ---------- placar ---------- */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-height: 0;
+  padding: 4px 8px 0;
+}
+
+/* botão de fechar e fundo escurecido só existem na gaveta do celular */
+.side-close,
+.side-scrim {
+  display: none;
+}
+
+.side .chat-panel {
+  flex: 1;
+}
+
+/* em telas baixas o chat da lateral encolhe para o placar e o campo caberem sem rolar a página */
+@media (max-height: 560px) {
+  .side .chat-log {
+    min-height: 72px;
+  }
+}
+
+.side .chat-panel .panel-head {
+  cursor: pointer;
+  user-select: none;
+}
+
+.side .chat-panel .panel-head h3 {
+  margin: 0;
+}
+
+.chat-toggle {
+  display: none;
+  position: relative;
+}
+
+.side .chat-toggle {
+  display: inline-flex;
+}
+
+.chat-toggle .chevron {
+  transition: transform 0.2s;
+}
+
+.side .chat-panel.collapsed {
+  flex: 0 0 auto;
+}
+
+.side .chat-panel.collapsed .chat-log,
+.side .chat-panel.collapsed .chat-form {
+  display: none;
+}
+
+.side .chat-panel.collapsed .chevron {
+  transform: rotate(-90deg);
+}
+
+/* "Limite 100" no cabeçalho do placar */
+.score-limit {
+  color: var(--silver);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.score-limit b {
+  font-family: var(--font-hud);
+  font-size: var(--fs-lg);
+  color: var(--ink);
+}
+
+.score-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.score-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.score-list .avatar {
+  width: 28px;
+  height: 28px;
+  font-size: var(--fs-xs);
+  border-width: 2px;
+  grid-row: span 2;
+}
+
+.score-list b {
+  font-family: var(--font-hud);
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.score-list .nm {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* você: fundo levemente mais claro; quem joga agora: anel vermelho no avatar */
+.score-list li.me {
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border-radius: var(--r-md);
+  background: rgba(194, 193, 194, 0.07);
+}
+
+.score-list .you {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.score-list li.turn .avatar {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--primary);
+}
+
+.score-list li.turn .nm {
+  color: var(--ink);
+}
+
+/* quanto falta para o limite, ao lado da barra */
+.score-list .left {
+  grid-column: 3;
+  font-family: var(--font-hud);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.score-list .bar {
+  position: relative;
+  grid-column: 2;
+  align-self: center;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+}
+
+.score-list .bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--silver);
+}
+
+.score-list .bar::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: -3px;
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.score-list li.out {
+  opacity: 0.45;
+}
+
+.score-list li.out .nm {
+  text-decoration: line-through;
+}

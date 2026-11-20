@@ -1,0 +1,315 @@
+/* ---------- minha mão ---------- */
+
+.me-bar {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.turn-banner {
+  font-weight: 700;
+  min-width: 0;
+  background: var(--primary);
+  color: var(--primary-ink);
+  padding: 6px 16px;
+  border-radius: var(--r-pill);
+  text-wrap: balance;
+  animation: banner-in 0.3s ease-out;
+}
+
+@keyframes banner-in {
+  from {
+    transform: translateX(-8px);
+    opacity: 0;
+  }
+}
+
+.turn-banner:empty {
+  display: none;
+}
+
+.me-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  color: #fff;
+}
+
+.me-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* a barra de tempo fica só para o leitor de tela; na tela, o tempo é o anel no seu avatar */
+.timer-bar {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.timer-bar i {
+  display: block;
+}
+
+/* segundos que faltam, logo depois do aviso de vez */
+.timer-secs {
+  font-family: var(--font-hud);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--silver);
+  visibility: hidden;
+}
+
+.timer-secs.on {
+  visibility: visible;
+}
+
+.timer-secs.low {
+  color: var(--red-text);
+}
+
+/* seus pontos até o limite, no canto direito da sua barra (só no desktop) */
+.me-score {
+  margin-left: auto;
+  display: grid;
+  gap: 5px;
+  min-width: 170px;
+  font-variant-numeric: tabular-nums;
+}
+
+.me-score:empty {
+  display: none;
+}
+
+.me-score-label {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--silver);
+  font-weight: 600;
+}
+
+.me-score-cap {
+  margin-right: auto;
+}
+
+.me-score-label b {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xl);
+  color: var(--ink);
+}
+
+.me-score-bar {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.me-score-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--silver);
+  transition: width 0.6s ease-out;
+}
+
+/* perto do limite (20 pontos ou menos): a barra fica vermelha */
+.me-score-bar.danger i {
+  background: var(--primary);
+}
+
+/* no desktop os pontos ficam no placar à direita; no celular, ao lado do "Você" */
+.me-pts {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .me-score {
+    display: none;
+  }
+
+  .me-pts {
+    display: inline;
+  }
+}
+
+.hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  padding: 22px 8px 8px;
+  min-height: calc(var(--card-h) + 30px);
+}
+
+/* Fileiras da mão (montadas em layoutHand): a de trás fica meio coberta pela da frente,
+   deixando à mostra o canto com número e pinta. */
+.hand-row {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.hand-row + .hand-row {
+  margin-top: calc(var(--card-h) * -0.52);
+}
+
+.hand .card {
+  flex: none;
+  transition:
+    transform 0.15s,
+    filter 0.2s,
+    box-shadow 0.15s;
+  touch-action: manipulation;
+}
+
+.hand .card + .card {
+  margin-left: var(--overlap, 6px);
+}
+
+.hand.my-turn .card.playable {
+  cursor: pointer;
+  transform: translateY(-14px);
+  box-shadow:
+    0 0 0 3px var(--primary),
+    var(--shadow);
+}
+
+.hand.rows.my-turn .card.playable {
+  transform: translateY(-6px);
+}
+
+@media (hover: hover) {
+  .hand.my-turn .card.playable:hover {
+    transform: translateY(-24px);
+    z-index: 2;
+  }
+}
+
+/* No toque, a 1ª batida seleciona e a 2ª joga (ou toque no monte). */
+.hand.my-turn .card.playable.selected {
+  transform: translateY(-30px);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 6px var(--primary),
+    var(--shadow-lg);
+  z-index: 3;
+}
+
+.discard-pile.drop-target {
+  cursor: pointer;
+}
+
+.discard-pile:focus-visible {
+  outline: 3px solid var(--silver-300);
+  outline-offset: 12px;
+  border-radius: var(--r-md);
+}
+
+/* ---------- arrastar a carta para o monte ---------- */
+
+/* na sua vez o dedo arrasta a carta em vez de rolar a tela */
+.hand.my-turn .card {
+  touch-action: none;
+}
+
+.hand .card.dragging {
+  opacity: 0.25;
+  filter: none;
+}
+
+.card.drag-ghost {
+  position: fixed;
+  z-index: 11;
+  margin: 0;
+  pointer-events: none;
+  will-change: transform;
+  box-shadow:
+    0 0 0 3px var(--primary),
+    var(--shadow-lg);
+}
+
+body.is-dragging,
+body.is-dragging * {
+  cursor: grabbing !important;
+}
+
+.discard-pile.drag-ready.drag-over::after {
+  inset: -12px;
+  border: 3px solid var(--primary);
+  background: rgba(237, 28, 36, 0.14);
+  animation: none;
+  opacity: 1;
+}
+
+.discard-pile.drop-target::after,
+.discard-pile.drag-ready::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 2px dashed var(--silver-300);
+  border-radius: var(--r-md);
+  pointer-events: none;
+  animation: target-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes target-pulse {
+  to {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discard-pile.drop-target::after,
+  .discard-pile.drag-ready::after {
+    animation: none;
+  }
+}
+
+.hand.my-turn .card:not(.playable) {
+  filter: brightness(0.82) saturate(0.75);
+}
+
+/* foco pelo teclado: a carta ganha contorno e fica por cima das vizinhas */
+.hand .card:focus {
+  outline: none;
+}
+
+.hand .card:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  z-index: 4;
+}
+
+.hand.my-turn .card.playable:focus-visible {
+  transform: translateY(-24px);
+}
+
+.hand .card.fresh {
+  animation: fresh 0.5s ease-out;
+}
+
+@keyframes fresh {
+  from {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+}
+
+.spectator {
+  color: #fff;
+  text-align: center;
+  align-self: center;
+  margin: auto;
+}

@@ -1,0 +1,48 @@
+/* dica com o efeito da carta especial, logo acima da carta na mão */
+.card-tip {
+  position: fixed;
+  translate: -50% -100%;
+  z-index: 12;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: 8px 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  text-align: center;
+  pointer-events: none;
+  animation: fade 0.15s;
+}
+
+.card-tip b {
+  color: var(--ink);
+}
+
+/* setinha apontando para a carta */
+.card-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: calc(50% + var(--caret-x, 0px));
+  translate: -50% -50%;
+  width: 10px;
+  height: 10px;
+  rotate: 45deg;
+  background: var(--surface-3);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.hand .card {
+  -webkit-touch-callout: none;
+}
+
+/* durante a partida: logo abaixo da barra do topo, sem cobrir as cartas */
+.flash.in-game {
+  bottom: auto;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+}
