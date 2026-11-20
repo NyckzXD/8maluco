@@ -30,3 +30,21 @@ test('avatar inválido vindo do navegador vira null', () => {
   // campos extras são descartados
   assert.deepEqual(sanitizeAvatar({ ...ok, evil: '<script>' }), ok);
 });
+
+test('avatar salvo antes dos acessórios continua valendo, sem acessório', () => {
+  const { accessory: _a, accessoryColor: _c, ...old } = randomAvatar();
+  assert.deepEqual(sanitizeAvatar(old), { ...old, accessory: 0, accessoryColor: 0 });
+  // acessório presente mas inválido continua derrubando o avatar
+  assert.equal(sanitizeAvatar({ ...old, accessory: 99 }), null);
+});
+
+test('chapéu com qualquer cabelo e rosto desenha sem erro', () => {
+  const base = randomAvatar();
+  for (let accessory = 0; accessory < AVATAR_PARTS.accessory; accessory++) {
+    for (let hair = 0; hair < AVATAR_PARTS.hair; hair++) {
+      for (let face = 0; face < AVATAR_PARTS.face; face++) {
+        assert.doesNotMatch(avatarSVG({ ...base, accessory, hair, face }), /undefined|NaN/);
+      }
+    }
+  }
+});
