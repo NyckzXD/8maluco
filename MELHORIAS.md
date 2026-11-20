@@ -128,11 +128,11 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 ## 🔧 Código e servidor
 
-- [ ] **22. Dividir `app.js` e `style.css`**
+- [x] **22. Dividir `app.js` e `style.css`**
       `app.js` tem 3.397 linhas e `style.css` 4.462.
   - Pronto quando: o cliente é dividido em módulos ES sem build (rede, mesa, animações, modais, editor de avatar) e o CSS por tela, sem mudar o comportamento.
   - Feito (JS): `client/app.js` virou 22 módulos em `client/src/` (`main.js` é a entrada; `core.js` tem o estado da sala e as utilidades; um módulo por parte da tela: `lobby`, `table`, `hand`, `drag`, `suit-picker`, `audio`, `avatar-editor`...). O Vite junta tudo no build. O estado compartilhado (`state`, `roomCode`...) só muda pelas funções `set...` do `core.js`. Os tipos do cliente entram no `npm run typecheck`. Conferido no navegador: partida com bots, arrastar, pinta do 8, reações, resultado e rodada 2, no desenvolvimento e no build de produção.
-  - Falta: dividir o `client/style.css` por tela.
+  - Feito (CSS): `client/style.css` virou 24 arquivos em `client/styles/` (`base`, `components`, `home`, `account`, `howto`, `rooms`, `ranking`, `lobby`, `chat`, `table`, `seats`, `reactions`, `hand`, `cards`, `scores`, `modals`, `results`, `rules`, `feedback`, `card-tip`, `mobile`, `avatar`, `motion`, `analysis`). O `style.css` ficou só com os `@import`, na ordem da cascata, e o `index.html` continua apontando para ele; o Vite junta tudo num CSS só no build. As regras estão na mesma ordem de antes, com duas exceções sem efeito: os pedaços da tela inicial (menu, entrar com código, rodapé) foram juntados no `home.css` antes da conta e do "Como jogar", e as salas abertas vêm antes do ranking (os seletores não se cruzam). O balão do chat foi para o `reactions.css`, depois das regras de `.reaction`. Conferido: o build sai com o mesmo tamanho e as mesmas 688 regras, e no navegador o estilo calculado de cada elemento é igual ao do CSS antigo (comparando os dois na mesma página) na tela inicial, no lobby e na partida com bots, no celular e no desktop.
 
 - [x] **23. Testes do servidor**
       Só o motor e o avatar têm testes.
@@ -201,11 +201,6 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
   - Onde: `Room.disconnect()` em `server/rooms.js`
   - Pronto quando: depois de uns 3 minutos desconectado, o jogador sai da mesa (`removePlayer`, como quem clica em sair) com aviso no chat. Se ele voltar antes, nada muda.
   - Feito: quando quem está na partida cai, `disconnect()` arma o `seatTimer` (`armSeatTimer()`, `SEAT_GRACE_MS` = 3 minutos), e o `join()` desarma esse timer quando a pessoa volta. Se o timer chega ao fim, o chat avisa "Fulano ficou 3 minutos desconectado" e depois "Fulano saiu da mesa". O `removePlayer` devolve as cartas dele para o baralho e passa a vez (se sobrar um só jogador, a partida acaba). A pessoa continua na sala até a partida acabar: se voltar depois, aparece como "Você está fora", e a volta para a sala ou a revanche tiram quem ainda estiver desconectado, como já acontecia. Teste em `test/names.test.js`.
-
-- [ ] **32. Mesa sem nenhum humano fica parada**
-      Se todos os humanos caem, os bots e as jogadas automáticas continuam jogando por até 5 minutos (`EMPTY_ROOM_MS`), e quem volta pode encontrar a partida decidida.
-  - Onde: `Room.schedule()` / `disconnect()` / `join()` em `server/rooms.js`
-  - Pronto quando: sem nenhum humano conectado o relógio para (sem timers rodando); quando alguém volta, a vez recomeça com o prazo cheio.
 
 - [x] **33. Nomes repetidos na mesma sala**
       Dois "Jogador" (o padrão) ou dois "Ana" ficam iguais no chat, no placar e no "Fulano jogou", e o chat manda só o nome (`from`), sem o id. Também dá para se chamar "Robô Zeca".
