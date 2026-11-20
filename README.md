@@ -92,7 +92,7 @@ Para ligar:
 | --- | --- |
 | `shared/engine.js` | Regras do jogo, sem rede nem tela. Funciona no servidor e pode ir para o app. |
 | `shared/bot.js` | Os bots: a heurística simples (`chooseMoveBasic`, que joga nas salas) e a busca forte (`chooseMove`/`evaluateMoves`, usada na análise). Veja "Como o bot joga" abaixo. |
-| `shared/ranking.js` | Regra do ranking (partida vale com 3 ou mais pessoas na mesa; bots não contam), usada pelo servidor e pela tela. |
+| `shared/ranking.js` | Regra do ranking (partida vale com 4 ou mais pessoas na mesa; bots não contam), usada pelo servidor e pela tela. |
 | `shared/names.js` | Regras de apelido que valem no servidor e na tela (nomes "Robô …" são só dos bots) e as de apelido e senha de conta. |
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
 | `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). Contas em `/api` (`api.js`: cadastro, entrar, sair, `/me`, apagar conta; `auth.js`: senha com scrypt, sessões e contas do Google; `google.js`: confere o token do Google; no fim de cada partida com alguém logado, a sala manda o resumo para o banco, e `/api/leaderboard` monta o ranking; `db.js`: o SQLite e as migrações). No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
