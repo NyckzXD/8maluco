@@ -62,7 +62,24 @@ export const OUTFIT_COLORS = [
   color('Preto', '#2a2a30'),
 ];
 
-export const OUTFITS = ['Camiseta', 'Gola V', 'Moletom', 'Social', 'Regata', 'Jaqueta', 'Listrada', 'Gola alta'];
+// Acessórios usam a mesma paleta das roupas.
+export const ACCESSORY_COLORS = OUTFIT_COLORS;
+
+export const OUTFITS = [
+  'Camiseta',
+  'Gola V',
+  'Moletom',
+  'Social',
+  'Regata',
+  'Jaqueta',
+  'Listrada',
+  'Gola alta',
+  'Camisa 8',
+  'Xadrez',
+  'Macacão',
+  'Crupiê',
+  'Florida',
+];
 export const HAIRS = [
   'Careca',
   'Curto',
@@ -75,6 +92,12 @@ export const HAIRS = [
   'Moicano',
   'Cacheado',
   'Chiquinhas',
+  'Rabo de cavalo',
+  'Tranças',
+  'Tigela',
+  'Ondulado',
+  'Raspado',
+  'Dreads',
 ];
 export const FACES = [
   'Sorriso',
@@ -89,6 +112,26 @@ export const FACES = [
   'Óculos escuros',
   'Bigode',
   'Sardas',
+  'Gargalhada',
+  'Estrelas',
+  'Desconfiado',
+  'Triste',
+  'Barba',
+  'Cavanhaque',
+];
+export const ACCESSORIES = [
+  'Nenhum',
+  'Boné',
+  'Gorro',
+  'Fone',
+  'Brincos',
+  'Cartola',
+  'Coroa',
+  'Laço',
+  'Faixa',
+  'Viseira',
+  'Flor',
+  'Bandana',
 ];
 
 // Quantas opções cada parte tem. A ordem das chaves é a ordem das abas do editor.
@@ -100,12 +143,21 @@ export const AVATAR_PARTS = {
   hair: HAIRS.length,
   hairColor: HAIR_COLORS.length,
   face: FACES.length,
+  accessory: ACCESSORIES.length,
+  accessoryColor: ACCESSORY_COLORS.length,
 };
+
+// Partes que entraram depois: avatares salvos antes delas (no navegador e no banco) não as têm,
+// então a falta vira este valor em vez de invalidar o avatar inteiro.
+const LATER_PARTS = { accessory: 0, accessoryColor: 0 };
 
 const pick = (n) => Math.floor(Math.random() * n);
 
 export function randomAvatar() {
-  return Object.fromEntries(Object.entries(AVATAR_PARTS).map(([k, n]) => [k, pick(n)]));
+  const a = Object.fromEntries(Object.entries(AVATAR_PARTS).map(([k, n]) => [k, pick(n)]));
+  // Sem acessório em boa parte dos sorteios, para a mesa não virar um desfile de chapéus.
+  if (Math.random() < 0.4) a.accessory = 0;
+  return a;
 }
 
 // Aceita só índices inteiros dentro das listas; o que vier errado vira null (sem avatar, mostra a inicial).
@@ -113,7 +165,7 @@ export function sanitizeAvatar(input) {
   if (!input || typeof input !== 'object') return null;
   const out = {};
   for (const [k, n] of Object.entries(AVATAR_PARTS)) {
-    const v = input[k];
+    const v = input[k] === undefined && k in LATER_PARTS ? LATER_PARTS[k] : input[k];
     if (!Number.isInteger(v) || v < 0 || v >= n) return null;
     out[k] = v;
   }
@@ -167,9 +219,9 @@ let uid = 0;
 function clipper() {
   const id = `av${(++uid).toString(36)}`;
   let n = 0;
-  return (d, content) => {
+  return (d, content, rule = 'nonzero') => {
     const cid = `${id}-${n++}`;
-    return `<clipPath id="${cid}"><path d="${d}"/></clipPath><g clip-path="url(#${cid})">${content}</g>`;
+    return `<clipPath id="${cid}"><path d="${d}" clip-rule="${rule}"/></clipPath><g clip-path="url(#${cid})">${content}</g>`;
   };
 }
 
@@ -240,6 +292,95 @@ function outfitSvg(style, c, skin, clip) {
       const collar = 'M42 64H58Q59.6 64 59.7 66L60 76.5Q50 81.5 40 76.5L40.3 66Q40.4 64 42 64Z';
       return torso(c) + fill(collar, shade) + line('M40.6 71Q50 74.6 59.4 71', deep, 1.4);
     }
+    case 8: // camisa de time, com o 8 no peito e faixa nas mangas
+      return (
+        torso(c) +
+        fill('M41 75Q50 79.5 59 75L50 86Z', neckTone) +
+        line('M41.6 76.2L50 86L58.4 76.2', trim, 2.2) +
+        line('M24 96.5L29 93M76 96.5L71 93', trim, 2.4) +
+        `<circle cx="50" cy="89.6" r="2.7" fill="none" stroke="${trim}" stroke-width="2.1"/>` +
+        `<circle cx="50" cy="96.2" r="3.4" fill="none" stroke="${trim}" stroke-width="2.1"/>`
+      );
+    case 9: {
+      // camisa xadrez: faixas largas no tom escuro e finas no claro, com gola de ponta
+      const dark = darken(c, 0.32);
+      const bands = [16, 32, 50, 68, 84];
+      const grid =
+        bands
+          .map((x) => `<rect x="${x - 2.6}" y="70" width="5.2" height="40" fill="${dark}" opacity=".45"/>`)
+          .join('') +
+        [84, 98]
+          .map((y) => `<rect x="0" y="${y - 2.6}" width="100" height="5.2" fill="${dark}" opacity=".45"/>`)
+          .join('') +
+        bands.map((x) => `<rect x="${x + 6.6}" y="70" width="1.2" height="40" fill="${trim}" opacity=".45"/>`).join('');
+      return (
+        fill(BODY, c) +
+        clip(BODY, grid) +
+        line('M27.5 104V93M72.5 104V93', dark, 1.8) +
+        fill('M41 75Q50 79.5 59 75L50 86Z', neckTone) +
+        soft('M41 75L50 86L44 88L38.5 79Z', shade, 1) +
+        soft('M59 75L50 86L56 88L61.5 79Z', shade, 1)
+      );
+    }
+    case 10: {
+      // macacão: alças e peitilho por cima de uma camiseta
+      const tee = isLight(c) ? '#e5484d' : PAPER;
+      return (
+        torso(tee, darken(tee, 0.16)) +
+        line('M41.8 76.4Q50 80.8 58.2 76.4', darken(tee, 0.16), 2.4) +
+        soft('M37.5 104V89Q37.5 87 39.5 87H60.5Q62.5 87 62.5 89V104Z', c, 1.4) +
+        line('M36 77.5L40 88M64 77.5L60 88', c, 3.6) +
+        `<rect x="45" y="91.5" width="10" height="6.5" rx="1.6" fill="${shade}"/>` +
+        dot(40.4, 89.6, 1.5, '#ffc83d') +
+        dot(59.6, 89.6, 1.5, '#ffc83d')
+      );
+    }
+    case 11: {
+      // crupiê: camisa branca, colete e gravata-borboleta
+      const shirt = PAPER;
+      const vest = isLight(c) ? darken(c, 0.12) : c;
+      const bow = isLight(c) ? '#2a2a30' : '#e5484d';
+      return (
+        torso(shirt, '#d6d2c8') +
+        soft('M41 75L50 91V104H27.5V88Q29 79 41 75Z', vest, 1.2) +
+        soft('M59 75L50 91V104H72.5V88Q71 79 59 75Z', tone(vest, 0.1), 1.2) +
+        [95, 100.5].map((y) => dot(50.2, y, 1.1, '#ffc83d')).join('') +
+        soft('M50 79.2L44.2 76.2V82.2Z', bow, 1) +
+        soft('M50 79.2L55.8 76.2V82.2Z', bow, 1) +
+        dot(50, 79.2, 1.7, darken(bow, 0.2))
+      );
+    }
+    case 12: {
+      // camisa florida, aberta no pescoço
+      const petal = isLight(c) ? '#e84393' : PAPER;
+      const flower = (x, y) =>
+        [0, 72, 144, 216, 288]
+          .map((a) => {
+            const r = (a * Math.PI) / 180;
+            return dot(+(x + Math.cos(r) * 2.3).toFixed(2), +(y + Math.sin(r) * 2.3).toFixed(2), 1.7, petal);
+          })
+          .join('') + dot(x, y, 1.2, '#ffc83d');
+      return (
+        fill(BODY, c) +
+        clip(
+          BODY,
+          [
+            [20, 90],
+            [33, 99],
+            [64, 86],
+            [79, 96],
+            [57, 100],
+            [42, 92],
+          ]
+            .map(([x, y]) => flower(x, y))
+            .join(''),
+        ) +
+        line('M27.5 104V93M72.5 104V93', shade, 1.8) +
+        fill('M41 75Q50 79.5 59 75L50 89Z', neckTone) +
+        soft('M41 75L50 89L43.5 90L37 80Z', shade, 1) +
+        soft('M59 75L50 89L56.5 90L63 80Z', shade, 1)
+      );
+    }
     default: // camiseta, com um naipe pequeno no peito
       return (
         torso(c) +
@@ -282,7 +423,12 @@ function hairSvg(style, c, skin) {
       // comprido, repartido no meio
       const B = 'M28 46C26 27 38 19.5 50 19.5C62 19.5 74 27 72 46L74 80Q66 84 59 80L57 62H43L41 80Q34 84 26 80Z';
       const F = cap('C68 41 62 33 50 27C38 33 32 41 30 46');
-      return { cast: [F], ears: false, back: soft(B, back, 1), front: fill(F, c) };
+      return {
+        cast: [F],
+        ears: false,
+        back: soft(B, back, 1),
+        front: fill(F, c) + line('M44 28Q38.5 32 35.5 38', accent, 1.6),
+      };
     }
     case 5: {
       // coque com elástico
@@ -306,7 +452,12 @@ function hairSvg(style, c, skin) {
       // chanel com franja reta
       const B = 'M27 46C26 27 38 20 50 20C62 20 74 27 73 46V63Q73 68 68 68H32Q27 68 27 63Z';
       const F = cap('L68 38H32L30 46');
-      return { cast: [F], ears: false, back: fill(B, back), front: soft(F, c, 1) };
+      return {
+        cast: [F],
+        ears: false,
+        back: fill(B, back),
+        front: soft(F, c, 1) + line('M36 31Q41 25.5 49 24.5', accent, 1.6),
+      };
     }
     case 8: {
       // moicano: laterais raspadas e crista no meio
@@ -340,7 +491,78 @@ function hairSvg(style, c, skin) {
           `<ellipse cx="21" cy="50" rx="7" ry="11" fill="${back}"/><ellipse cx="79" cy="50" rx="7" ry="11" fill="${back}"/>` +
           dot(27, 39.5, 2.8, RED) +
           dot(73, 39.5, 2.8, RED),
-        front: fill(F, c),
+        front: fill(F, c) + line('M60 27Q55 24.5 50 24.5', accent, 1.6),
+      };
+    }
+    case 11: {
+      // rabo de cavalo balançando para o lado
+      const F = cap('C68 38 62 33 50 32.5C38 33 32 38 30 46');
+      const P = 'M63 25C76 22 84 35 81 49C79.5 57 75 62 70.5 64.5C73 56 73.5 48 70.5 41C68.5 35.5 66 31 61.5 29Z';
+      return {
+        cast: [F],
+        back: soft(P, back, 1.2) + line('M76.5 34Q79.5 43 76 53', tone(back, 0.15), 1.4),
+        front: fill(F, c) + dot(66.4, 27.6, 2.8, RED) + line('M58 27Q53 25 47 25.5', accent, 1.6),
+      };
+    }
+    case 12: {
+      // duas tranças caindo na frente dos ombros
+      const F = cap('C68 41 62 34 50 31C38 34 32 41 30 46');
+      const braid = (x) =>
+        [52, 58.6, 65.2, 71.8, 78.4]
+          .map((y, i) => `<ellipse cx="${x}" cy="${y}" rx="${4.2 - i * 0.25}" ry="3.9" fill="${i % 2 ? back : c}"/>`)
+          .join('') +
+        `<rect x="${x - 2.8}" y="81.6" width="5.6" height="2.6" rx="1.3" fill="${RED}"/>` +
+        soft(`M${x - 1.6} 84.2H${x + 1.6}L${x + 2.4} 88.6H${x - 2.4}Z`, c, 1);
+      return {
+        cast: [F],
+        ears: false,
+        back: fill('M28.5 47C27 28 38 20.5 50 20.5C62 20.5 73 28 71.5 47Z', back),
+        front: fill(F, c) + braid(27.4) + braid(72.6) + line('M50 30.5V23', back, 1.4),
+      };
+    }
+    case 13: {
+      // tigela: franja reta e laterais até a orelha
+      const F = 'M29 48C27 30 38 21 50 21C62 21 73 30 71 48H67V37.6H33V48Z';
+      return {
+        cast: ['M29 48C27 30 38 21 50 21C62 21 73 30 71 48V37.6H29Z'],
+        ears: false,
+        front: soft(F, c, 1.2) + line('M36 31Q41 25.5 49 24.5', accent, 1.8),
+      };
+    }
+    case 14: {
+      // ondulado comprido, com franja de lado
+      const B =
+        'M27 46C25 27 38 19.5 50 19.5C62 19.5 75 27 73 46C76.5 52 71 56 74 62C77 68 72 72 74 78Q66 82 60 77L57 62H43L40 77Q34 82 26 78C28 72 23 68 26 62C29 56 23.5 52 27 46Z';
+      const F = cap('C68 40 64 33 56 30C48 33 38 33 33 38C31.5 40.5 30.5 43 30 46');
+      return {
+        cast: [F],
+        ears: false,
+        back: soft(B, back, 1),
+        front: fill(F, c) + line('M62 28.5Q56 25 48 25', accent, 1.6),
+      };
+    }
+    case 15: {
+      // raspado: só a sombra do cabelo bem curto
+      const S = 'M31 44C30.5 30 39 23.6 50 23.6C61 23.6 69.5 30 69 44C66 37.5 60 35 50 35C40 35 34 37.5 31 44Z';
+      return { front: fill(S, mix(skin, c, 0.6)) };
+    }
+    case 16: {
+      // dreads: fios grossos atrás e dois caindo na frente
+      const F = cap('C68 39 63 34.5 50 34C37 34.5 32 39 30 46');
+      const strands = [24.5, 29.5, 70.5, 75.5]
+        .map((x) => line(`M${x} 34Q${x + (x < 50 ? -1.6 : 1.6)} 52 ${x} 72`, back, 5))
+        .join('');
+      return {
+        cast: [F],
+        ears: false,
+        back: fill('M27.5 46C26 28 38 20 50 20C62 20 74 28 72.5 46Z', back) + strands,
+        front:
+          fill(F, c) +
+          line('M31.5 40Q29 50 30 60M68.5 40Q71 50 70 60', c, 4.4) +
+          line('M27.9 47.4H32.1M27.8 52H32M68 47.4H72.1M68 52H72.2', back, 1) +
+          dot(30, 56, 1.7, '#ffc83d') +
+          dot(70, 56, 1.7, '#ffc83d') +
+          line('M43 24.6Q40.6 28.6 40.2 34.2M50 23.8V34M57 24.6Q59.4 28.6 59.8 34.2', back, 1.2),
       };
     }
     default: // careca
@@ -356,7 +578,10 @@ function faceSvg(style, skin, hairColor, clip) {
   const browC = against(mix(hairColor, INK, isLight(hairColor) ? 0.5 : 0.25), skin);
   const mouthFill = '#5c1a24';
   const tongue = '#ff7a90';
-  const eye = (x, r = 2.3) => dot(x, 47, r, ink);
+  // Olho redondo com um pontinho de brilho, que dá vida ao olhar.
+  const eye = (x, r = 2.3, dx = 0) =>
+    dot(x + dx, 47, r, ink) +
+    dot(+(x + dx + r * 0.36).toFixed(2), +(47 - r * 0.36).toFixed(2), +(r * 0.34).toFixed(2), '#fff');
   const eyes = (r) => eye(42, r) + eye(58, r);
   const brows = (lift = 0, w = 2) =>
     line(`M38.5 ${41 - lift}Q42 ${39.4 - lift} 45.5 ${41 - lift}`, browC, w) +
@@ -479,8 +704,251 @@ function faceSvg(style, skin, hairColor, clip) {
       ];
       return brows(0.6) + eyes() + freckles.map(([x, y]) => dot(x, y, 0.9, darken(skin, 0.3))).join('') + nose + smile;
     }
+    case 12: // gargalhada: olhos espremidos e uma lágrima de rir
+      return (
+        brows(2) +
+        line('M39 44.6L44.6 47.2L39 49.8', ink, 2.2) +
+        line('M61 44.6L55.4 47.2L61 49.8', ink, 2.2) +
+        nose +
+        openMouth('M41.5 54.6H58.5Q58.5 65.4 50 65.4Q41.5 65.4 41.5 54.6Z') +
+        fill('M36.2 49.6Q34.4 52.6 36.2 53.8Q38 52.6 36.2 49.6Z', '#59c3ff') +
+        blush(0.4)
+      );
+    case 13: {
+      // olhos de estrela
+      const star = (cx, cy, r) => {
+        const pts = Array.from({ length: 10 }, (_, i) => {
+          const a = -Math.PI / 2 + (i * Math.PI) / 5;
+          const rr = i % 2 ? r * 0.45 : r;
+          return `${(cx + Math.cos(a) * rr).toFixed(2)} ${(cy + Math.sin(a) * rr).toFixed(2)}`;
+        });
+        return soft(`M${pts.join('L')}Z`, '#ffb300', 0.9) + dot(cx, cy + 0.4, r * 0.22, '#fff3c4');
+      };
+      return (
+        brows(2.6) +
+        star(42, 47, 4.6) +
+        star(58, 47, 4.6) +
+        nose +
+        openMouth('M43 55.5H57Q57 63.5 50 63.5Q43 63.5 43 55.5Z') +
+        blush(0.3)
+      );
+    }
+    case 14: // desconfiado: uma sobrancelha erguida e olhar de lado
+      return (
+        line('M38.5 42.6H45.5', browC, 2.2) +
+        line('M54.5 39.6Q58 37 61.5 39', browC, 2.2) +
+        eye(42, 2.4, 1.4) +
+        eye(58, 2.4, 1.4) +
+        // pálpebras baixas: a pele cobre o alto dos olhos e um traço marca a borda
+        `<rect x="38" y="42.8" width="8.6" height="3.6" fill="${skin}"/><rect x="54" y="43.4" width="8.6" height="3" fill="${skin}"/>` +
+        line('M38.8 46.4H46M54.8 46.4H62', ink, 1.7) +
+        nose +
+        line('M45 58.8Q50.5 59.4 55.5 57.2', ink, 2.2)
+      );
+    case 15: // triste: sobrancelhas caídas, beicinho e uma lágrima
+      return (
+        line('M38.5 42.4Q42 41.4 45.5 39.6', browC) +
+        line('M61.5 42.4Q58 41.4 54.5 39.6', browC) +
+        eyes(2.5) +
+        nose +
+        line('M45 60.4Q50 56.8 55 60.4', ink, 2.2) +
+        fill('M60.6 50.4Q58.6 53.8 60.6 55Q62.6 53.8 60.6 50.4Z', '#59c3ff')
+      );
+    case 16: {
+      // barba cheia, da cor do cabelo, com bigode e a boca aparecendo
+      const beardC = against(hairColor, skin);
+      const B =
+        'M31 47C31 60.5 39 70 50 70C61 70 69 60.5 69 47C67 53 63.5 55.5 59 55.5C56 53.4 44 53.4 41 55.5C36.5 55.5 33 53 31 47Z';
+      return (
+        brows(0.6, 2.4) +
+        eyes() +
+        line('M48.6 51Q50 52.4 51.4 51', darken(skin, 0.24), 1.6) +
+        soft(B, beardC, 1) +
+        line('M42.6 64.6Q50 67.4 57.4 64.6', tone(beardC, 0.25), 1.2) +
+        `<ellipse cx="50" cy="59.8" rx="4.8" ry="2.5" fill="${darken(skin, 0.1)}"/>` +
+        line('M46.8 59.4Q50 61.6 53.2 59.4', ink, 1.8) +
+        soft(
+          'M50 56.6C47 54.4 42.6 54.8 41.2 57.8C44 58.6 47.6 58.2 50 57.4C52.4 58.2 56 58.6 58.8 57.8C57.4 54.8 53 54.4 50 56.6Z',
+          beardC,
+          1,
+        )
+      );
+    }
+    case 17: {
+      // cavanhaque e bigodinho, com meio sorriso
+      const beardC = against(hairColor, skin);
+      return (
+        brows(1) +
+        eyes() +
+        nose +
+        soft('M44.6 56.2Q50 53.2 55.4 56.2Q50 55.4 44.6 56.2Z', beardC, 1.4) +
+        line('M46 58.8Q51 60.6 55 57.8', ink, 2) +
+        soft('M46.6 62Q50 61 53.4 62Q53.4 67 50 68.2Q46.6 67 46.6 62Z', beardC, 1)
+      );
+    }
     default: // sorriso
       return brows() + eyes() + nose + smile + blush(0.2);
+  }
+}
+
+// ---------- acessórios ----------
+// Ficam por cima de tudo. Chapéus têm `hat`: o cabelo que ficaria acima da aba some
+// (recortado), menos o que escapa pelos lados. `cast` projeta sombra na testa, como no cabelo.
+
+function accessorySvg(style, c, skin) {
+  const shade = tone(c, 0.18);
+  const deep = tone(c, 0.32);
+  const trim = isLight(c) ? darken(c, 0.4) : PAPER;
+  const GOLD = '#ffc83d';
+  const GOLD_DEEP = '#e0a21c';
+
+  switch (style) {
+    case 1: // boné com aba para a frente e um naipe na copa
+      return {
+        hat: { y: 36, left: 29, right: 71 },
+        cast: ['M30 37Q50 34 70 37V41Q50 38 30 41Z'],
+        svg:
+          fill('M29 36.5C29 24 38 16.5 50 16.5C62 16.5 71 24 71 36.5Z', c) +
+          line('M50 17V35M40 20Q37.5 27 37.5 35.5M60 20Q62.5 27 62.5 35.5', shade, 1.2) +
+          dot(50, 17.2, 1.9, shade) +
+          fill(
+            'M50 25.4C48.4 27.4 46.8 28.3 46.8 29.7C46.8 31 48.2 31.4 49.2 30.6L48.7 31.9H51.3L50.8 30.6C51.8 31.4 53.2 31 53.2 29.7C53.2 28.3 51.6 27.4 50 25.4Z',
+            trim,
+          ) +
+          soft('M26.6 36.6Q50 31 73.4 36.6Q74.4 41.6 66.4 41.8Q50 38.2 33.6 41.8Q25.6 41.6 26.6 36.6Z', deep, 1.2) +
+          line('M31 38.4Q50 34.4 69 38.4', shade, 1.1),
+      };
+    case 2: // gorro com barra canelada e pompom
+      return {
+        hat: { y: 38, left: 27.5, right: 72.5 },
+        cast: ['M29 38H71V41.5H29Z'],
+        svg:
+          dot(50, 13.6, 5.6, trim) +
+          fill('M28.6 38C28.6 23.5 38 15.5 50 15.5C62 15.5 71.4 23.5 71.4 38Z', c) +
+          `<rect x="27.4" y="31" width="45.2" height="8.6" rx="3.4" fill="${shade}"/>` +
+          [33, 39, 45, 50, 55, 61, 67].map((x) => line(`M${x} 33V37.6`, deep, 1.2)).join(''),
+      };
+    case 3: // fone de ouvido
+      return {
+        svg:
+          line('M27.6 46C26.4 25 37 15.6 50 15.6C63 15.6 73.6 25 72.4 46', c, 3.6) +
+          line('M30.6 30Q33.6 21.6 42 18.4', lighten(c, 0.3), 1.2, 'opacity=".7"') +
+          [
+            [22.4, 30.6],
+            [69.4, 77.6],
+          ]
+            .map(
+              ([x, pad]) =>
+                `<rect x="${pad - 1.4}" y="40.6" width="4" height="13.8" rx="2" fill="${INK}"/>` +
+                `<rect x="${x}" y="39" width="8.2" height="17" rx="4.1" fill="${c}"/>` +
+                `<rect x="${x + 2}" y="43" width="4.2" height="9" rx="2.1" fill="${shade}"/>`,
+            )
+            .join(''),
+      };
+    case 4: {
+      // brincos de argola com uma pedrinha
+      const ring = against(c, skin);
+      return {
+        svg: [30.8, 69.2]
+          .map(
+            (x) =>
+              `<circle cx="${x}" cy="55" r="2.8" fill="none" stroke="${ring}" stroke-width="1.5"/>` +
+              dot(x, 57.8, 1.4, GOLD),
+          )
+          .join(''),
+      };
+    }
+    case 5: // cartola com faixa
+      return {
+        hat: { y: 31, left: 24, right: 76 },
+        cast: ['M31 31H69V35Q50 33 31 35Z'],
+        svg:
+          soft('M35.5 30V9.4Q35.5 6.8 38 6.8H62Q64.5 6.8 64.5 9.4V30Z', c, 1) +
+          `<rect x="35.5" y="22.6" width="29" height="5" fill="${trim}"/>` +
+          line('M39 10V21', lighten(c, 0.22), 1.6, 'opacity=".6"') +
+          soft(
+            'M23.6 31Q23.6 27.4 29.6 27.8H70.4Q76.4 27.4 76.4 31Q76.4 34 70.4 33.4Q50 31.4 29.6 33.4Q23.6 34 23.6 31Z',
+            shade,
+            1,
+          ),
+      };
+    case 6: // coroa dourada com a pedra na cor escolhida
+      return {
+        svg:
+          soft('M37 27.4L35.2 13.4L43 19.8L50 10.4L57 19.8L64.8 13.4L63 27.4Z', GOLD, 1.4) +
+          `<rect x="36.4" y="23.8" width="27.2" height="4.4" rx="1.2" fill="${GOLD_DEEP}"/>` +
+          [35.2, 50, 64.8].map((x, i) => dot(x, i === 1 ? 10.4 : 13.4, 1.6, GOLD)).join('') +
+          dot(50, 21.4, 2.2, c) +
+          dot(42.4, 25.9, 1.1, lighten(GOLD, 0.5)) +
+          dot(57.6, 25.9, 1.1, lighten(GOLD, 0.5)),
+      };
+    case 7: // laço no alto da cabeça
+      return {
+        svg:
+          '<g transform="rotate(-18 63 25)">' +
+          soft('M63 25L54.2 19Q51.8 25 54.2 31Z', c, 1.6) +
+          soft('M63 25L71.8 19Q74.2 25 71.8 31Z', c, 1.6) +
+          line('M58 23.6L55.6 22.4M68 23.6L70.4 22.4', shade, 1.2) +
+          `<rect x="60.6" y="22" width="4.8" height="6" rx="2" fill="${shade}"/>` +
+          '</g>',
+      };
+    case 8: // faixa na testa, com as pontas do nó
+      return {
+        cast: ['M30 36.5H70V39.5H30Z'],
+        svg:
+          soft('M70.4 33.6L77.4 31.4L76.6 35.8Z', shade, 1.2) +
+          soft('M70.4 34.8L76 39.6L72.4 41.2Z', shade, 1.2) +
+          `<rect x="29" y="30.6" width="42" height="6.2" rx="3" fill="${c}"/>` +
+          line('M30.6 33.7H69.4', trim, 1.1, 'opacity=".75"'),
+      };
+    case 9: // viseira de crupiê, translúcida
+      return {
+        svg:
+          `<rect x="29.4" y="30.2" width="41.2" height="4" rx="2" fill="${shade}"/>` +
+          fill('M29.6 33.4Q50 30.4 70.4 33.4Q71.2 41.4 50 43.6Q28.8 41.4 29.6 33.4Z', c, 'opacity=".72"') +
+          line('M30.4 34.2Q50 31.4 69.6 34.2', lighten(c, 0.35), 1.2, 'opacity=".8"'),
+      };
+    case 10: {
+      // flor atrás da orelha
+      const petals = [0, 72, 144, 216, 288]
+        .map((a) => {
+          const r = (a * Math.PI) / 180;
+          return dot(+(66 + Math.cos(r) * 3.6).toFixed(2), +(31 + Math.sin(r) * 3.6).toFixed(2), 3, c);
+        })
+        .join('');
+      return {
+        svg:
+          soft('M64 36Q68.4 40.4 73.6 38.6Q70 34 64 36Z', '#43a047', 1) +
+          petals +
+          dot(66, 31, 2.4, isLight(c) ? '#e5484d' : GOLD),
+      };
+    }
+    case 11: {
+      // bandana amarrada, com bolinhas
+      const D = 'M29 38C29 24.5 38 17 50 17C62 17 71 24.5 71 38Q50 33.4 29 38Z';
+      return {
+        hat: { y: 37, left: 29, right: 71 },
+        cast: ['M30 37Q50 33.4 70 37V40Q50 36.4 30 40Z'],
+        svg:
+          soft('M69 33L78.6 37.6L72 41.4Z', shade, 1.2) +
+          soft('M69.6 35.4L76 44.6L70.6 44Z', shade, 1.2) +
+          fill(D, c) +
+          [
+            [40, 23],
+            [50, 21.6],
+            [60, 23],
+            [35, 30.6],
+            [45, 28.6],
+            [55, 28.6],
+            [65, 30.6],
+          ]
+            .map(([x, y]) => dot(x, y, 1.3, trim))
+            .join('') +
+          dot(70.2, 35.8, 2.6, deep),
+      };
+    }
+    default: // nenhum
+      return {};
   }
 }
 
@@ -500,22 +968,42 @@ export function avatarSVG(avatar, { view = '0 0 100 100', title } = {}) {
   const picked = HAIR_COLORS[a.hairColor].hex;
   const hairColor = Math.abs(lum(picked) - lum(skin)) < 30 ? darken(picked, 0.4) : picked;
   const hair = hairSvg(a.hair, hairColor, skin);
+  const acc = accessorySvg(a.accessory, ACCESSORY_COLORS[a.accessoryColor].hex, skin);
+  // Com chapéu, o cabelo dentro de uma cúpula um pouco maior que ele some (o chapéu fica por cima);
+  // o que passa dessa cúpula, como o volume do black power ou um rabo de cavalo, continua.
+  const hat = acc.hat;
+  const underHat = (svg) => {
+    if (!hat || !svg) return svg ?? '';
+    const rx = (hat.right - hat.left) / 2 + 8;
+    const dome = `M${50 - rx} ${hat.y}A${rx} ${hat.y - 2} 0 0 1 ${50 + rx} ${hat.y}Z`;
+    return clip(`M-10 -10H110V110H-10Z${dome}`, svg, 'evenodd');
+  };
   const ear = darken(skin, 0.08);
+  const earIn = darken(skin, 0.22);
+  const neck = darken(skin, 0.12);
+  const cast = [...(hair.cast ?? []), ...(acc.cast ?? [])];
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${escapeAttr(view)}" role="img" aria-label="${escapeAttr(title ?? 'Avatar')}">`,
     `<rect x="-20" y="-20" width="140" height="140" fill="${bg}"/>`,
     // disco mais claro atrás da figura: destaca roupa e cabelo mesmo quando têm a cor do fundo
     dot(50, 60, 43, lighten(bg, 0.24)),
-    hair.back ?? '',
-    fill(NECK, darken(skin, 0.12)),
+    underHat(hair.back),
+    // pescoço com a sombra do queixo
+    fill(NECK, neck),
+    clip(NECK, `<ellipse cx="50" cy="63.5" rx="10" ry="6" fill="${darken(skin, 0.24)}"/>`),
     outfitSvg(a.outfit, OUTFIT_COLORS[a.outfitColor].hex, skin, clip),
-    hair.ears === false ? '' : dot(31, 47.5, 4.2, ear) + dot(69, 47.5, 4.2, ear),
+    hair.ears === false
+      ? ''
+      : dot(31, 47.5, 4.2, ear) +
+        dot(69, 47.5, 4.2, ear) +
+        line('M30.6 45.4Q28.8 47.6 30.8 49.8M69.4 45.4Q71.2 47.6 69.2 49.8', earIn, 1.3),
     fill(HEAD_D, skin),
-    hair.cast
-      ? clip(HEAD_D, hair.cast.map((d) => fill(d, darken(skin, 0.14), 'transform="translate(0 2.4)"')).join(''))
+    cast.length
+      ? clip(HEAD_D, cast.map((d) => fill(d, darken(skin, 0.14), 'transform="translate(0 2.4)"')).join(''))
       : '',
     faceSvg(a.face, skin, hairColor, clip),
-    hair.front ?? '',
+    underHat(hair.front),
+    acc.svg ?? '',
     '</svg>',
   ].join('');
 }

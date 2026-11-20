@@ -1,5 +1,7 @@
 // Avatar do jogador: salvo neste navegador, com editor na tela inicial.
 import {
+  ACCESSORIES,
+  ACCESSORY_COLORS,
   BACKGROUNDS,
   FACES,
   HAIRS,
@@ -59,6 +61,12 @@ const AVATAR_TABS = [
     label: 'Rosto',
     icon: 'smile',
     styles: { key: 'face', list: FACES, view: '27 28 46 46' },
+  },
+  {
+    label: 'Extras',
+    icon: 'hat',
+    styles: { key: 'accessory', list: ACCESSORIES, view: '12 2 76 76' },
+    colors: { key: 'accessoryColor', list: ACCESSORY_COLORS },
   },
 ];
 
