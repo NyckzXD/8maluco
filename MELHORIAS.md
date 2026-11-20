@@ -109,6 +109,7 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 
 - [ ] **20. Mais avatar**
   - Pronto quando: há acessórios (boné, brinco, fone) como nova parte em `shared/avatar.js`, dá para guardar alguns avatares prontos e o vencedor aparece com o avatar grande na tela final.
+  - Feito (acessórios e mais opções): duas partes novas, `accessory` e `accessoryColor` (mesma paleta das roupas), com a aba "Extras" no editor: boné, gorro, fone, brincos, cartola, coroa, laço, faixa, viseira de crupiê, flor e bandana. Com chapéu, o cabelo dentro de uma cúpula um pouco maior que ele é recortado, e o que passa dela (volume do black power, rabo de cavalo, chiquinhas) continua aparecendo. Avatares salvos antes (no navegador e no banco) não têm essas chaves: o `sanitizeAvatar` as completa com "Nenhum" em vez de descartar o avatar. Também entraram 6 cabelos (rabo de cavalo, tranças, tigela, ondulado, raspado, dreads), 6 rostos (gargalhada, estrelas, desconfiado, triste, barba, cavanhaque) e 5 roupas (camisa 8, xadrez, macacão, crupiê, florida). O desenho ganhou brilho nos olhos, o detalhe de dentro da orelha, a sombra do queixo no pescoço e reflexo em mais cabelos. Faltam os avatares prontos e o avatar grande do vencedor.
 
 ## 🔧 Código e servidor
 
