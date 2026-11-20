@@ -1,6 +1,6 @@
 # 8 Maluco
 
-Jogo de cartas 8 Maluco multiplayer online, no estilo Gartic: cria uma sala, manda o código ou o link para a galera, completa a mesa com bots e joga.
+Jogo de cartas multiplayer online: cria uma sala, manda o código ou o link para a galera, completa a mesa com bots e joga.
 
 ## Rodando
 
