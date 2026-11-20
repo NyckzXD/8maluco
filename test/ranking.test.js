@@ -52,13 +52,13 @@ const bia = { id: 2, nickname: 'Bia' };
 const caio = { id: 3, nickname: 'Caio' };
 
 test(`vale com ${RANKED_MIN_HUMANS} pessoas na mesa; bots não contam e convidado conta para chegar lá`, () => {
-  const { room, ids, summaries } = playingRoom([{ user: ana }, { user: bia }, {}, { bot: true }]);
+  const { room, ids, summaries } = playingRoom([{ user: ana }, { user: bia }, {}, {}, { bot: true }]);
   assert.equal(room.viewFor(ids[0], []).ranked, true);
   finish(room, ids[1]);
   assert.equal(summaries.length, 1);
   const s = summaries[0];
   assert.equal(s.ranked, true);
-  assert.equal(s.humans, 3);
+  assert.equal(s.humans, 4);
   assert.equal(s.bots, 1);
   // só quem tem conta entra no resumo
   assert.deepEqual(
@@ -72,8 +72,8 @@ test(`vale com ${RANKED_MIN_HUMANS} pessoas na mesa; bots não contam e convidad
   room.dispose();
 });
 
-test('duas pessoas e bots não valem', () => {
-  const { room, ids, summaries } = playingRoom([{ user: ana }, { user: bia }, { bot: true }, { bot: true }]);
+test('três pessoas e bots não valem', () => {
+  const { room, ids, summaries } = playingRoom([{ user: ana }, { user: bia }, {}, { bot: true }, { bot: true }]);
   assert.equal(room.viewFor(ids[0], []).ranked, false);
   finish(room, ids[0]);
   assert.equal(summaries.length, 1); // grava no histórico, mas marcada como não valendo
@@ -135,7 +135,7 @@ test('rodadas vencidas contam e a revanche começa um registro novo', () => {
 });
 
 test('o registro da partida sobrevive ao reinício do servidor', () => {
-  const { room, ids, manager } = playingRoom([{ user: ana }, { user: bia }, {}]);
+  const { room, ids, manager } = playingRoom([{ user: ana }, { user: bia }, {}, {}]);
   const data = JSON.parse(JSON.stringify(manager.snapshot()));
   room.dispose();
   const summaries = [];
@@ -166,7 +166,7 @@ async function accountsWith(...names) {
   return { accounts, ids };
 }
 
-const game = (ranked, players) => ({ code: 'ABCDE', ranked, humans: 3, bots: 0, players });
+const game = (ranked, players) => ({ code: 'ABCDE', ranked, humans: 4, bots: 0, players });
 const seat = (userId, won, roundsWon = 0, avatar = null) => ({ userId, won, roundsWon, avatar });
 
 test('ranking: só partidas que valem, mais vitórias primeiro, empate desfeito por menos partidas', async () => {
