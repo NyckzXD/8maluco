@@ -6,14 +6,17 @@ import { $, $$, cardName, el, emit, store } from './core.js';
 
 const AUTO_KEY = 'om_analysis_auto';
 const OPEN_KEY = 'om_analysis_open';
+const DETAILS_KEY = 'om_analysis_details';
 
 let auto = store.get(AUTO_KEY) === '1';
 let open = store.get(OPEN_KEY) !== '0';
+// A lista de opções aberta. No celular começa fechada: o painel fica numa linha só (a jogada
+// sugerida) e não cobre a mesa.
+let details = (store.get(DETAILS_KEY) ?? (matchMedia('(max-width: 860px)').matches ? '0' : '1')) === '1';
 let situation = null; // a situação analisada (ou sendo analisada) agora
 let result = null; // resposta do servidor para `situation`
 let pending = false;
-let showAll = false; // a lista inteira ou só as TOP_MOVES melhores
-const TOP_MOVES = 5;
+const TOP_MOVES = 3; // a lista mostra só as melhores
 let lastFeedback = null; // como foi a sua última jogada perto da do bot
 let lastAnalysis = null; // a análise da sua última vez (para comparar com o que você fez)
 
@@ -84,7 +87,9 @@ function paint(s) {
   const g = s.game;
   const myTurn = g.phase === 'playing' && g.turnId === s.me;
   box.classList.toggle('open', open);
+  box.classList.toggle('details', details);
   $('#analysisShow').setAttribute('aria-expanded', String(open));
+  $('#analysisDetails').setAttribute('aria-expanded', String(details));
   const auto$ = /** @type {HTMLInputElement} */ ($('#analysisAuto'));
   auto$.checked = auto;
   const body = $('#analysisBody');
@@ -96,45 +101,21 @@ function paint(s) {
   // escondida, nada da análise aparece (nem a marca na mão)
   if (open && myTurn && best?.type === 'play') $(`#hand [data-id="${best.cardId}"]`)?.classList.add('bot-pick');
 
+  // o título é a jogada sugerida: é o que fica à vista com o painel compacto
+  $('#analysisTitle').textContent =
+    myTurn && pending ? 'Pensando…' : myTurn && best ? moveLabel(best, g.hand) : 'Análise do bot';
+  $('#analysisTitle').classList.toggle('analysis-best', !!(myTurn && best));
+
   if (lastFeedback) parts.push(el('p', `analysis-feedback ${lastFeedback.good ? 'good' : 'bad'}`, lastFeedback.text));
 
   if (!myTurn) {
-    parts.push(el('p', 'analysis-note', 'Na sua vez, veja o que o bot forte jogaria.'));
+    if (details) parts.push(el('p', 'analysis-note', 'Na sua vez, veja o que o bot forte jogaria.'));
   } else if (pending) {
-    parts.push(el('p', 'analysis-note', 'Pensando…'));
+    // o título já diz "Pensando…"
   } else if (result?.error) {
     parts.push(el('p', 'analysis-note', result.error));
   } else if (result?.moves) {
-    parts.push(el('p', 'analysis-best', moveLabel(best, g.hand)));
-    const list = el('ol', 'analysis-list');
-    const shown = showAll ? result.moves : result.moves.slice(0, TOP_MOVES);
-    for (const m of shown) {
-      const item = el('li', m.best ? 'best' : '');
-      item.append(
-        el('span', 'analysis-move', moveLabel(m, g.hand)),
-        el('span', 'analysis-loss', m.best ? 'melhor' : `−${fmt(m.loss)}`),
-      );
-      list.append(item);
-    }
-    parts.push(list);
-    const hidden = result.moves.length - TOP_MOVES;
-    if (hidden > 0) {
-      const more = el('button', 'btn btn-text analysis-more', showAll ? 'Mostrar menos' : `Mais ${hidden} opções`);
-      more.type = 'button';
-      more.setAttribute('aria-expanded', String(showAll));
-      more.addEventListener('click', () => {
-        showAll = !showAll;
-        paint(state());
-      });
-      parts.push(more);
-    }
-    parts.push(
-      el(
-        'p',
-        'analysis-note',
-        `−N: em média, termina a rodada N pontos pior que a melhor. ${result.samples} simulações.`,
-      ),
-    );
+    if (details) appendDetails(parts, result, g);
   } else {
     const ask = el('button', 'btn btn-small', 'O que o bot jogaria?');
     ask.type = 'button';
@@ -142,6 +123,20 @@ function paint(s) {
     parts.push(ask);
   }
   body.replaceChildren(...parts);
+}
+
+// A lista de opções com quanto cada uma perde para a melhor.
+function appendDetails(parts, result, g) {
+  const list = el('ol', 'analysis-list');
+  for (const m of result.moves.slice(0, TOP_MOVES)) {
+    const item = el('li', m.best ? 'best' : '');
+    const loss = el('span', 'analysis-loss', m.best ? 'melhor' : `−${fmt(m.loss)}`);
+    // a explicação do número fica na dica, para a lista continuar curta
+    if (!m.best) loss.title = `Em média, termina a rodada ${fmt(m.loss)} pontos pior que a melhor`;
+    item.append(el('span', 'analysis-move', moveLabel(m, g.hand)), loss);
+    list.append(item);
+  }
+  parts.push(list);
 }
 
 let current = null;
@@ -163,7 +158,6 @@ export function renderAnalysis(s) {
     situation = now;
     result = null;
     pending = false;
-    showAll = false;
     if (myTurn) lastFeedback = null; // vez nova: o comentário da anterior já foi visto
   }
   // depois de trocar a situação: comprar e continuar na vez também ganha comentário
@@ -187,6 +181,11 @@ export function renderAnalysis(s) {
   };
   $('#analysisShow').addEventListener('click', () => setOpen(true));
   $('#analysisHide').addEventListener('click', () => setOpen(false));
+  $('#analysisDetails').addEventListener('click', () => {
+    details = !details;
+    store.set(DETAILS_KEY, details ? '1' : '0');
+    if (current) paint(current);
+  });
   $('#analysisAuto').addEventListener('change', (e) => {
     auto = /** @type {HTMLInputElement} */ (e.target).checked;
     store.set(AUTO_KEY, auto ? '1' : '0');

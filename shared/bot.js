@@ -30,7 +30,7 @@ const rankIdx = (rank) => (rank && rank !== JOKER ? RANKS.indexOf(rank) : -1);
 /** @typedef {{ maxRollouts?: number, maxMs?: number, seed?: number, maxPlies?: number }} BotOptions */
 
 // Quanto ele pensa por jogada. Bot no servidor espera 3–5s antes de jogar, então 150ms não aparecem.
-export const BOT_DEFAULTS = Object.freeze({ maxRollouts: 20000, maxMs: 150, maxPlies: 400 });
+export const BOT_DEFAULTS = Object.freeze({ maxRollouts: 20000, maxMs: 300, maxPlies: 400 });
 
 // Pesos do resultado de uma rodada (em pontos).
 const ELIM_COST = 80; // sair da partida

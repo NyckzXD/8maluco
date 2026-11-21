@@ -465,13 +465,25 @@
               </button>
               <div id="analysisPanel" class="analysis-panel">
                 <div class="analysis-head">
+                  <!-- com resultado, o título vira a jogada sugerida (o painel compacto do celular só mostra isso) -->
                   <span class="analysis-title">
                     <svg class="icon" aria-hidden="true"><use href="#i-bot" /></svg>
-                    Análise do bot
+                    <span id="analysisTitle">Análise do bot</span>
                   </span>
                   <label class="analysis-auto"
                     ><input id="analysisAuto" type="checkbox" /> sempre</label
                   >
+                  <button
+                    id="analysisDetails"
+                    type="button"
+                    class="analysis-details"
+                    title="Ver todas as opções"
+                    aria-label="Ver todas as opções"
+                    aria-controls="analysisBody"
+                    aria-expanded="true"
+                  >
+                    <svg class="icon" aria-hidden="true"><use href="#i-chevron" /></svg>
+                  </button>
                   <button
                     id="analysisHide"
                     type="button"
