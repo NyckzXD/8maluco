@@ -154,7 +154,7 @@ Gasta de 40 a 70 ms por jogada em média.
 
 ### Análise do bot
 
-Para aprender a jogar melhor: na sua vez, um painel no canto da mesa mostra o que o bot forte jogaria e quanto cada opção perde para a melhor ("−2,3" = em média, termina a rodada 2,3 pontos pior). A carta sugerida fica marcada na mão. Depois que você joga, o painel compara a sua jogada com a do bot.
+Para aprender a jogar melhor: na sua vez, um painel no canto da mesa mostra o que o bot forte jogaria e as 3 melhores opções, com quanto cada uma perde para a melhor ("−2,3" = em média, termina a rodada 2,3 pontos pior; a explicação aparece ao passar o mouse no número). A carta sugerida fica marcada na mão. Depois que você joga, o painel compara a sua jogada com a do bot.
 
 - **Quem vê**: só as contas cujo apelido está em `ANALYSIS_USERS` (sem acento nem caixa: `ANALYSIS_USERS=Zé` libera "ze"). Convidados nunca veem. O servidor confere no `game:analyze`, então esconder o painel na tela não é a única barreira.
 - **Quando**: só na sua vez, ao vivo; nada é gravado. Com "sempre" marcado, a análise vem sozinha a cada vez; sem, aparece o botão "O que o bot jogaria?". O botão × esconde o painel e deixa só um "Mostrar análise" no canto; escondida, nada aparece (nem a carta marcada) e nada é pedido ao servidor, mesmo com "sempre". A escolha fica guardada no navegador.
