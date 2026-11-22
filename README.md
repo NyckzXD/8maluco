@@ -39,7 +39,7 @@ Tudo o mais vem de variáveis de ambiente. Em casa, o jeito mais fácil é um ar
 | `PORT` | `3000` | Porta do servidor. |
 | `NODE_ENV` | — | Com `production`, o `TRUST_PROXY` passa a valer 1. |
 | `TRUST_PROXY` | `1` em produção, `0` fora | Quantos proxies ficam na frente do servidor (Render, Railway e Fly têm 1). Serve para pegar o IP real nos limites por IP. Sem proxy, deixe `0`, senão qualquer um inventa o IP no `X-Forwarded-For`. |
-| `ALLOWED_ORIGINS` | vazio | Outras origens que podem conectar, separadas por vírgula. O site servido pelo próprio servidor sempre pode. Para o app Capacitor: `capacitor://localhost,http://localhost`. |
+| `ALLOWED_ORIGINS` | vazio | Outras origens que podem conectar, separadas por vírgula. O site servido pelo próprio servidor sempre pode. Para o app: `capacitor://localhost,https://localhost` (iOS e Android; veja "App Android e iOS"). |
 | `MAX_ROOMS` | `500` | Teto de salas abertas. Acima disso, "Servidor cheio, tente daqui a pouco". |
 | `MAX_CONNECTIONS_PER_IP` | `20` | Conexões simultâneas por IP. Uma família na mesma rede de casa cabe com folga. |
 | `SNAPSHOT_FILE` | `data/rooms.json` | Onde as salas ficam gravadas entre um processo e outro. Precisa estar num disco que sobreviva ao deploy (veja abaixo). `off` desliga. |
@@ -101,6 +101,7 @@ Para ligar:
 | `client/src/` | Um módulo por parte da tela. `main.js` é a entrada (conexão e convite) e carrega os outros; `core.js` tem atalhos do DOM, o socket e o estado da sala, que os outros leem direto e só mudam pelas funções `set...`. Telas: `home`, `ranking` (os primeiros e a sua posição), `account` (entrar, criar conta, sair e apagar; a sessão vai no handshake do socket), `howto`, `avatar-editor`, `lobby`, `results`. Mesa: `table` (assentos e voos), `deal`, `pile`, `hand`, `card-tip`, `drag`, `suit-picker`, `scores`, `clock`, `render` (desenha cada atualização). Gerais: `modals`, `chat`, `reactions`, `cards` (desenho das cartas e ícones), `audio`, `analysis` (o painel da análise do bot). |
 | `public/` | Arquivos que vão para o build do jeito que estão, sempre no mesmo caminho: fontes, ícones, cartas, sons, `manifest.json` e o service worker (PWA). |
 | `dist/` | Saída do `npm run build` (fora do git). |
+| `android/`, `ios/` | Projetos nativos do app (Capacitor), configurados em `capacitor.config.json`. Veja "App Android e iOS". |
 | `test/` | Testes com `node:test`: regras (`engine`), bots (`bot`, `analysis`), salas (`rooms`, `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`), avatar, e rede de ponta a ponta com clientes socket.io reais (`multiplayer`, `production`, `restart`). |
 
 ### PWA
@@ -161,9 +162,21 @@ Para aprender a jogar melhor: na sua vez, um painel no canto da mesa mostra o qu
 - **Custo**: cada análise pensa até 400 ms (`ANALYSIS_MS` em `server/rooms.js`) e é reaproveitada se você pedir de novo na mesma situação. Limite de 6 pedidos a cada 10 s.
 - **Atenção**: é ajuda de verdade durante a partida, inclusive nas que valem ranking.
 
-## Próximo passo: app mobile
+## App Android e iOS
 
-O motor (`shared/`) não depende do navegador nem do servidor, então dá para:
+O app é o mesmo cliente embrulhado com o [Capacitor](https://capacitorjs.com/): o `npm run build:mobile` gera o `dist/` e copia para os projetos nativos em `android/` e `ios/` (que ficam no git; os arquivos copiados não). Os arquivos da tela vão dentro do app, então ela abre sem depender do servidor, e só o tempo real e as contas vão pela rede.
 
-1. **Capacitor** (o caminho mais rápido): embrulhar a pasta `dist/` (o `webDir` do Capacitor) como app Android/iOS e apontar o `io()` do `client/src/core.js` para o servidor publicado. O cliente do Socket.IO já vem no build, então o app não depende do servidor para carregar a tela. Para o servidor aceitar o app, coloque a origem dele em `ALLOWED_ORIGINS` (veja "Publicando").
-2. **React Native / Expo**: refazer a interface nativa e reaproveitar `shared/engine.js` e `shared/bot.js`, inclusive para um modo offline contra bots.
+Para gerar:
+
+1. Copie o `.env.mobile.example` para `.env.mobile` e ponha em `VITE_SERVER_URL` o endereço do servidor publicado, com `https`. Sem ele, o build do app para com erro.
+2. No servidor, defina `ALLOWED_ORIGINS=capacitor://localhost,https://localhost`: é a origem da página dentro do app no iOS e no Android.
+3. `npm run android` abre o projeto no Android Studio; `npm run ios` abre no Xcode (só no macOS). Os dois rodam o `build:mobile` antes. Depois de mudar o cliente, `npm run build:mobile` atualiza os dois projetos.
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run build:mobile` | `vite build --mode mobile` (lê o `.env.mobile`) e `cap sync` (copia o `dist/` para `android/` e `ios/` e atualiza os plugins). |
+| `npm run android` / `npm run ios` | O mesmo, e abre o projeto nativo. |
+
+No código, `client/src/platform.js` diz se está no app (`isNative`) e para onde conectar (`SERVER_URL`, vazio no navegador). No app, o socket e o `/api` vão para o `SERVER_URL`, o link de convite também aponta para ele, e o service worker não é registrado. O resto do cliente é igual ao do site. O id do app (`appId` em `capacitor.config.json`) não muda depois de publicado nas lojas.
+
+Falta para publicar: login do Google nativo (o botão do site não funciona dentro do app) e "Entrar com a Apple", abrir convites direto no app (App Links e Universal Links), compartilhar, vibrar, botão voltar do Android e reconexão ao voltar do segundo plano com os plugins do Capacitor, ícones e tela de abertura, e o que as lojas pedem (moderação do chat, política de privacidade).
