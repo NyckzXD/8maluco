@@ -46,6 +46,9 @@ Tudo o mais vem de variáveis de ambiente. Em casa, o jeito mais fácil é um ar
 | `DATABASE_FILE` | `data/oito-maluco.db` | Banco SQLite das contas (apelido, hash da senha, sessões). Tem que ficar no mesmo disco persistente do `SNAPSHOT_FILE` (por exemplo `/data/oito-maluco.db`): sem volume, cada deploy apaga todas as contas. |
 | `GOOGLE_CLIENT_ID` | vazio | Liga o "Entrar com o Google" (veja "Login com o Google" abaixo). Vazio, o botão não aparece e só vale apelido e senha. |
 | `ANALYSIS_USERS` | vazio | Apelidos de conta, separados por vírgula, que veem na própria vez o que o bot forte jogaria (veja "Análise do bot" abaixo). Vazio, ninguém vê. |
+| `ANDROID_CERT_SHA256` | vazio | Impressões digitais SHA-256 do certificado que assina o app Android, separadas por vírgula. Liga o `/.well-known/assetlinks.json` (convites abrem no app; veja "App Android e iOS"). |
+| `APPLE_TEAM_ID` | vazio | Team ID da conta de desenvolvedor da Apple. Liga o `/.well-known/apple-app-site-association`. |
+| `APP_ID` | o `appId` do `capacitor.config.json` | Id do app nas lojas, usado nesses dois arquivos. Só mude se o app for publicado com outro id. |
 
 - **Limites por conexão** (`RATE_LIMITS` em `server/index.js`): 5 salas criadas por minuto, 12 tentativas de entrar por minuto, 30 pedidos da lista de salas por minuto, 10 jogadas, compras ou passes a cada 5s, e 20 a cada 10s nos outros eventos. Mensagens maiores que 16KB derrubam a conexão de quem mandou.
 - **Desligamento e volta**: no `SIGTERM` (o que as plataformas mandam no deploy) e no Ctrl+C, o servidor avisa todas as salas ("O servidor vai reiniciar. A partida continua quando ele voltar!"), para os timers dos bots, grava as salas em `SNAPSHOT_FILE` e fecha. Ao subir, ele lê o arquivo, apaga-o e recria as salas com todo mundo desconectado. A partida fica parada até a primeira pessoa voltar; aí a vez de quem estava jogando recomeça com o prazo cheio. Os clientes reconectam sozinhos e voltam pelo token para o mesmo lugar, com as mesmas cartas. Gravações com mais de 10 minutos são ignoradas. O arquivo tem os tokens dos jogadores, por isso a pasta `data/` fica fora do git. Uma queda sem aviso (falta de memória, `kill -9`) não grava nada, e aí as partidas se perdem.
@@ -95,13 +98,14 @@ Para ligar:
 | `shared/ranking.js` | Regra do ranking (partida vale com 4 ou mais pessoas na mesa; bots não contam), usada pelo servidor e pela tela. |
 | `shared/names.js` | Regras de apelido que valem no servidor e na tela (nomes "Robô …" são só dos bots) e as de apelido e senha de conta. |
 | `shared/reactions.js` | Lista das reações rápidas (validada no servidor, desenhada no navegador) e o limite de frequência. |
-| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). Contas em `/api` (`api.js`: cadastro, entrar, sair, `/me`, apagar conta; `auth.js`: senha com scrypt, sessões e contas do Google; `google.js`: confere o token do Google; no fim de cada partida com alguém logado, a sala manda o resumo para o banco, e `/api/leaderboard` monta o ranking; `db.js`: o SQLite e as migrações). No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
+| `server/` | Express + Socket.IO: salas, anfitrião, bots, chat, reações, tempo por vez, reconexão e as salas gravadas entre reinícios (`snapshot.js`). Contas em `/api` (`api.js`: cadastro, entrar, sair, `/me`, apagar conta; `auth.js`: senha com scrypt, sessões e contas do Google; `google.js`: confere o token do Google; no fim de cada partida com alguém logado, a sala manda o resumo para o banco, e `/api/leaderboard` monta o ranking; `db.js`: o SQLite e as migrações). `app-links.js`: os arquivos `/.well-known/` que fazem os convites abrirem no app. No desenvolvimento, monta o Vite como middleware na mesma porta; em produção, serve o `dist/`. |
 | `client/` | Interface web (`index.html`, `style.css` e os módulos em `src/`, JS puro sem framework), responsiva para celular. Entrada do Vite (`vite.config.js`). |
 | `client/styles/` | O CSS, um arquivo por tela ou parte da tela, juntados pelos `@import` do `style.css` na ordem da cascata (o Vite gera um CSS só). Base: `base` (fontes, cores, medidas), `components` (botões, ícones). Tela inicial: `home`, `account`, `howto`, `rooms`, `ranking`. `lobby`, `chat`. Partida: `table`, `seats`, `reactions`, `hand`, `cards`, `scores`. `modals` (inclui a escolha da pinta), `results`, `rules`, `feedback` (espera, conexão caída, confirmações, avisos), `card-tip`. No fim, porque sobrescrevem o que vem antes: `mobile`, `avatar`, `motion` (movimento reduzido), `analysis`. |
 | `client/src/` | Um módulo por parte da tela. `main.js` é a entrada (conexão e convite) e carrega os outros; `core.js` tem atalhos do DOM, o socket e o estado da sala, que os outros leem direto e só mudam pelas funções `set...`. Telas: `home`, `ranking` (os primeiros e a sua posição), `account` (entrar, criar conta, sair e apagar; a sessão vai no handshake do socket), `howto`, `avatar-editor`, `lobby`, `results`. Mesa: `table` (assentos e voos), `deal`, `pile`, `hand`, `card-tip`, `drag`, `suit-picker`, `scores`, `clock`, `render` (desenha cada atualização). Gerais: `modals`, `chat`, `reactions`, `cards` (desenho das cartas e ícones), `audio`, `analysis` (o painel da análise do bot). |
 | `public/` | Arquivos que vão para o build do jeito que estão, sempre no mesmo caminho: fontes, ícones, cartas, sons, `manifest.json` e o service worker (PWA). |
 | `dist/` | Saída do `npm run build` (fora do git). |
 | `android/`, `ios/` | Projetos nativos do app (Capacitor), configurados em `capacitor.config.json`. Veja "App Android e iOS". |
+| `scripts/` | `app-links.mjs`: grava o domínio do servidor nos projetos nativos a cada `build:mobile`. |
 | `test/` | Testes com `node:test`: regras (`engine`), bots (`bot`, `analysis`), salas (`rooms`, `host`, `away`, `names`, `kick`, `spectators`, `rematch`, `reactions`), avatar, e rede de ponta a ponta com clientes socket.io reais (`multiplayer`, `production`, `restart`). |
 
 ### PWA
@@ -174,9 +178,24 @@ Para gerar:
 
 | Comando | O que faz |
 | --- | --- |
-| `npm run build:mobile` | `vite build --mode mobile` (lê o `.env.mobile`) e `cap sync` (copia o `dist/` para `android/` e `ios/` e atualiza os plugins). |
+| `npm run build:mobile` | `vite build --mode mobile` (lê o `.env.mobile`), `scripts/app-links.mjs` (põe o domínio do `VITE_SERVER_URL` nos projetos nativos) e `cap sync` (copia o `dist/` para `android/` e `ios/` e atualiza os plugins). |
 | `npm run android` / `npm run ios` | O mesmo, e abre o projeto nativo. |
 
-No código, `client/src/platform.js` diz se está no app (`isNative`) e para onde conectar (`SERVER_URL`, vazio no navegador). No app, o socket e o `/api` vão para o `SERVER_URL`, o link de convite também aponta para ele, e o service worker não é registrado. O resto do cliente é igual ao do site. O id do app (`appId` em `capacitor.config.json`) não muda depois de publicado nas lojas.
+No código, `client/src/platform.js` diz se está no app (`isNative`) e para onde conectar (`SERVER_URL`, vazio no navegador), e tem as funções que mudam entre o site e o app: `vibrate` (no app, o motor de vibração do sistema, que no iOS a web não tem), `shareLink` e `copyText` (no app, o compartilhamento e a área de transferência nativos). No app, o socket e o `/api` vão para o `SERVER_URL`, o link de convite também aponta para ele, e o service worker não é registrado. O resto do cliente é igual ao do site. O id do app (`appId` em `capacitor.config.json`) não muda depois de publicado nas lojas.
 
-Falta para publicar: login do Google nativo (o botão do site não funciona dentro do app) e "Entrar com a Apple", abrir convites direto no app (App Links e Universal Links), compartilhar, vibrar, botão voltar do Android e reconexão ao voltar do segundo plano com os plugins do Capacitor, ícones e tela de abertura, e o que as lojas pedem (moderação do chat, política de privacidade).
+`client/src/native.js` só age dentro do app:
+
+- **Voltar do Android**: fecha o que estiver aberto, como o Esc (`closeTopLayer` em `modals.js`). Na sala, faz o mesmo que o botão "Sair" (no meio da partida, pede confirmação). Na tela inicial, minimiza o app em vez de fechar.
+- **Volta do segundo plano**: reconecta se a conexão caiu. Depois de mais de 15s fora, reconecta de qualquer jeito, porque o iOS congela o app e a conexão pode parecer aberta sem estar. A sala volta pelo token, como em qualquer queda.
+- **Convites**: um link `https://servidor/?sala=CODIGO` aberto no celular com o app instalado abre o app, que entra na sala (`openInvite` em `home.js`, o mesmo do `?sala=` do site).
+
+### Convites abrindo no app
+
+O Android e o iOS só abrem o app por um link `https://` se o servidor provar que o app é dele. O `npm run build:mobile` já põe o domínio do `VITE_SERVER_URL` nos projetos nativos (o `AndroidManifest.xml` e o `ios/App/App/App.entitlements` mudam no primeiro build: commite). No servidor publicado:
+
+1. **Android**: defina `ANDROID_CERT_SHA256` com a impressão digital SHA-256 do certificado que assina o app. Com o Play App Signing, é a do Google (Play Console → Testar e lançar → Integridade do app → Assinatura do app). Para testar o build de debug, inclua também a da chave de debug (`keytool -list -v -keystore ~/.android/debug.keystore -storepass android`), separada por vírgula. Confira em `https://servidor/.well-known/assetlinks.json`.
+2. **iOS**: defina `APPLE_TEAM_ID` (Apple Developer → Membership) e ligue o "Associated Domains" no App ID (o Xcode faz isso sozinho com a assinatura automática). Confira em `https://servidor/.well-known/apple-app-site-association`.
+
+O Android filtra só pelo caminho, então qualquer link para a raiz do site abre o app; o iOS abre só os que têm `?sala=`. Sem as variáveis, o link abre no navegador, como hoje.
+
+Falta para publicar: login do Google nativo (o botão do site não funciona dentro do app) e "Entrar com a Apple", ícones e tela de abertura, barra de status e teclado, e o que as lojas pedem (moderação do chat, política de privacidade).
