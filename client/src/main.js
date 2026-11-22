@@ -47,14 +47,16 @@ import {
 } from './core.js';
 import { codeInput, extractCode, joinRoom, nameInput, refreshRooms, showJoinError } from './home.js';
 import { leaveRoom } from './lobby.js';
+import { isNative } from './platform.js';
 import { closeModal, hideModal, modalStack, openModal } from './modals.js';
 import { showChatBubble, showReaction } from './reactions.js';
 import { render } from './render.js';
 import { show } from './table.js';
 
 // Service worker (public/sw.js): deixa o app instalável e abre a casca do jogo sem internet.
-// Registra depois do carregamento para não disputar banda com a primeira tela.
-if ('serviceWorker' in navigator) {
+// Registra depois do carregamento para não disputar banda com a primeira tela. No app os
+// arquivos já estão no aparelho: nada de service worker.
+if ('serviceWorker' in navigator && !isNative) {
   addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });

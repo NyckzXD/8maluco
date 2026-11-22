@@ -1,5 +1,6 @@
 // Sala de espera: convite, bots, configurações, plateia e sair da sala.
 import { icon, nameWithBot } from './cards.js';
+import { publicUrl } from './platform.js';
 import {
   $,
   $$,
@@ -68,7 +69,7 @@ function copyFallback(text) {
 }
 
 async function inviteFriends() {
-  const link = `${location.origin}${location.pathname}?sala=${roomCode}`;
+  const link = `${publicUrl()}?sala=${roomCode}`;
   if (canShare()) {
     try {
       await navigator.share({

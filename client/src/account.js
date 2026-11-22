@@ -4,6 +4,7 @@
 import { nicknameError, passwordError, tidyNickname } from '../../shared/names.js';
 import { $, flash, roomCode, socket, speak, store } from './core.js';
 import { closeModal, openModal } from './modals.js';
+import { SERVER_URL } from './platform.js';
 
 /** @typedef {{ id: number, nickname: string, hasPassword: boolean, hasGoogle: boolean }} User */
 
@@ -24,7 +25,7 @@ export let user = store.get('om_session') ? readUser() : null;
 export async function api(method, path, body) {
   const session = store.get('om_session');
   try {
-    const res = await fetch(`/api${path}`, {
+    const res = await fetch(`${SERVER_URL}/api${path}`, {
       method,
       headers: {
         ...(body && { 'Content-Type': 'application/json' }),

@@ -1,0 +1,9 @@
+{
+  "appId": "com.oitomaluco.app",
+  "appName": "8 Maluco",
+  "webDir": "dist",
+  "backgroundColor": "#0a0908",
+  "ios": {
+    "contentInset": "never"
+  }
+}

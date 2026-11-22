@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['dist/', 'node_modules/', '.agents/'] },
+  { ignores: ['dist/', 'node_modules/', '.agents/', 'android/', 'ios/'] },
   js.configs.recommended,
   {
     languageOptions: { ecmaVersion: 2023, sourceType: 'module' },
