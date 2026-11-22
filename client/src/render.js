@@ -10,6 +10,7 @@ import { renderHand, waveHand } from './hand.js';
 import { renderLobby } from './lobby.js';
 import { hideModal } from './modals.js';
 import { renderCenter } from './pile.js';
+import { vibrate } from './platform.js';
 import { closeReactMenu } from './reactions.js';
 import { renderRoundModal } from './results.js';
 import { renderMe, renderScores } from './scores.js';
@@ -166,7 +167,7 @@ function renderGame(prev, s) {
   const wasMyTurn = prev?.game?.phase === 'playing' && prev.game.turnId === s.me;
   const turnAlert = () => {
     sounds.turn();
-    navigator.vibrate?.(60);
+    vibrate('turn');
     waveHand();
   };
   if (roundStart && deal) {

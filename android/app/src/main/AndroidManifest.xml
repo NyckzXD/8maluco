@@ -22,6 +22,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- app-links: gerado pelo scripts/app-links.mjs (npm run build:mobile) a partir do VITE_SERVER_URL -->
+            <!-- /app-links -->
+
         </activity>
 
         <provider

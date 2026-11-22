@@ -3,7 +3,7 @@ import { BOT_NAME_ERROR, RESERVED_NAME_ERROR, isBotName } from '../../shared/nam
 import { openAccount, refreshUser, user } from './account.js';
 import { myAvatar } from './avatar-editor.js';
 import { icon } from './cards.js';
-import { $, avatar, el, emit, flash, setRoomCode, setUrl, speak, store, token } from './core.js';
+import { $, avatar, el, emit, flash, roomCode, setRoomCode, setUrl, speak, store, token } from './core.js';
 import { closeModal, hideModal, openModal } from './modals.js';
 
 // ---------- tela inicial ----------
@@ -122,6 +122,23 @@ export async function joinRoom(code) {
     return showJoinError(res.error, code);
   }
   onJoined(res);
+}
+
+// Convite aberto pelo link (no navegador, o ?sala= da página; no app, o link que abriu o app).
+// Sem apelido, deixa o código no campo e pede o apelido; já numa sala, não troca sozinho.
+export function openInvite(link) {
+  const code = extractCode(link);
+  if (!code || code === roomCode) return;
+  if (roomCode) {
+    flash(`Você já está na sala ${roomCode}. Saia dela para entrar na sala ${code}.`, { info: true });
+    return;
+  }
+  codeInput.value = code;
+  if (nameInput.value.trim()) joinRoom(code);
+  else {
+    nameInput.focus();
+    flash('Escolha um apelido e clique em Entrar', { info: true });
+  }
 }
 
 $('#createBtn').addEventListener('click', async () => {

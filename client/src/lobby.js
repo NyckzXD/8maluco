@@ -1,6 +1,6 @@
 // Sala de espera: convite, bots, configurações, plateia e sair da sala.
 import { icon, nameWithBot } from './cards.js';
-import { publicUrl } from './platform.js';
+import { canShare, copyText, publicUrl, shareLink } from './platform.js';
 import {
   $,
   $$,
@@ -48,8 +48,8 @@ $('#addBotBtn').addEventListener('click', () => emit('room:addBot'));
 $('#startBtn').addEventListener('click', () => emit('room:start'));
 $('#setPublic').addEventListener('change', (e) => emit('room:settings', { isPublic: e.target.checked }));
 $('#setTurn').addEventListener('change', (e) => emit('room:settings', { turnSeconds: Number(e.target.value) }));
-// Convite: no celular abre o compartilhamento do sistema; no computador (ou sem ele) copia o link.
-const canShare = () => !!navigator.share && matchMedia('(pointer: coarse)').matches;
+// Convite: no celular e no app abre o compartilhamento do sistema; no computador (ou sem ele)
+// copia o link.
 $('#copyLink').textContent = canShare() ? 'Convidar' : 'Copiar link';
 
 // Cópia de reserva para navegadores sem a API de área de transferência (ou sem permissão).
@@ -71,24 +71,10 @@ function copyFallback(text) {
 async function inviteFriends() {
   const link = `${publicUrl()}?sala=${roomCode}`;
   if (canShare()) {
-    try {
-      await navigator.share({
-        title: '8 Maluco',
-        text: `Bora jogar 8 Maluco! Sala ${roomCode}`,
-        url: link,
-      });
-      return;
-    } catch (err) {
-      if (err?.name === 'AbortError') return; // fechou o compartilhamento sem escolher
-    }
+    const shared = await shareLink({ title: '8 Maluco', text: `Bora jogar 8 Maluco! Sala ${roomCode}`, url: link });
+    if (shared !== 'failed') return; // compartilhou, ou fechou sem escolher
   }
-  let copied;
-  try {
-    await navigator.clipboard.writeText(link);
-    copied = true;
-  } catch {
-    copied = copyFallback(link);
-  }
+  const copied = (await copyText(link)) || copyFallback(link);
   if (copied) flash('Link copiado! Mande para a galera', { info: true });
   else
     flash(`Não deu para copiar. O código da sala é ${roomCode}`, {

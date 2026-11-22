@@ -2,6 +2,7 @@
 import { sounds } from './audio.js';
 import { $, clockOffset, el, speak, state } from './core.js';
 import { isMyTurn } from './hand.js';
+import { vibrate } from './platform.js';
 
 // Relógio da vez: barra, segundos que faltam, aviso nos últimos segundos e título da aba.
 const BASE_TITLE = document.title;
@@ -69,7 +70,7 @@ function updateClock() {
     if (s !== lastTick) {
       lastTick = s;
       sounds.tick();
-      navigator.vibrate?.(30);
+      vibrate('tick');
       if (s === tickFrom) speak(`Faltam ${tickFrom} segundos`);
     }
   } else lastTick = null;

@@ -27,6 +27,7 @@ import './results.js';
 import './analysis.js';
 import './render.js';
 import './clock.js';
+import './native.js';
 
 import { myAvatar } from './avatar-editor.js';
 import { addChat } from './chat.js';
@@ -45,7 +46,7 @@ import {
   store,
   token,
 } from './core.js';
-import { codeInput, extractCode, joinRoom, nameInput, refreshRooms, showJoinError } from './home.js';
+import { joinRoom, openInvite, refreshRooms, showJoinError } from './home.js';
 import { leaveRoom } from './lobby.js';
 import { isNative } from './platform.js';
 import { closeModal, hideModal, modalStack, openModal } from './modals.js';
@@ -182,13 +183,6 @@ socket.on('connect_error', (err) => {
   }
 });
 
-// Entrou por um link de convite (?sala=CODIGO).
+// Entrou por um link de convite (?sala=CODIGO). No app, o link chega pelo native.js.
 const invite = new URLSearchParams(location.search).get('sala');
-if (invite) {
-  codeInput.value = extractCode(invite);
-  if (nameInput.value.trim()) joinRoom(invite);
-  else {
-    nameInput.focus();
-    flash('Escolha um apelido e clique em Entrar', { info: true });
-  }
-}
+if (invite) openInvite(invite);

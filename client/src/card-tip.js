@@ -1,5 +1,6 @@
 // Dica com o efeito das cartas especiais (passar o mouse, toque longo ou foco).
 import { $, RANK_NAMES, SPECIAL_TIPS, el, state } from './core.js';
+import { vibrate } from './platform.js';
 
 // ---------- dica das cartas especiais ----------
 // Passar o mouse, dar um toque longo ou focar pelo teclado numa carta com estrela mostra o efeito dela.
@@ -66,7 +67,7 @@ export function bindCardTip(node, card) {
     tipTimer = setTimeout(() => {
       tipLongPressed = card.id;
       showCardTip(node, card);
-      navigator.vibrate?.(10);
+      vibrate('tip');
     }, TIP_PRESS_MS);
   });
   node.addEventListener('pointermove', (e) => {
