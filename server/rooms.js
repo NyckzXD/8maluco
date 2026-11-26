@@ -8,6 +8,7 @@ import { randomAvatar, sanitizeAvatar } from '../shared/avatar.js';
 import { REACTION_LIMIT, isReaction } from '../shared/reactions.js';
 import { BOT_NAME_ERROR, RESERVED_NAME_ERROR, isBotName } from '../shared/names.js';
 import { RANKED_MIN_HUMANS } from '../shared/ranking.js';
+import { cleanSignal } from './voice.js';
 
 export const MAX_PLAYERS = 8; // lugares na mesa
 export const TURN_SECONDS = [5, 10, 15, 30, 45, 60]; // opções de tempo por vez (o seletor do lobby)
@@ -79,11 +80,13 @@ export class RoomManager {
   // `onGameOver` recebe o resumo de cada partida que teve alguém com conta (o ranking grava).
   // `isTop1` diz se a conta está em 1º no ranking (o selo TOP 1 ao lado do nome).
   // `isAnalyst` diz se a conta pode ver a análise do bot forte na própria vez (ANALYSIS_USERS).
+  // `iceServers` monta os servidores STUN/TURN de quem entra no voz (voice.js).
   /**
    * @param {any} io
    * @param {{ timing?: object, nicknameTaken?: (name: string) => boolean,
    *   onGameOver?: (summary: GameSummary) => void, isTop1?: (userId: number) => boolean,
-   *   isAnalyst?: (user: { id: number, nickname: string }) => boolean }} [options]
+   *   isAnalyst?: (user: { id: number, nickname: string }) => boolean,
+   *   iceServers?: () => import('./voice.js').RTCIceServerLike[] }} [options]
    */
   constructor(
     io,
@@ -93,6 +96,7 @@ export class RoomManager {
       onGameOver = (_summary) => {},
       isTop1 = (_userId) => false,
       isAnalyst = (_user) => false,
+      iceServers = () => [],
     } = {},
   ) {
     this.io = io;
@@ -102,6 +106,7 @@ export class RoomManager {
     this.onGameOver = onGameOver;
     this.isTop1 = isTop1;
     this.isAnalyst = isAnalyst;
+    this.iceServers = iceServers;
   }
 
   create({ isPublic = true } = {}) {
@@ -253,6 +258,8 @@ class Room {
       else if (name !== m.askedName) m.name = this.uniqueName(name, m.id);
       m.askedName = name;
       m.avatar = avatar;
+      // as conexões de voz eram da conexão antiga: quem volta entra no voz de novo (voice:join)
+      if (m.socketId !== socket.id) this.dropVoice(m);
       // Mesmo token por outra conexão (outra aba): a nova assume o lugar e a antiga perde
       // o acesso à sala de vez, não só o canal (senão ela ainda conseguiria jogar e falar).
       if (m.socketId && m.socketId !== socket.id) {
@@ -383,6 +390,7 @@ class Room {
     // o anfitrião saiu: o cargo vai para o próximo humano conectado (ou, sem nenhum, o próximo humano)
     const wasHost = this.hostId === memberId;
     const heir = wasHost ? (this.nextHuman(memberId, (x) => x.connected) ?? this.nextHuman(memberId)) : null;
+    this.dropVoice(m);
     this.members = this.members.filter((x) => x.id !== memberId);
     if (m.socketId) this.io.sockets.sockets.get(m.socketId)?.leave(this.code);
     if (wasHost) {
@@ -405,6 +413,7 @@ class Room {
     const m = this.member(memberId);
     // Se o jogador já voltou por outra conexão, a queda da antiga não conta.
     if (!m || m.socketId !== socketId) return;
+    this.dropVoice(m);
     m.connected = false;
     m.socketId = null;
     this.armAbsence(m);
@@ -573,6 +582,70 @@ class Room {
     if (!slot.ok) return { ok: false, error: 'Calma! Espere um pouquinho para reagir de novo' };
     this.io.to(this.code).emit('reaction', { from: m.id, id });
     return { ok: true };
+  }
+
+  // ---------- voz ----------
+  // Quem está no voz tem `m.voice = { muted }`. O estado da sala mostra isso nos assentos; o
+  // áudio em si não passa por aqui. Quem entra recebe a lista de quem já está e manda a oferta
+  // para cada um (voiceSignal repassa); quem sai avisa os outros com `voice:peer-left`, para
+  // fecharem a conexão na hora. Nada disso vai para o snapshot: depois de um reinício, cada um
+  // entra de novo.
+
+  // Entrar (ou, já dentro, pedir de novo a lista e as credenciais, como depois de reconectar).
+  voiceJoin(memberId, { muted = false } = {}) {
+    const m = this.member(memberId);
+    if (!m || m.isBot || !m.connected) return { ok: false, error: 'Você não está nesta sala' };
+    const already = !!m.voice;
+    m.voice = { muted: !!muted };
+    const peers = this.voicePeers(m.id).map((x) => x.id);
+    if (!already) this.broadcast();
+    return { ok: true, peers, iceServers: this.manager.iceServers() };
+  }
+
+  voiceLeave(memberId) {
+    const m = this.member(memberId);
+    if (!m?.voice) return { ok: true };
+    this.dropVoice(m);
+    this.broadcast();
+    return { ok: true };
+  }
+
+  voiceMute(memberId, muted) {
+    const m = this.member(memberId);
+    if (!m?.voice) return { ok: false, error: 'Você não está no voz' };
+    if (m.voice.muted !== !!muted) {
+      m.voice.muted = !!muted;
+      this.broadcast();
+    }
+    return { ok: true };
+  }
+
+  // Repassa uma mensagem de negociação para outra pessoa do voz desta sala, com o id de quem
+  // mandou. Só entre dois que estão no voz e conectados; o conteúdo passa pelo cleanSignal.
+  /** @param {string} memberId @param {{ to?: unknown, data?: unknown }} [message] */
+  voiceSignal(memberId, message = {}) {
+    const { to, data } = message;
+    const m = this.member(memberId);
+    if (!m?.voice) return { ok: false, error: 'Você não está no voz' };
+    const target = typeof to === 'string' && to !== m.id ? this.member(to) : null;
+    if (!target?.voice || !target.connected || !target.socketId)
+      return { ok: false, error: 'Essa pessoa não está no voz' };
+    const signal = cleanSignal(data);
+    if (!signal) return { ok: false, error: 'Mensagem de voz inválida' };
+    this.io.to(target.socketId).emit('voice:signal', { from: m.id, ...signal });
+    return { ok: true };
+  }
+
+  // Os outros que estão no voz agora (sempre conectados: a queda tira do voz).
+  voicePeers(exceptId) {
+    return this.members.filter((x) => x.voice && x.id !== exceptId && x.socketId);
+  }
+
+  // Tira do voz sem mandar o estado (quem chama já manda); avisa quem ficou.
+  dropVoice(m) {
+    if (!m?.voice) return;
+    m.voice = null;
+    for (const x of this.voicePeers(m.id)) this.io.to(x.socketId).emit('voice:peer-left', { id: m.id });
   }
 
   system(text) {
@@ -964,6 +1037,8 @@ class Room {
         top1: !!m.userId && this.manager.isTop1(m.userId), // 1º do ranking
         connected: m.connected,
         away: !!m.away,
+        voice: !!m.voice, // no chat de voz
+        voiceMuted: !!m.voice?.muted,
       })),
       // a conta de quem recebe pode pedir a análise do bot forte (game:analyze)
       analyst: !!this.member(memberId)?.analyst,

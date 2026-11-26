@@ -12,6 +12,7 @@ import { googleVerifier } from './google.js';
 import { RoomManager, takeSlot } from './rooms.js';
 import { nicknameKey } from '../shared/names.js';
 import { loadSnapshot, saveSnapshot, startSnapshots } from './snapshot.js';
+import { iceServers } from './voice.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -30,6 +31,9 @@ export const RATE_LIMITS = {
   'game:pass': { max: 10, windowMs: 5_000 },
   // cada análise pensa ~0,4s: poucas por vez bastam
   'game:analyze': { max: 6, windowMs: 10_000 },
+  // negociação do voz: oferta/resposta e uns 10 candidatos de rede por par, e são até 11 pares
+  // quando a mesa cheia entra junta (ou a rede troca e todos renegociam)
+  'voice:signal': { max: 400, windowMs: 10_000 },
   default: { max: 20, windowMs: 10_000 },
 };
 
@@ -65,8 +69,20 @@ export function configFromEnv(env = process.env) {
       .split(',')
       .map((s) => nicknameKey(s))
       .filter(Boolean),
+    // chat de voz (voice.js): STUN para achar o endereço público; TURN para retransmitir o áudio
+    // quando a conexão direta não passa. Sem TURN o voz funciona, mas falha em parte das redes.
+    stunUrls: list(env.STUN_URLS ?? 'stun:stun.l.google.com:19302'),
+    turnUrls: list(env.TURN_URLS),
+    turnSecret: env.TURN_SECRET?.trim() || null,
+    turnTtlSeconds: Number(env.TURN_TTL_SECONDS) || 6 * 3600,
   };
 }
+
+const list = (v) =>
+  String(v ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 // Content-Security-Policy da página. Tudo vem da própria origem (fontes em /fonts, cartas, sons,
 // o tempo real em /socket.io), menos o "Entrar com o Google" (script, estilo, iframe e chamadas
@@ -208,7 +224,12 @@ export function createGameServer(options = {}) {
     onGameOver: (summary) => getAccounts().recordGame(summary),
     isTop1: (userId) => !!accounts?.isTop1(userId),
     isAnalyst: (user) => (config.analysisUsers ?? []).includes(nicknameKey(user.nickname)),
+    iceServers: () => iceServers(config),
   });
+  if (config.production && !(config.turnUrls?.length && config.turnSecret))
+    console.warn(
+      '[voz] sem TURN_URLS/TURN_SECRET: o chat de voz não conecta em parte das redes (README, "Chat de voz")',
+    );
 
   app.get('/health', (_req, res) =>
     res.json({ ok: true, ...rooms.stats(), connections: io.engine.clientsCount, uptime: Math.round(process.uptime()) }),
@@ -311,11 +332,12 @@ export function createGameServer(options = {}) {
         }
       });
     // Executa algo na sala atual do socket, respondendo erro se ele não estiver em nenhuma.
-    const inRoom = (event, fn) =>
+    // `touch: false` nos eventos que o cliente manda sozinho, sem a pessoa mexer em nada.
+    const inRoom = (event, fn, { touch = true } = {}) =>
       on(event, (data) => {
         const room = current();
         if (!room) return { ok: false, error: 'Você não está em uma sala' };
-        room.touch(socket.data.memberId); // qualquer ação tira o "ausente"
+        if (touch) room.touch(socket.data.memberId); // qualquer ação tira o "ausente"
         return fn(room, socket.data.memberId, data);
       });
 
@@ -354,6 +376,12 @@ export function createGameServer(options = {}) {
     inRoom('game:analyze', (room, me) => room.analyze(me));
     // o cliente avisa que a pessoa mexeu na tela enquanto estava ausente (o touch acima já resolve)
     inRoom('presence', () => ({ ok: true }));
+    // Chat de voz (voice.js). Entrar de novo depois de reconectar e negociar são automáticos:
+    // não contam como a pessoa ter voltado para a tela.
+    inRoom('voice:join', (room, me, d) => room.voiceJoin(me, { muted: d.muted === true }), { touch: false });
+    inRoom('voice:leave', (room, me) => room.voiceLeave(me));
+    inRoom('voice:mute', (room, me, d) => room.voiceMute(me, d.muted === true));
+    inRoom('voice:signal', (room, me, d) => room.voiceSignal(me, d), { touch: false });
 
     socket.on('disconnect', () => {
       try {
