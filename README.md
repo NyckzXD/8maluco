@@ -49,8 +49,12 @@ Tudo o mais vem de variáveis de ambiente. Em casa, o jeito mais fácil é um ar
 | `ANDROID_CERT_SHA256` | vazio | Impressões digitais SHA-256 do certificado que assina o app Android, separadas por vírgula. Liga o `/.well-known/assetlinks.json` (convites abrem no app; veja "App Android e iOS"). |
 | `APPLE_TEAM_ID` | vazio | Team ID da conta de desenvolvedor da Apple. Liga o `/.well-known/apple-app-site-association`. |
 | `APP_ID` | o `appId` do `capacitor.config.json` | Id do app nas lojas, usado nesses dois arquivos. Só mude se o app for publicado com outro id. |
+| `STUN_URLS` | `stun:stun.l.google.com:19302` | Servidores STUN do chat de voz, separados por vírgula (veja "Chat de voz" abaixo). Vazio, não usa nenhum. |
+| `TURN_URLS` | vazio | Servidores TURN do chat de voz, separados por vírgula (por exemplo `turn:turn.seu-dominio:3478,turns:turn.seu-dominio:5349`). Só vale junto com o `TURN_SECRET`. |
+| `TURN_SECRET` | vazio | Segredo compartilhado com o TURN (o `static-auth-secret` do coturn). O servidor gera com ele credenciais que vencem. |
+| `TURN_TTL_SECONDS` | `21600` (6h) | Validade de cada credencial TURN. |
 
-- **Limites por conexão** (`RATE_LIMITS` em `server/index.js`): 5 salas criadas por minuto, 12 tentativas de entrar por minuto, 30 pedidos da lista de salas por minuto, 10 jogadas, compras ou passes a cada 5s, e 20 a cada 10s nos outros eventos. Mensagens maiores que 16KB derrubam a conexão de quem mandou.
+- **Limites por conexão** (`RATE_LIMITS` em `server/index.js`): 5 salas criadas por minuto, 12 tentativas de entrar por minuto, 30 pedidos da lista de salas por minuto, 10 jogadas, compras ou passes a cada 5s, 400 mensagens de negociação do voz a cada 10s, e 20 a cada 10s nos outros eventos. Mensagens maiores que 16KB derrubam a conexão de quem mandou.
 - **Desligamento e volta**: no `SIGTERM` (o que as plataformas mandam no deploy) e no Ctrl+C, o servidor avisa todas as salas ("O servidor vai reiniciar. A partida continua quando ele voltar!"), para os timers dos bots, grava as salas em `SNAPSHOT_FILE` e fecha. Ao subir, ele lê o arquivo, apaga-o e recria as salas com todo mundo desconectado. A partida fica parada até a primeira pessoa voltar; aí a vez de quem estava jogando recomeça com o prazo cheio. Os clientes reconectam sozinhos e voltam pelo token para o mesmo lugar, com as mesmas cartas. Gravações com mais de 10 minutos são ignoradas. O arquivo tem os tokens dos jogadores, por isso a pasta `data/` fica fora do git. Uma queda sem aviso (falta de memória, `kill -9`) não grava nada, e aí as partidas se perdem.
 - **Uma instância só**: veja abaixo.
 - **`/health`**: `{ ok, rooms, games, players, connections, uptime }`. Serve para o health check da plataforma e para ver quantas pessoas estão jogando.
@@ -73,6 +77,13 @@ Em cada plataforma:
 Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for usar o app, `ALLOWED_ORIGINS`. Em casa, ou num servidor próprio com o disco de sempre, o padrão `data/rooms.json` já funciona.
 
 **Se um dia precisar de mais de uma instância:** as salas teriam que sair da memória para um lugar compartilhado (Redis), os eventos teriam que passar entre as instâncias com o `@socket.io/redis-adapter`, e o balanceador precisaria de sessão fixa (*sticky sessions*). Os timers dos bots também precisariam de um dono por sala. É uma mudança grande, que só vale a pena se uma máquina grande não der mais conta.
+
+### Chat de voz
+
+O áudio vai direto de um aparelho para o outro (WebRTC, uma conexão por par, só áudio), e o servidor do jogo só apresenta as pessoas: quem entra no voz (`voice:join`) recebe a lista de quem já está e os servidores STUN/TURN, e as mensagens de negociação passam pelo `voice:signal`, só entre duas pessoas da mesma sala que estão no voz (`server/voice.js` e os métodos `voice*` de `server/rooms.js`). Cair, sair da sala ou ser removido tira a pessoa do voz e avisa os outros (`voice:peer-left`). Nada do voz vai para o `SNAPSHOT_FILE`.
+
+- **STUN** descobre o endereço público de cada aparelho. Basta para a maioria das redes de casa.
+- **TURN** retransmite o áudio quando a conexão direta não passa (operadora de celular, rede de empresa, NAT simétrico): sem ele, o voz falha em parte das conexões. Em produção, o servidor avisa no log quando falta. Pode ser um [coturn](https://github.com/coturn/coturn) próprio numa VPS (com `use-auth-secret` e `static-auth-secret=<o mesmo TURN_SECRET>`) ou um serviço que aceite o mesmo padrão de credencial temporária. O segredo fica só no servidor do jogo; o cliente recebe um usuário e senha que vencem em `TURN_TTL_SECONDS`, e só quem está numa sala e no voz recebe.
 
 ### Login com o Google
 
