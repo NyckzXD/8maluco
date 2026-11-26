@@ -107,37 +107,66 @@ function keepOnScreen(bubble, anchor) {
   if (shift) bubble.style.setProperty('--shift', `${shift}px`);
 }
 
+// Balões no ar, um por pessoa. A mesa e a sala de espera redesenham os assentos a cada
+// mudança (vez de outro jogador, carta jogada, alguém entrou), o que apagaria o balão junto
+// com o assento antigo. Por isso cada balão fica guardado aqui e, quando o assento é
+// redesenhado, volta para o avatar novo e continua a animação de onde parou.
+const bubbles = new Map(); // memberId -> { node, start, timer }
+
+function placeBubble(from, entry) {
+  const anchor = reactionAnchor(from);
+  if (!anchor) {
+    entry.node.remove();
+    return;
+  }
+  if (entry.node.parentNode === anchor) return;
+  // voltar para o DOM reinicia a animação CSS; o atraso negativo pula o tempo que já passou
+  entry.node.style.animationDelay = `-${Math.round(performance.now() - entry.start)}ms`;
+  anchor.append(entry.node);
+  keepOnScreen(entry.node, anchor);
+}
+
+function addBubble(from, bubble) {
+  const old = bubbles.get(from);
+  if (old) {
+    clearTimeout(old.timer);
+    old.node.remove();
+  }
+  bubble.setAttribute('aria-hidden', 'true');
+  bubble.style.setProperty('--life', `${REACTION_MS}ms`);
+  const entry = {
+    node: bubble,
+    start: performance.now(),
+    timer: setTimeout(() => {
+      bubble.remove();
+      if (bubbles.get(from) === entry) bubbles.delete(from);
+    }, REACTION_MS),
+  };
+  bubbles.set(from, entry);
+  placeBubble(from, entry);
+}
+
+// Qualquer redesenho (assentos da mesa, sua barra, cadeiras da sala de espera) passa por aqui:
+// balão que ficou fora da tela, ou num avatar que não é mais o da pessoa, volta para o lugar.
+new MutationObserver(() => {
+  for (const [from, entry] of bubbles) placeBubble(from, entry);
+}).observe(document.body, { childList: true, subtree: true });
+
 export function showReaction(from, id) {
   const label = reactionLabel(id);
   if (!label) return;
   speak(`${from === state?.me ? 'Você' : nameOf(from)}: ${label}`);
-  const anchor = reactionAnchor(from);
-  if (!anchor) return;
-  anchor.querySelector(':scope > .reaction')?.remove();
   const bubble = el('div', 'reaction');
-  bubble.setAttribute('aria-hidden', 'true');
-  bubble.style.setProperty('--life', `${REACTION_MS}ms`);
   bubble.append(reactionFace(id), el('span', null, label));
-  anchor.append(bubble);
-  keepOnScreen(bubble, anchor);
-  setTimeout(() => bubble.remove(), REACTION_MS);
+  addBubble(from, bubble);
 }
 
 // Mensagens do chat também viram balão em cima do avatar de quem escreveu, para a mesa toda
-// ler sem abrir o chat. Fica mais tempo quanto maior o texto (o chat aceita até 200 letras).
-const chatBubbleMs = (text) => Math.min(7000, 2500 + text.length * 60);
-
+// ler sem abrir o chat.
 export function showChatBubble(from, text) {
-  const anchor = reactionAnchor(from);
-  if (!anchor || !text) return;
-  anchor.querySelector(':scope > .reaction')?.remove();
-  const ms = chatBubbleMs(text);
+  if (!text) return;
   // o texto já é anunciado pelo log do chat; o balão é só visual
   const bubble = el('div', 'reaction chat-bubble');
-  bubble.setAttribute('aria-hidden', 'true');
-  bubble.style.setProperty('--life', `${ms}ms`);
   bubble.append(el('span', 'chat-bubble-text', text));
-  anchor.append(bubble);
-  keepOnScreen(bubble, anchor);
-  setTimeout(() => bubble.remove(), ms);
+  addBubble(from, bubble);
 }

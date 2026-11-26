@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Server } from 'socket.io';
 import { createApi } from './api.js';
+import { appLinks, defaultAppId } from './app-links.js';
 import { Accounts } from './auth.js';
 import { openDatabase } from './db.js';
 import { googleVerifier } from './google.js';
@@ -52,6 +53,13 @@ export function configFromEnv(env = process.env) {
     databaseFile: env.DATABASE_FILE || `${root}data/oito-maluco.db`,
     // "Entrar com o Google": o Client ID do Google Cloud (README). Sem ele, o botão nem aparece.
     googleClientId: env.GOOGLE_CLIENT_ID?.trim() || null,
+    // convites que abrem direto no app (app-links.js): id do app, certificados do Android, time da Apple
+    appId: env.APP_ID?.trim() || defaultAppId(),
+    androidCertFingerprints: (env.ANDROID_CERT_SHA256 ?? '')
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean),
+    appleTeamId: env.APPLE_TEAM_ID?.trim() || null,
     // contas (apelidos, separados por vírgula) que veem a análise do bot forte na própria vez
     analysisUsers: (env.ANALYSIS_USERS ?? '')
       .split(',')
@@ -155,6 +163,8 @@ export function createGameServer(options = {}) {
   // em produção, a subida já chama accounts() para um disco com problema aparecer logo.
   let accounts = null;
   const getAccounts = () => (accounts ??= new Accounts(openDatabase(config.databaseFile)));
+  // antes do cliente, pelo mesmo motivo do /api abaixo
+  app.use(appLinks(config));
   // antes do cliente: no desenvolvimento, o Vite responderia /api/... com a página
   app.use(
     '/api',

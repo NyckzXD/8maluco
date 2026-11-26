@@ -86,22 +86,23 @@ function setSideOpen(open) {
   }
 }
 
-// Esc fecha o que estiver por cima: modal, depois a gaveta, depois a carta selecionada.
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  if (drag?.active) {
-    cancelDrag();
-    e.preventDefault();
-    return;
-  }
+// Fecha o que estiver por cima: o arrasto, o menu de reações, o modal (os marcados com
+// data-static ficam, mas o pedido conta como atendido), a gaveta, a carta selecionada.
+// Devolve false quando não havia nada aberto. É o Esc do teclado e o voltar do Android (native.js).
+export function closeTopLayer() {
   const top = modalStack.at(-1);
-  if (!$('#reactMenu').classList.contains('hidden')) closeReactMenu({ focus: true });
+  if (drag?.active) cancelDrag();
+  else if (!$('#reactMenu').classList.contains('hidden')) closeReactMenu({ focus: true });
   else if (top) {
     if (!top.hasAttribute('data-static')) closeModal(top);
   } else if ($('.side').classList.contains('open')) setSideOpen(false);
   else if (selectedId) setSelected(null);
-  else return;
-  e.preventDefault();
+  else return false;
+  return true;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && closeTopLayer()) e.preventDefault();
 });
 
 // ---------- painéis e modais ----------

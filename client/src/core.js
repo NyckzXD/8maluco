@@ -3,6 +3,7 @@
 import { io } from 'socket.io-client';
 import { SUIT_INFO } from '../../shared/engine.js';
 import { avatarSVG } from '../../shared/avatar.js';
+import { SERVER_URL } from './platform.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -33,7 +34,9 @@ export const token =
 store.set('om_token', token);
 
 // A sessão da conta (account.js) vai no handshake; função para cada reconexão ler a atual.
-export const socket = io({ auth: (cb) => cb({ session: store.get('om_session') ?? '' }) });
+// No navegador conecta na própria origem; no app, no SERVER_URL (platform.js).
+const socketOptions = { auth: (cb) => cb({ session: store.get('om_session') ?? '' }) };
+export const socket = SERVER_URL ? io(SERVER_URL, socketOptions) : io(socketOptions);
 
 export let state = null;
 export let roomCode = null;

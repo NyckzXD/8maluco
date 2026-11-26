@@ -16,8 +16,8 @@ export const REACTIONS = [
 // Por pessoa: no máximo `max` reações dentro de `windowMs` (dá para uma rajada curta, sem flood).
 export const REACTION_LIMIT = { max: 3, windowMs: 5000 };
 
-// Quanto tempo o balão fica em cima do avatar.
-export const REACTION_MS = 2000;
+// Quanto tempo o balão (reação ou mensagem do chat) fica em cima do avatar.
+export const REACTION_MS = 4500;
 
 const IDS = new Set(REACTIONS.map((r) => r.id));
 export const isReaction = (id) => typeof id === 'string' && IDS.has(id);

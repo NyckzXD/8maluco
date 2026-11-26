@@ -92,6 +92,7 @@ Lista de tarefas tirada da análise feita em 06/11/2026, lendo o código e jogan
 - [x] **14. Reações rápidas**
   - Pronto quando: há 4–6 reações ("Boa!", "Ops!", risada, bravo) que aparecem num balão em cima do avatar por 2s, com limite de frequência no servidor.
   - Feito: 6 reações em `shared/reactions.js` (Boa!, Haha, Ops!, Grr!, Uau!, Vai logo!), cada uma com uma carinha em SVG no traço dos avatares (símbolos `#r-*` do sprite em `app.js`). O botão "Reagir" fica no topo da mesa e da sala de espera e abre um menu que fecha com Esc, clicando fora ou escolhendo, e que navega pelas setas. O servidor (`Room.react`) só aceita ids da lista e no máximo 3 reações a cada 5s por pessoa (`takeSlot`, janela deslizante); passando disso, quem mandou vê "Calma! Espere um pouquinho para reagir de novo". O balão aparece por 2s em cima do avatar de quem reagiu (assento, sua barra ou cadeira do lobby) e é lido pelo leitor de tela. Testes em `test/reactions.test.js`. Em telas de até 380px, o "Como jogar" do lobby ficou só com o ícone para tudo caber numa linha.
+  - Ajuste: reações e balões do chat ficam 4,5s (`REACTION_MS`) e não somem mais quando a mesa é redesenhada (vez de outro jogador, carta jogada): `client/src/reactions.js` guarda o balão de cada pessoa e o devolve ao avatar novo, continuando a animação de onde parou.
 
 - [x] **16. Revanche em um clique**
       Ao fim da partida só existe "Voltar para a sala".

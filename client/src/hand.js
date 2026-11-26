@@ -5,6 +5,7 @@ import { renderCard, sortHand } from './cards.js';
 import { $, $$, cardName, el, emit, flash, setPendingEight, state } from './core.js';
 import { deal } from './deal.js';
 import { onCardPointerDown, syncDragWithHand } from './drag.js';
+import { vibrate } from './platform.js';
 import { renderBanner } from './scores.js';
 import { layoutSuitHand, liftedIds, openSuitModal } from './suit-picker.js';
 import { renderSeats } from './table.js';
@@ -203,7 +204,7 @@ function onCardClick(card, { direct = false } = {}) {
   if (!direct && confirmByTap() && selectedId !== card.id) {
     setSelected(card.id);
     sounds.select();
-    navigator.vibrate?.(15);
+    vibrate('select');
     return;
   }
   playCard(card);

@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['dist/', 'node_modules/', '.agents/'] },
+  { ignores: ['dist/', 'node_modules/', '.agents/', 'android/', 'ios/'] },
   js.configs.recommended,
   {
     languageOptions: { ecmaVersion: 2023, sourceType: 'module' },
@@ -13,7 +13,7 @@ export default [
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
     },
   },
-  { files: ['server/**', 'test/**', '*.config.js'], languageOptions: { globals: globals.node } },
+  { files: ['server/**', 'test/**', 'scripts/**', '*.config.js'], languageOptions: { globals: globals.node } },
   { files: ['client/**'], languageOptions: { globals: globals.browser } },
   { files: ['public/sw.js'], languageOptions: { globals: globals.serviceworker } },
   // as regras rodam no servidor e no navegador: só o que existe nos dois

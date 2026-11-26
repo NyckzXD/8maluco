@@ -4,13 +4,14 @@ import { muted } from './core.js';
 // ---------- som ----------
 
 let audio;
-// O contexto de áudio só nasce depois de um gesto do usuário; se o navegador suspendeu, retoma.
+// O contexto de áudio só nasce depois de um gesto do usuário; se o navegador suspendeu (ou o
+// iOS interrompeu, ao voltar do segundo plano ou de uma ligação), retoma.
 function audioCtx() {
   if (!audio) {
     audio = new AudioContext();
     decodeSamples();
   }
-  if (audio.state === 'suspended') audio.resume().catch(() => {});
+  if (audio.state !== 'running') audio.resume().catch(() => {});
   return audio;
 }
 // O primeiro toque na página já prepara o áudio, para os sons gravados estarem prontos na hora da partida.
