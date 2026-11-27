@@ -259,3 +259,35 @@ O que falta para várias pessoas jogarem juntas pela internet sem travar, trapac
     - payloads malformados em todos os 17 eventos, depois disso uma sala nova funciona (26).
 
     O `test/server.test.js` foi absorvido aqui, e as referências a ele nas tarefas 26 e 27 foram atualizadas. Rodei o arquivo 10 vezes seguidas, sem nenhuma falha.
+
+## 🎙️ Chat de voz
+
+Plano de 25/11/2026 para falar com a mesa durante a partida: áudio direto entre os aparelhos (WebRTC em malha), com o servidor do jogo só apresentando as pessoas. Detalhes e roteiro de teste no README, em "Chat de voz". O app Android/iOS ficou de fora (a ideia do app foi deixada de lado), e com ele a fase de permissões nativas.
+
+- [x] **41. Sinalização no servidor**
+  - Onde: `server/voice.js`, métodos `voice*` de `server/rooms.js`, eventos em `server/index.js`
+  - Feito: `voice:join` (devolve quem já está e os servidores STUN/TURN, com credencial TURN temporária só para quem está no voz), `voice:leave`, `voice:mute` e `voice:signal` (repassa só entre duas pessoas da mesma sala que estão no voz, com o conteúdo limpo). Cair, sair, ser removido ou abrir outra aba tira do voz e avisa os outros (`voice:peer-left`). Limite próprio de 400 mensagens de negociação a cada 10s. Testes em `test/voice.test.js`.
+
+- [x] **42. Conexão no cliente**
+  - Onde: `client/src/voice.js`
+  - Feito: uma conexão só de áudio por pessoa, com "perfect negotiation" (quem chega oferece; numa colisão, o menor id cede). Microfone com cancelamento de eco e de ruído, medidor local de quem está falando, volta sozinho ao voz depois de uma queda, sai ao trocar de sala, ser removido ou outra aba assumir.
+
+- [x] **43. Tela do voz**
+  - Onde: `client/src/voice-ui.js`, `client/styles/voice.css`, botões no topo de `client/index.html`
+  - Feito: botão do fone (entrar e abrir o menu com quem está, silenciar alguém só para você e sair) e do microfone, selos e anel verde de "falando" nos avatares. No celular (até 430px) os botões do topo ficam mais estreitos e o "Sair" vira só a seta. Conferido em 1280, 375 e 360px.
+
+- [x] **44. Cada pessoa decide**
+  - Feito: sem opção do anfitrião; jogadores, plateia e eliminados entram, falam e ouvem igual (teste em `test/voice.test.js`). Sem microfone (permissão negada, nenhum aparelho, página sem https) a pessoa entra só ouvindo e liga o microfone depois, sem sair do voz. A plateia no voz aparece numa fileira no canto da mesa; o eliminado fica aceso enquanto fala.
+
+- [x] **45. Diagnóstico sem TURN**
+  - Feito: o servidor publicado roda só com STUN (decisão de 26/11/2026). Quando a conexão com alguém falha, o cliente tenta outro caminho no máximo duas vezes e, depois de 10s falhando, avisa a pessoa com o motivo provável. O `/health` mostra `voice: { stun, turn }` e `inVoice`.
+
+- [ ] **46. Teste com gente de verdade**
+  - Onde: servidor publicado (https), roteiro em README → "Chat de voz" → "Testando o voz"
+  - Pronto quando: os 6 itens do roteiro passaram (dois computadores, Android, iPhone, 4G contra Wi-Fi, mesa cheia, troca de rede), com e sem fone de ouvido, e o que falhou virou tarefa aqui.
+  - Até agora: só testado no navegador do computador, com duas e três abas e um tom gerado no lugar do microfone. Microfone de verdade, celular e 4G não foram testados.
+
+- [ ] **47. Servidor TURN**
+  - Onde: uma VPS com coturn (o servidor do jogo já gera a credencial nesse padrão) ou um serviço gerenciado; variáveis `TURN_URLS` e `TURN_SECRET`
+  - Pronto quando: o `/health` mostra `turn: true` e o item 4 do roteiro (4G contra Wi-Fi) conecta.
+  - Quando fazer: se a tarefa 46 mostrar gente sem conseguir conectar. Render, Railway e Fly não aceitam o UDP do TURN.
