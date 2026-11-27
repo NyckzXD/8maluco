@@ -92,7 +92,23 @@ O áudio vai direto de um aparelho para o outro (WebRTC, uma conexão por par, s
 A conexão fica em `client/src/voice.js` e a tela em `client/src/voice-ui.js`.
 
 - **STUN** descobre o endereço público de cada aparelho. Basta para a maioria das redes de casa.
-- **TURN** retransmite o áudio quando a conexão direta não passa (operadora de celular, rede de empresa, NAT simétrico): sem ele, o voz falha em parte das conexões. Em produção, o servidor avisa no log quando falta. Pode ser um [coturn](https://github.com/coturn/coturn) próprio numa VPS (com `use-auth-secret` e `static-auth-secret=<o mesmo TURN_SECRET>`) ou um serviço que aceite o mesmo padrão de credencial temporária. O segredo fica só no servidor do jogo; o cliente recebe um usuário e senha que vencem em `TURN_TTL_SECONDS`, e só quem está numa sala e no voz recebe.
+- **TURN** retransmite o áudio quando a conexão direta não passa (operadora de celular, rede de empresa, NAT simétrico): sem ele, o voz falha em parte das conexões. Em produção, o servidor avisa no log quando falta. Pode ser um [coturn](https://github.com/coturn/coturn) próprio numa VPS (com `use-auth-secret` e `static-auth-secret=<o mesmo TURN_SECRET>`) ou um serviço que aceite o mesmo padrão de credencial temporária. O segredo fica só no servidor do jogo; o cliente recebe um usuário e senha que vencem em `TURN_TTL_SECONDS`, e só quem está numa sala e no voz recebe. Render, Railway e Fly não aceitam o UDP de que o TURN precisa: ele fica noutra máquina.
+
+**Hoje o servidor publicado roda sem TURN** (decisão de 26/11/2026): só STUN. Na maioria das redes de casa o áudio conecta; em parte do 4G e das redes de empresa, não. Quando a conexão com alguém falha, o cliente tenta outro caminho duas vezes e, depois de 10s falhando, avisa quem está na mesa ("Não deu para conectar o áudio com Ana...") e o menu do voz mostra "sem conexão" ao lado da pessoa. Para ligar o TURN depois, basta subir um e preencher `TURN_URLS` e `TURN_SECRET`: nada muda no código. O `/health` diz o que está configurado (`voice: { stun, turn }`) e quantas pessoas estão no voz agora (`inVoice`).
+
+#### Testando o voz
+
+- **No computador, sozinho:** abra a sala em `http://localhost:3000` num navegador e em `http://127.0.0.1:3000` noutro (ou numa janela anônima). Duas abas da mesma origem dividem o token e uma derruba a outra.
+- **No celular, pela rede de casa:** `http://192.168.x.x:3000` não é https, então o celular entra só ouvindo. Para testar o microfone do celular, use o servidor publicado (https).
+
+Roteiro com gente de verdade, no servidor publicado. Cada item vale com fone de ouvido e sem fone (sem fone, o cancelamento de eco do navegador é quem segura a microfonia):
+
+1. **Dois computadores na mesma rede:** os dois se ouvem, o anel verde acompanha a fala, e o microfone desligado corta o áudio e mostra o selo.
+2. **Computador e celular (Android, Chrome) no Wi-Fi:** o mesmo, mais bloquear e desbloquear a tela: ao voltar, o voz reconecta sozinho.
+3. **iPhone (Safari) no Wi-Fi:** o mesmo. Conferir se o som do jogo continua saindo depois de abrir o microfone e se a voz sai pelo alto-falante, não pelo fone de ouvido do aparelho.
+4. **Celular no 4G com alguém no Wi-Fi de casa:** é onde o STUN pode não bastar. Anote se conectou; se aparecer o aviso de "não deu para conectar", é o caso do TURN.
+5. **Mesa cheia (6 a 8 pessoas no voz):** o áudio continua limpo e o celular não esquenta demais. Cada pessoa manda o áudio para cada uma das outras, então é aqui que a malha mostra o limite.
+6. **Trocar de rede no meio (Wi-Fi para 4G):** o voz volta sozinho ou mostra o aviso, sem travar a partida.
 
 ### Login com o Google
 
