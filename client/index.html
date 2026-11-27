@@ -264,10 +264,28 @@
           <header class="lobby-head">
             <button class="btn btn-small leave-btn">
               <svg class="icon" aria-hidden="true"><use href="#i-back" /></svg
-              >Sair
+              ><span class="leave-label">Sair</span>
             </button>
             <h1 class="lobby-title">Sala de espera</h1>
             <div class="top-right">
+              <button
+                type="button"
+                class="btn btn-small voice-mic hidden"
+                title="Desligar microfone"
+                aria-label="Microfone desligado"
+                aria-pressed="false"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#i-mic" /></svg>
+              </button>
+              <button
+                type="button"
+                class="btn btn-small voice-btn"
+                title="Entrar no chat de voz"
+                aria-label="Entrar no chat de voz"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#i-headset" /></svg
+                ><span class="voice-count hidden"></span>
+              </button>
               <button
                 type="button"
                 class="btn btn-small react-btn"
@@ -369,10 +387,28 @@
           <header class="game-top">
             <button class="btn btn-small leave-btn">
               <svg class="icon" aria-hidden="true"><use href="#i-back" /></svg
-              >Sair
+              ><span class="leave-label">Sair</span>
             </button>
             <h1 id="roundLabel" class="round-label">Rodada 1</h1>
             <div class="top-right">
+              <button
+                type="button"
+                class="btn btn-small voice-mic hidden"
+                title="Desligar microfone"
+                aria-label="Microfone desligado"
+                aria-pressed="false"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#i-mic" /></svg>
+              </button>
+              <button
+                type="button"
+                class="btn btn-small voice-btn"
+                title="Entrar no chat de voz"
+                aria-label="Entrar no chat de voz"
+              >
+                <svg class="icon" aria-hidden="true"><use href="#i-headset" /></svg
+                ><span class="voice-count hidden"></span>
+              </button>
               <button
                 type="button"
                 class="btn btn-small react-btn"
@@ -414,6 +450,12 @@
           <div id="table" class="table">
             <div class="felt"></div>
             <div id="seats"></div>
+            <!-- plateia no chat de voz: não tem assento, então aparece aqui (voice-ui.js) -->
+            <ul
+              id="voiceBench"
+              class="voice-bench hidden"
+              aria-label="Plateia no chat de voz"
+            ></ul>
             <div class="table-center">
               <svg
                 class="direction"
@@ -1106,6 +1148,13 @@
          um instante (CSS), para não piscar numa queda rápida. -->
     <!-- Menu das reações rápidas: abre embaixo do botão "Reagir" (na mesa ou na sala de espera).
          Os botões são montados em app.js a partir de shared/reactions.js. -->
+    <!-- Chat de voz: quem está no voz, silenciar alguém só para você e sair (voice-ui.js). -->
+    <div
+      id="voiceMenu"
+      class="voice-menu hidden"
+      role="dialog"
+      aria-label="Chat de voz"
+    ></div>
     <div
       id="reactMenu"
       class="react-menu hidden"

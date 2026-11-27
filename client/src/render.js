@@ -16,6 +16,7 @@ import { renderRoundModal } from './results.js';
 import { renderMe, renderScores } from './scores.js';
 import { closeSuitModal } from './suit-picker.js';
 import { playOrigin, renderSeats, seatCallout, show, showEffectTargets, showGain, tableCallout } from './table.js';
+import { renderVoice } from './voice-ui.js';
 
 function roundCallout(e, s) {
   tableCallout(`Rodada ${e.round}`, e.starterId === s.me ? 'Você abre o monte' : `${nameOf(e.starterId)} abre o monte`);
@@ -194,4 +195,6 @@ export function render(prev, s) {
     if (entering) $('#discardPile').dataset.top = '';
     renderGame(prev, s);
   }
+  // os assentos acabaram de ser redesenhados: os selos do voz voltam para os avatares
+  renderVoice();
 }

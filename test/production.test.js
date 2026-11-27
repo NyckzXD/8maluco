@@ -148,6 +148,17 @@ test('/health mostra salas, partidas e conexões', async () => {
   assert.equal(health.games, 1);
   assert.equal(health.players, 1);
   assert.equal(health.connections, 1);
+  // chat de voz: quantos estão no voz e se dá para atravessar as redes (o segredo do TURN não aparece)
+  assert.equal(health.inVoice, 0);
+  await call(c, 'voice:join', {});
+  const after = await (await fetch(`${s.url}/health`)).json();
+  assert.equal(after.inVoice, 1);
+  assert.deepEqual(after.voice, { stun: true, turn: false });
+
+  const withTurn = await start({ stunUrls: [], turnUrls: ['turn:t.test:3478'], turnSecret: 'segredo' });
+  const body = await (await fetch(`${withTurn.url}/health`)).text();
+  assert.deepEqual(JSON.parse(body).voice, { stun: false, turn: true });
+  assert.ok(!body.includes('segredo'));
 });
 
 test('desligamento avisa as salas, para os timers e fecha', async () => {

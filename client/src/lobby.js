@@ -19,9 +19,11 @@ import {
 import { refreshRooms } from './home.js';
 import { closeModal, hideModal, openModal } from './modals.js';
 import { placeSeat, seatPosition, show } from './table.js';
+import { leaveVoice } from './voice.js';
 
 export function leaveRoom() {
   socket.emit('room:leave');
+  leaveVoice({ tellServer: false }); // sair da sala já tira do voz no servidor
   setRoomCode(null);
   setState(null);
   setUrl(null);

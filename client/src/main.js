@@ -9,6 +9,7 @@ import './reactions.js';
 import './cards.js';
 import './audio.js';
 import './chat.js';
+import './voice.js';
 import './account.js';
 import './home.js';
 import './ranking.js';

@@ -1,0 +1,499 @@
+// Chat de voz da mesa: uma conexão WebRTC só de áudio com cada pessoa que está no voz da sala
+// (malha). O servidor só apresenta as pessoas e repassa a negociação (server/voice.js); o
+// áudio vai direto de um aparelho para o outro, ou pelo TURN quando a rede não deixa.
+//
+// Quem entra recebe do servidor a lista de quem já está e manda a oferta para cada um. Para as
+// duas pontas nunca brigarem (as duas oferecendo ao mesmo tempo, numa troca de rede), vale o
+// padrão "perfect negotiation": a ponta "educada" (o menor id) desiste da própria oferta e
+// aceita a do outro; a outra ignora a oferta que colidiu.
+//
+// Este módulo não mexe na tela: quem desenha (botão, assentos) assina com onVoiceChange() e lê
+// voiceStatus(). Ele cuida sozinho das quedas: a conexão caiu, o servidor tirou a pessoa do voz;
+// quando a sala volta (o 'state' sem a pessoa no voz), entra de novo.
+import { emit, flash, roomCode, socket, store } from './core.js';
+
+const MIC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
+const SPEAK_LEVEL = 0.035; // volume (RMS de 0 a 1) a partir do qual alguém está falando
+const SPEAK_HOLD_MS = 350; // continua "falando" um pouquinho depois de parar (sem piscar entre palavras)
+const METER_MS = 100;
+const MAX_RESTARTS = 2; // tentativas de achar outro caminho quando a conexão cai (sem TURN, não adianta insistir)
+const STUCK_MS = 10_000; // conexão falhando por mais que isso: a tela avisa (voiceStatus().stuck)
+
+/**
+ * @typedef {{
+ *   pc: RTCPeerConnection, polite: boolean, makingOffer: boolean, ignoreOffer: boolean,
+ *   audio: HTMLAudioElement, meter: Meter | null, restarts: number, failTimer: number,
+ * }} Peer
+ * @typedef {{ analyser: AnalyserNode, source: MediaStreamAudioSourceNode, data: Uint8Array<ArrayBuffer>, lastLoud: number }} Meter
+ */
+
+// Quer estar no voz (tocou no botão). Continua true durante uma queda, para entrar de novo.
+let wanted = false;
+let joining = false;
+let listenOnly = false;
+let muted = store.get('om_voice_muted') === '1';
+let room = null; // sala em que entrou no voz: trocar de sala tira do voz
+let myId = null;
+/** @type {MediaStream | null} */
+let localStream = null;
+/** @type {RTCIceServer[]} */
+let iceServers = [];
+/** @type {Map<string, Peer>} */
+const peers = new Map();
+/** @type {Set<string>} quem eu silenciei só para mim */
+const silenced = new Set();
+/** @type {Set<string>} com quem a conexão está falhando há mais de STUCK_MS */
+const stuck = new Set();
+/** @type {Set<string>} quem está falando agora (o meu id também, com o microfone aberto) */
+let speaking = new Set();
+/** @type {Meter | null} */
+let localMeter = null;
+/** @type {AudioContext | null} */
+let ctx = null;
+let meterTimer = 0;
+const listeners = new Set();
+
+// Os elementos de áudio ficam num canto escondido da página (o iOS toca melhor com eles no DOM).
+const audioBox = document.createElement('div');
+audioBox.hidden = true;
+audioBox.setAttribute('aria-hidden', 'true');
+document.body.append(audioBox);
+
+// ---------- o que a tela lê ----------
+
+/** Estado do voz para a tela desenhar. */
+export function voiceStatus() {
+  return {
+    active: wanted && !!room,
+    joining,
+    muted: muted || listenOnly,
+    listenOnly,
+    speaking: new Set(speaking),
+    silenced: new Set(silenced),
+    // por pessoa: 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed'
+    peers: new Map([...peers].map(([id, p]) => [id, p.pc.connectionState])),
+    stuck: new Set(stuck),
+    // o servidor mandou um TURN (sem ele, parte do 4G e das redes de empresa não conecta)
+    hasTurn: iceServers.some((s) => [s.urls].flat().some((u) => /^turns?:/.test(u))),
+  };
+}
+
+/** Chama `fn` sempre que algo do voz mudar. Devolve a função que cancela. */
+export function onVoiceChange(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+function changed() {
+  const status = voiceStatus();
+  for (const fn of listeners) {
+    try {
+      fn(status);
+    } catch (err) {
+      console.error('[voz]', err);
+    }
+  }
+}
+
+export const voiceSupported = () => typeof RTCPeerConnection === 'function';
+// O navegador só deixa usar o microfone em https (ou localhost): pela rede de casa
+// (http://192.168...) o mediaDevices nem existe. Aí dá para entrar só ouvindo.
+const micSupported = () => !!navigator.mediaDevices?.getUserMedia;
+const NO_HTTPS = 'O microfone só funciona em conexão segura (https).';
+
+// ---------- entrar e sair ----------
+
+/**
+ * Entra no voz da sala atual, com o microfone. Sem microfone (sem permissão, sem aparelho, sem
+ * https), entra só ouvindo e avisa: dá para ligar depois pelo botão do microfone (enableMic).
+ * `listenOnly` entra só ouvindo de propósito, sem pedir o microfone. Precisa vir de um toque da
+ * pessoa: é o que libera o áudio tocar sozinho no navegador.
+ * @param {{ listenOnly?: boolean }} [options]
+ */
+export async function joinVoice(options = {}) {
+  if (wanted || joining) return true;
+  if (!voiceSupported()) {
+    flash('Este navegador não tem chat de voz. Atualize o navegador ou use outro.');
+    return false;
+  }
+  if (!roomCode) return false;
+  listenOnly = !!options.listenOnly;
+  joining = true;
+  room = roomCode;
+  // ainda dentro do toque: depois de esperar a permissão do microfone, o navegador pode não
+  // deixar mais o áudio começar
+  audioContext();
+  changed();
+  if (!listenOnly) {
+    const mic = await openMic();
+    if (!mic.ok) {
+      listenOnly = true;
+      flash(`${mic.error} Você entrou só para ouvir.`, { info: true });
+    }
+  }
+  wanted = true;
+  joining = false;
+  const ok = await sendJoin();
+  if (!ok) leaveVoice({ tellServer: false });
+  return ok;
+}
+
+// Abre o microfone e já deixa o medidor de "falando" ligado nele.
+async function openMic() {
+  if (!micSupported()) return { ok: false, error: NO_HTTPS };
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: MIC });
+  } catch (err) {
+    return { ok: false, error: micError(err) };
+  }
+  localStream.getAudioTracks().forEach((t) => (t.enabled = !muted));
+  localMeter = meter(localStream);
+  return { ok: true };
+}
+
+/**
+ * Quem está só ouvindo liga o microfone sem sair do voz: o áudio entra em cada conexão que já
+ * existe (cada uma renegocia sozinha, pelo onnegotiationneeded). Precisa vir de um toque.
+ */
+export async function enableMic() {
+  if (!wanted || !listenOnly || joining) return false;
+  joining = true;
+  changed();
+  muted = false;
+  store.set('om_voice_muted', '0');
+  const mic = await openMic();
+  joining = false;
+  if (!mic.ok || !wanted) {
+    if (!mic.ok) flash(mic.error);
+    else stopLocal(); // saiu do voz enquanto esperava a permissão
+    changed();
+    return false;
+  }
+  listenOnly = false;
+  const track = localTrack();
+  for (const p of peers.values()) {
+    const t = audioTransceiver(p.pc);
+    if (!t) continue;
+    await t.sender.replaceTrack(track);
+    if (t.direction !== 'sendrecv') t.direction = 'sendrecv';
+  }
+  emit('voice:mute', { muted: false });
+  changed();
+  return true;
+}
+
+function micError(err) {
+  const name = err?.name;
+  if (name === 'NotAllowedError' || name === 'SecurityError')
+    return 'Sem permissão para usar o microfone. Libere nas configurações do navegador ou do aparelho.';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'Nenhum microfone encontrado.';
+  if (name === 'NotReadableError') return 'O microfone está ocupado por outro aplicativo.';
+  return 'Não deu para abrir o microfone.';
+}
+
+// Pede ao servidor para entrar (ou entrar de novo, depois de uma queda) e oferece para cada um
+// que já está no voz.
+async function sendJoin() {
+  joining = true;
+  changed();
+  const res = await emit('voice:join', { muted: muted || listenOnly });
+  joining = false;
+  if (!res.ok || !wanted) {
+    if (!res.ok) wanted = false;
+    changed();
+    return !!res.ok;
+  }
+  iceServers = Array.isArray(res.iceServers) ? res.iceServers : [];
+  for (const p of peers.values()) p.pc.setConfiguration({ iceServers });
+  for (const id of res.peers ?? []) if (!peers.has(id)) createPeer(id, { offer: true });
+  changed();
+  return true;
+}
+
+/** Sai do voz: fecha as conexões, solta o microfone e avisa o servidor. */
+export function leaveVoice({ tellServer = true } = {}) {
+  const was = wanted || joining || peers.size > 0;
+  wanted = false;
+  joining = false;
+  closeAll();
+  stopLocal();
+  room = null;
+  if (was && tellServer && socket.connected) socket.emit('voice:leave');
+  if (was) changed();
+}
+
+function stopLocal() {
+  localStream?.getTracks().forEach((t) => t.stop());
+  localStream = null;
+  dropMeter(localMeter);
+  localMeter = null;
+  listenOnly = false;
+  speaking.clear();
+  if (!peers.size) stopMeters();
+}
+
+/** Liga ou desliga o próprio microfone (os outros veem o "mutado" no assento). */
+export function setVoiceMuted(on) {
+  muted = !!on;
+  store.set('om_voice_muted', muted ? '1' : '0');
+  localStream?.getAudioTracks().forEach((t) => (t.enabled = !muted));
+  if (wanted && !listenOnly) emit('voice:mute', { muted });
+  if (muted && myId) speaking.delete(myId);
+  changed();
+}
+
+/** Silencia (ou volta a ouvir) uma pessoa só para mim. */
+export function setSilenced(id, on) {
+  if (on) silenced.add(id);
+  else silenced.delete(id);
+  const p = peers.get(id);
+  if (p) p.audio.muted = on;
+  changed();
+}
+
+// ---------- conexões ----------
+
+/** @param {string} id @param {{ offer?: boolean }} [options] */
+function createPeer(id, { offer = false } = {}) {
+  const pc = new RTCPeerConnection({ iceServers });
+  const audio = new Audio();
+  audio.autoplay = true;
+  audio.setAttribute('playsinline', '');
+  audio.muted = silenced.has(id);
+  audioBox.append(audio);
+  /** @type {Peer} */
+  const p = {
+    pc,
+    polite: !!myId && myId < id,
+    makingOffer: false,
+    ignoreOffer: false,
+    audio,
+    meter: null,
+    restarts: 0,
+    failTimer: 0,
+  };
+  peers.set(id, p);
+
+  pc.onicecandidate = ({ candidate }) => {
+    if (candidate) send(id, { candidate: candidate.toJSON() });
+  };
+  pc.onnegotiationneeded = async () => {
+    try {
+      p.makingOffer = true;
+      await pc.setLocalDescription();
+      send(id, { description: pc.localDescription });
+    } catch (err) {
+      console.warn('[voz] oferta', err);
+    } finally {
+      p.makingOffer = false;
+    }
+  };
+  pc.ontrack = ({ track, streams }) => {
+    const stream = streams[0] ?? new MediaStream([track]);
+    audio.srcObject = stream;
+    audio.play().catch(() => {});
+    dropMeter(p.meter);
+    p.meter = meter(stream);
+  };
+  // Falhando por STUCK_MS seguidos: entra em `stuck` (a tela avisa uma vez). Conectou: zera tudo.
+  pc.onconnectionstatechange = () => {
+    const state = pc.connectionState;
+    if (state === 'connected') {
+      p.restarts = 0;
+      stuck.delete(id);
+    }
+    if (state === 'failed') {
+      p.failTimer ||= window.setTimeout(() => {
+        p.failTimer = 0;
+        if (pc.connectionState === 'failed' && peers.get(id) === p) {
+          stuck.add(id);
+          changed();
+        }
+      }, STUCK_MS);
+    } else {
+      clearTimeout(p.failTimer);
+      p.failTimer = 0;
+    }
+    changed();
+  };
+  // A rede trocou (Wi-Fi para 4G) ou o caminho caiu: renegocia o caminho sem fechar a conexão.
+  // Só a ponta não educada começa, para as duas não oferecerem juntas, e só MAX_RESTARTS vezes
+  // seguidas: se a rede não deixa passar, insistir só gasta bateria.
+  pc.oniceconnectionstatechange = () => {
+    if (pc.iceConnectionState === 'failed' && !p.polite && p.restarts < MAX_RESTARTS) {
+      p.restarts++;
+      pc.restartIce();
+    }
+  };
+
+  // Quem chega oferece: o transceptor com o microfone dispara o onnegotiationneeded.
+  if (offer) pc.addTransceiver(localTrack() ?? 'audio', { direction: localTrack() ? 'sendrecv' : 'recvonly' });
+  changed();
+  return p;
+}
+
+const localTrack = () => localStream?.getAudioTracks()[0] ?? null;
+
+/** @param {string} to @param {{ description?: RTCSessionDescription | null, candidate?: RTCIceCandidateInit }} data */
+function send(to, data) {
+  if (!wanted || !socket.connected) return;
+  const payload =
+    'description' in data
+      ? { description: { type: data.description?.type, sdp: data.description?.sdp } }
+      : { candidate: data.candidate };
+  socket.emit('voice:signal', { to, data: payload });
+}
+
+/** @param {{ from?: string, description?: RTCSessionDescriptionInit, candidate?: RTCIceCandidateInit | null }} msg */
+async function onSignal({ from, description, candidate } = {}) {
+  if (!wanted || typeof from !== 'string') return;
+  // alguém que entrou depois oferecendo: a conexão com ele nasce aqui
+  const p = peers.get(from) ?? (description?.type === 'offer' ? createPeer(from) : null);
+  if (!p) return;
+  const { pc } = p;
+  try {
+    if (description) {
+      const collision = description.type === 'offer' && (p.makingOffer || pc.signalingState !== 'stable');
+      p.ignoreOffer = !p.polite && collision;
+      if (p.ignoreOffer) return;
+      await pc.setRemoteDescription(description); // a educada desfaz a própria oferta sozinha aqui
+      if (description.type === 'offer') {
+        await answerWithMic(pc);
+        await pc.setLocalDescription();
+        send(from, { description: pc.localDescription });
+      }
+    } else if (candidate) {
+      await pc.addIceCandidate(candidate);
+    }
+  } catch (err) {
+    // candidato da oferta que foi ignorada: esperado
+    if (!(candidate && p.ignoreOffer)) console.warn('[voz] negociação', err);
+  }
+}
+
+// A oferta de quem chegou criou um transceptor só para receber: põe o microfone nele antes de
+// responder, assim a resposta já leva o áudio daqui (sem uma segunda negociação).
+/** @param {RTCPeerConnection} pc */
+async function answerWithMic(pc) {
+  const track = localTrack();
+  if (!track) return;
+  const t = audioTransceiver(pc);
+  if (!t || t.sender.track) return;
+  await t.sender.replaceTrack(track);
+  t.direction = 'sendrecv';
+}
+
+// O transceptor de áudio da conexão (só existe um: o voz não tem vídeo).
+/** @param {RTCPeerConnection} pc */
+const audioTransceiver = (pc) =>
+  pc.getTransceivers().find((x) => x.receiver.track?.kind === 'audio' && x.currentDirection !== 'stopped');
+
+function closePeer(id) {
+  const p = peers.get(id);
+  if (!p) return;
+  peers.delete(id);
+  stuck.delete(id);
+  clearTimeout(p.failTimer);
+  p.pc.onicecandidate = p.pc.onnegotiationneeded = p.pc.ontrack = null;
+  p.pc.onconnectionstatechange = p.pc.oniceconnectionstatechange = null;
+  p.pc.close();
+  p.audio.srcObject = null;
+  p.audio.remove();
+  dropMeter(p.meter);
+  speaking.delete(id);
+  changed();
+}
+
+function closeAll() {
+  for (const id of [...peers.keys()]) closePeer(id);
+}
+
+// ---------- quem está falando ----------
+// Um analisador por fluxo (o meu e o de cada um), lido a cada 100ms; nada disso vai pela rede.
+
+function audioContext() {
+  try {
+    ctx ??= new AudioContext();
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+  } catch {
+    ctx = null;
+  }
+  return ctx;
+}
+
+/** @param {MediaStream} stream @returns {Meter | null} */
+function meter(stream) {
+  const ac = audioContext();
+  if (!ac || !stream.getAudioTracks().length) return null;
+  try {
+    const source = ac.createMediaStreamSource(stream);
+    const analyser = ac.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser); // só mede: não liga na saída (quem toca é o <audio>)
+    meterTimer ||= window.setInterval(measure, METER_MS);
+    return { analyser, source, data: new Uint8Array(analyser.fftSize), lastLoud: 0 };
+  } catch {
+    return null;
+  }
+}
+
+/** @param {Meter | null} m */
+function dropMeter(m) {
+  if (!m) return;
+  m.source.disconnect();
+  m.analyser.disconnect();
+}
+
+function stopMeters() {
+  clearInterval(meterTimer);
+  meterTimer = 0;
+}
+
+/** @param {Meter} m */
+function loud(m, now) {
+  m.analyser.getByteTimeDomainData(m.data);
+  let sum = 0;
+  for (const v of m.data) sum += ((v - 128) / 128) ** 2;
+  if (Math.sqrt(sum / m.data.length) >= SPEAK_LEVEL) m.lastLoud = now;
+  return now - m.lastLoud < SPEAK_HOLD_MS;
+}
+
+function measure() {
+  if (!localMeter && !peers.size) return stopMeters();
+  const now = performance.now();
+  const next = new Set();
+  if (localMeter && myId && loud(localMeter, now) && !muted) next.add(myId);
+  for (const [id, p] of peers) if (p.meter && loud(p.meter, now) && !silenced.has(id)) next.add(id);
+  if (next.size === speaking.size && [...next].every((id) => speaking.has(id))) return;
+  speaking = next;
+  changed();
+}
+
+// ---------- conexão com o servidor ----------
+
+socket.on('voice:signal', onSignal);
+socket.on('voice:peer-left', ({ id } = {}) => closePeer(id));
+
+// Caiu: o servidor já tirou do voz e as conexões morreram junto com ele. Continua querendo
+// estar no voz; o 'state' da volta para a sala chama sendJoin().
+socket.on('disconnect', () => {
+  closeAll();
+  joining = false;
+});
+
+// Removido, ou outra aba assumiu o lugar: sai de vez (o servidor já tirou do voz).
+socket.on('room:kicked', () => leaveVoice({ tellServer: false }));
+socket.on('room:replaced', () => leaveVoice({ tellServer: false }));
+
+socket.on('state', (s) => {
+  myId = s?.me ?? null;
+  if (!wanted) return;
+  // trocou de sala: o voz era da outra
+  if (room && s.code !== room) return leaveVoice({ tellServer: false });
+  room = s.code;
+  const inVoice = new Set(s.members.filter((m) => m.voice).map((m) => m.id));
+  // alguém saiu do voz e o aviso se perdeu: fecha a conexão com ele
+  for (const id of peers.keys()) if (!inVoice.has(id)) closePeer(id);
+  // voltou para a sala (queda, servidor reiniciado) e o servidor não tem a pessoa no voz: entra de novo
+  if (!joining && !inVoice.has(s.me)) sendJoin();
+});
