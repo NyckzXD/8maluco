@@ -6,6 +6,7 @@ import { cancelDrag, drag } from './drag.js';
 import { selectedId, setSelected } from './hand.js';
 import { closeReactMenu } from './reactions.js';
 import { closeSuitModal } from './suit-picker.js';
+import { closeVoiceMenu } from './voice-ui.js';
 
 // ---------- modais ----------
 // Todo modal: leva o foco para dentro ao abrir, deixa o resto da página inerte (o Tab não sai dele),
@@ -93,6 +94,7 @@ export function closeTopLayer() {
   const top = modalStack.at(-1);
   if (drag?.active) cancelDrag();
   else if (!$('#reactMenu').classList.contains('hidden')) closeReactMenu({ focus: true });
+  else if (!$('#voiceMenu').classList.contains('hidden')) closeVoiceMenu({ focus: true });
   else if (top) {
     if (!top.hasAttribute('data-static')) closeModal(top);
   } else if ($('.side').classList.contains('open')) setSideOpen(false);

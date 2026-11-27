@@ -6,6 +6,7 @@ import { cancelDeal, deal } from './deal.js';
 import { takeDropGhost } from './drag.js';
 import { pileScale } from './hand.js';
 import { reducedMotion } from './suit-picker.js';
+import { paintVoice } from './voice-ui.js';
 
 // ---------- mesa ----------
 
@@ -83,6 +84,7 @@ export function renderSeats(g, s, hit) {
     seat.append(av, name, info);
     seats.append(seat);
   });
+  paintVoice(); // assentos novos: os selos do chat de voz voltam (a distribuição também redesenha)
 }
 
 // Ao jogar 7 ou 9, uma seta sai do monte até quem vai comprar.
