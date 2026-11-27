@@ -88,21 +88,25 @@ function changed() {
   }
 }
 
+export const voiceSupported = () => typeof RTCPeerConnection === 'function';
 // O navegador só deixa usar o microfone em https (ou localhost): pela rede de casa
-// (http://192.168...) o mediaDevices nem existe.
-export const voiceSupported = () => !!navigator.mediaDevices?.getUserMedia && typeof RTCPeerConnection === 'function';
+// (http://192.168...) o mediaDevices nem existe. Aí dá para entrar só ouvindo.
+const micSupported = () => !!navigator.mediaDevices?.getUserMedia;
+const NO_HTTPS = 'O microfone só funciona em conexão segura (https).';
 
 // ---------- entrar e sair ----------
 
 /**
- * Entra no voz da sala atual. Pede o microfone (só ouvindo, `listenOnly`, não pede). Precisa vir
- * de um toque da pessoa: é o que libera o áudio tocar sozinho no navegador.
+ * Entra no voz da sala atual, com o microfone. Sem microfone (sem permissão, sem aparelho, sem
+ * https), entra só ouvindo e avisa: dá para ligar depois pelo botão do microfone (enableMic).
+ * `listenOnly` entra só ouvindo de propósito, sem pedir o microfone. Precisa vir de um toque da
+ * pessoa: é o que libera o áudio tocar sozinho no navegador.
  * @param {{ listenOnly?: boolean }} [options]
  */
 export async function joinVoice(options = {}) {
   if (wanted || joining) return true;
   if (!voiceSupported()) {
-    flash('O chat de voz precisa de uma conexão segura (https) e de um navegador atualizado.');
+    flash('Este navegador não tem chat de voz. Atualize o navegador ou use outro.');
     return false;
   }
   if (!roomCode) return false;
@@ -113,24 +117,62 @@ export async function joinVoice(options = {}) {
   // deixar mais o áudio começar
   audioContext();
   changed();
-  try {
-    if (!listenOnly) localStream = await navigator.mediaDevices.getUserMedia({ audio: MIC });
-  } catch (err) {
-    joining = false;
-    room = null;
-    changed();
-    flash(micError(err));
-    return false;
-  }
-  if (localStream) {
-    localStream.getAudioTracks().forEach((t) => (t.enabled = !muted));
-    localMeter = meter(localStream);
+  if (!listenOnly) {
+    const mic = await openMic();
+    if (!mic.ok) {
+      listenOnly = true;
+      flash(`${mic.error} Você entrou só para ouvir.`, { info: true });
+    }
   }
   wanted = true;
   joining = false;
   const ok = await sendJoin();
   if (!ok) leaveVoice({ tellServer: false });
   return ok;
+}
+
+// Abre o microfone e já deixa o medidor de "falando" ligado nele.
+async function openMic() {
+  if (!micSupported()) return { ok: false, error: NO_HTTPS };
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: MIC });
+  } catch (err) {
+    return { ok: false, error: micError(err) };
+  }
+  localStream.getAudioTracks().forEach((t) => (t.enabled = !muted));
+  localMeter = meter(localStream);
+  return { ok: true };
+}
+
+/**
+ * Quem está só ouvindo liga o microfone sem sair do voz: o áudio entra em cada conexão que já
+ * existe (cada uma renegocia sozinha, pelo onnegotiationneeded). Precisa vir de um toque.
+ */
+export async function enableMic() {
+  if (!wanted || !listenOnly || joining) return false;
+  joining = true;
+  changed();
+  muted = false;
+  store.set('om_voice_muted', '0');
+  const mic = await openMic();
+  joining = false;
+  if (!mic.ok || !wanted) {
+    if (!mic.ok) flash(mic.error);
+    else stopLocal(); // saiu do voz enquanto esperava a permissão
+    changed();
+    return false;
+  }
+  listenOnly = false;
+  const track = localTrack();
+  for (const p of peers.values()) {
+    const t = audioTransceiver(p.pc);
+    if (!t) continue;
+    await t.sender.replaceTrack(track);
+    if (t.direction !== 'sendrecv') t.direction = 'sendrecv';
+  }
+  emit('voice:mute', { muted: false });
+  changed();
+  return true;
 }
 
 function micError(err) {
@@ -291,14 +333,20 @@ async function onSignal({ from, description, candidate } = {}) {
 
 // A oferta de quem chegou criou um transceptor só para receber: põe o microfone nele antes de
 // responder, assim a resposta já leva o áudio daqui (sem uma segunda negociação).
+/** @param {RTCPeerConnection} pc */
 async function answerWithMic(pc) {
   const track = localTrack();
   if (!track) return;
-  const t = pc.getTransceivers().find((x) => x.receiver.track?.kind === 'audio' && !x.stopped);
+  const t = audioTransceiver(pc);
   if (!t || t.sender.track) return;
   await t.sender.replaceTrack(track);
   t.direction = 'sendrecv';
 }
+
+// O transceptor de áudio da conexão (só existe um: o voz não tem vídeo).
+/** @param {RTCPeerConnection} pc */
+const audioTransceiver = (pc) =>
+  pc.getTransceivers().find((x) => x.receiver.track?.kind === 'audio' && x.currentDirection !== 'stopped');
 
 function closePeer(id) {
   const p = peers.get(id);

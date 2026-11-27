@@ -9,7 +9,7 @@
 //   cortado (você silenciou), e um anel verde em quem está falando.
 import { icon } from './cards.js';
 import { $, $$, avatar, el, speak, state } from './core.js';
-import { joinVoice, leaveVoice, onVoiceChange, setSilenced, setVoiceMuted, voiceStatus } from './voice.js';
+import { enableMic, joinVoice, leaveVoice, onVoiceChange, setSilenced, setVoiceMuted, voiceStatus } from './voice.js';
 
 const menu = $('#voiceMenu');
 /** @type {HTMLElement | null} */
@@ -44,7 +44,9 @@ function syncButtons(v = voiceStatus()) {
     count.classList.toggle('hidden', !v.active);
   }
   for (const b of $$('.voice-mic')) {
-    b.classList.toggle('hidden', !v.active || v.listenOnly);
+    // só ouvindo, o botão aparece desligado: tocar pede o microfone (enableMic)
+    b.classList.toggle('hidden', !v.active);
+    b.disabled = v.joining;
     b.classList.toggle('is-off', v.muted);
     b.replaceChildren(icon(v.muted ? 'mic-off' : 'mic'));
     // nome fixo e aria-pressed dizendo se está ligado, como o "Silenciar" dos sons
@@ -68,7 +70,11 @@ for (const b of $$('.voice-btn')) {
 }
 
 for (const b of $$('.voice-mic')) {
-  b.addEventListener('click', () => {
+  b.addEventListener('click', async () => {
+    if (voiceStatus().listenOnly) {
+      if (await enableMic()) speak('Microfone ligado');
+      return;
+    }
     const muted = !voiceStatus().muted;
     setVoiceMuted(muted);
     speak(muted ? 'Microfone desligado' : 'Microfone ligado');
@@ -121,7 +127,7 @@ let menuKey = '';
 const keyOf = (v) =>
   voiceMembers()
     .map((m) => [m.id, m.name, m.voiceMuted, v.silenced.has(m.id), v.peers.get(m.id) ?? ''].join(':'))
-    .join('|');
+    .join('|') + (v.listenOnly ? '|só ouvindo' : '');
 
 function renderMenu({ force = false } = {}) {
   if (!menuOpener) return;
@@ -145,9 +151,11 @@ function renderMenu({ force = false } = {}) {
     li.dataset.id = m.id;
     if (v.speaking.has(m.id)) li.classList.add('speaking');
     const note = mine
-      ? m.voiceMuted
-        ? 'você · microfone desligado'
-        : 'você'
+      ? v.listenOnly
+        ? 'você · só ouvindo'
+        : m.voiceMuted
+          ? 'você · microfone desligado'
+          : 'você'
       : (CONNECTION_NOTE[v.peers.get(m.id)] ??
         (v.silenced.has(m.id) ? 'silenciado por você' : m.voiceMuted ? 'microfone desligado' : ''));
     const text = el('div', 'voice-who');
@@ -207,6 +215,7 @@ function avatarsOf(id) {
     $(`#memberList .seat[data-id="${id}"] .avatar`),
     $(`#benchList [data-id="${id}"] .avatar`),
   ];
+  spots.push($(`#voiceBench [data-id="${id}"] .avatar`));
   if (s && id === s.me) spots.push($('#meInfo .avatar'));
   return spots.filter(Boolean);
 }
@@ -257,11 +266,37 @@ function announceChanges() {
   lastVoice = now;
 }
 
+// ---------- plateia na partida ----------
+// Na partida, só quem joga (ou já foi eliminado) tem assento. Quem está na plateia e entrou no
+// voz aparece numa fileira no canto da mesa, para a mesa saber quem está falando.
+
+let benchKey = '';
+function renderBench() {
+  const box = $('#voiceBench');
+  const g = state?.game;
+  const seated = new Set(g?.players.map((p) => p.id) ?? []);
+  const people = g ? voiceMembers().filter((m) => !seated.has(m.id)) : [];
+  const key = people.map((m) => `${m.id}:${m.name}`).join('|');
+  if (key === benchKey) return;
+  benchKey = key;
+  box.classList.toggle('hidden', !people.length);
+  box.replaceChildren(
+    ...people.map((m) => {
+      const li = el('li', 'voice-bench-chip');
+      li.dataset.id = m.id;
+      li.title = m.id === state.me ? `${m.name} (você), na plateia` : `${m.name}, na plateia`;
+      li.append(avatar(m), el('span', 'sr-only', li.title));
+      return li;
+    }),
+  );
+}
+
 // Depois de cada 'state' (render.js chama): botões, menu, selos e avisos.
 export function renderVoice() {
   if (!state) closeVoiceMenu();
   syncButtons();
   renderMenu();
+  renderBench();
   paintVoice();
   announceChanges();
 }

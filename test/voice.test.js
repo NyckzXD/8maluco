@@ -218,6 +218,45 @@ test('limpeza da negociação', () => {
   assert.equal(cleanSignal({ candidate: { candidate: 'c'.repeat(1001) } }), null);
 });
 
+test('plateia e eliminados também entram no voz, falam e ouvem (cada um decide, sem regra do anfitrião)', () => {
+  const { io, room, ids, to, lastState, done } = setup();
+  assert.equal(room.start(ids.Ana).ok, true);
+  // Davi chega com a partida rolando: vai para a plateia
+  const joined = room.join(fakeSocket('s-Davi'), { token: 'tok-Davi', name: 'Davi' });
+  assert.equal(joined.spectator, true);
+  ids.Davi = room.members.at(-1).id;
+  // Caio foi eliminado (estourou o limite de pontos): continua na sala, fora da partida
+  room.game.players.find((p) => p.id === ids.Caio).eliminated = true;
+
+  // ninguém precisa de permissão: quem não é anfitrião entra sozinho, inclusive a plateia
+  for (const name of ['Davi', 'Caio', 'Bia']) assert.equal(room.voiceJoin(ids[name]).ok, true, name);
+  assert.deepEqual(room.voiceJoin(ids.Ana).peers.sort(), [ids.Davi, ids.Caio, ids.Bia].sort());
+
+  // a plateia fala com quem joga e com o eliminado, e recebe de volta
+  io.sent.length = 0;
+  for (const target of ['Ana', 'Caio'])
+    assert.equal(room.voiceSignal(ids.Davi, { to: ids[target], data: OFFER }).ok, true);
+  assert.equal(room.voiceSignal(ids.Caio, { to: ids.Davi, data: CANDIDATE }).ok, true);
+  assert.deepEqual(to('s-Ana', 'voice:signal')[0].payload, { from: ids.Davi, ...OFFER });
+  assert.deepEqual(to('s-Caio', 'voice:signal')[0].payload, { from: ids.Davi, ...OFFER });
+  assert.deepEqual(to('s-Davi', 'voice:signal')[0].payload, { from: ids.Caio, ...CANDIDATE });
+
+  // e mutar vale para eles também
+  assert.equal(room.voiceMute(ids.Davi, true).ok, true);
+  const st = lastState('Ana');
+  assert.deepEqual(st.spectators, [ids.Davi]);
+  assert.deepEqual(
+    st.members.filter((m) => m.voice).map((m) => [m.name, m.voiceMuted]),
+    [
+      ['Ana', false],
+      ['Bia', false],
+      ['Caio', false],
+      ['Davi', true],
+    ],
+  );
+  done();
+});
+
 // ---------- pela rede ----------
 
 let srv;

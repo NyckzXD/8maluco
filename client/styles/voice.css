@@ -71,6 +71,48 @@
   transition: box-shadow 0.12s ease-out;
 }
 
+/* eliminado continua na mesa, apagado: enquanto fala, volta a ficar aceso */
+.seat.out:has(.avatar.speaking) {
+  opacity: 1;
+  filter: none;
+}
+
+/* plateia no voz durante a partida: avatares pequenos no canto de baixo da mesa */
+.voice-bench {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 40%;
+  margin: 0;
+  padding: 6px 8px;
+  list-style: none;
+  border-radius: var(--r-pill);
+  background: var(--veil-weak);
+}
+
+.voice-bench-chip .avatar {
+  width: 32px;
+  height: 32px;
+  font-size: var(--fs-sm);
+}
+
+.voice-bench-chip .badge.voice {
+  width: 16px;
+  height: 16px;
+  top: -5px;
+  right: -7px;
+  border-width: 1.5px;
+}
+
+.voice-bench-chip .badge.voice .icon {
+  width: 9px;
+  height: 9px;
+}
+
 /* ---------- menu do voz ---------- */
 
 .voice-menu {
