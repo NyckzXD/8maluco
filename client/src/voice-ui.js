@@ -8,7 +8,7 @@
 //   selo de fone (no voz), de microfone cortado (desligou o microfone) ou de alto-falante
 //   cortado (você silenciou), e um anel verde em quem está falando.
 import { icon } from './cards.js';
-import { $, $$, avatar, el, speak, state } from './core.js';
+import { $, $$, avatar, el, flash, speak, state } from './core.js';
 import { enableMic, joinVoice, leaveVoice, onVoiceChange, setSilenced, setVoiceMuted, voiceStatus } from './voice.js';
 
 const menu = $('#voiceMenu');
@@ -301,8 +301,29 @@ export function renderVoice() {
   announceChanges();
 }
 
+// ---------- conexão que não passa ----------
+// Uma vez por pessoa (até conectar de novo): o áudio com ela não conectou. Sem TURN no servidor,
+// a causa mais comum é a rede de um dos dois (4G, rede de empresa) bloquear a conexão direta.
+const warned = new Set();
+function warnStuck(v) {
+  for (const id of warned) if (!v.stuck.has(id)) warned.delete(id);
+  for (const id of v.stuck) {
+    if (warned.has(id)) continue;
+    warned.add(id);
+    const name = state?.members.find((m) => m.id === id)?.name ?? 'uma pessoa';
+    flash(
+      `Não deu para conectar o áudio com ${name}. ` +
+        (v.hasTurn
+          ? 'Tente sair e entrar no voz de novo.'
+          : 'A rede de um de vocês bloqueia a conexão direta (acontece no 4G e em redes de empresa).'),
+      { info: true },
+    );
+  }
+}
+
 onVoiceChange((v) => {
   if (!v.active) closeVoiceMenu();
+  warnStuck(v);
   syncButtons(v);
   renderMenu();
   paintVoice();

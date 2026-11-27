@@ -231,8 +231,19 @@ export function createGameServer(options = {}) {
       '[voz] sem TURN_URLS/TURN_SECRET: o chat de voz não conecta em parte das redes (README, "Chat de voz")',
     );
 
+  // `voice` diz o que o chat de voz tem para atravessar as redes (sem TURN, parte do 4G não conecta)
+  const voice = {
+    stun: (config.stunUrls?.length ?? 0) > 0,
+    turn: !!(config.turnUrls?.length && config.turnSecret),
+  };
   app.get('/health', (_req, res) =>
-    res.json({ ok: true, ...rooms.stats(), connections: io.engine.clientsCount, uptime: Math.round(process.uptime()) }),
+    res.json({
+      ok: true,
+      ...rooms.stats(),
+      connections: io.engine.clientsCount,
+      uptime: Math.round(process.uptime()),
+      voice,
+    }),
   );
 
   // Publicado sem o build: em vez de um "Cannot GET /" mudo, diz o que falta (o /health continua respondendo).

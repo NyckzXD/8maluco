@@ -132,6 +132,7 @@ export class RoomManager {
       rooms: rooms.length,
       games: rooms.filter((r) => r.game && r.game.phase !== 'gameOver').length,
       players: rooms.reduce((n, r) => n + r.members.filter((m) => !m.isBot && m.connected).length, 0),
+      inVoice: rooms.reduce((n, r) => n + r.members.filter((m) => m.voice).length, 0), // no chat de voz agora
     };
   }
 

@@ -16,11 +16,13 @@ const MIC = { echoCancellation: true, noiseSuppression: true, autoGainControl: t
 const SPEAK_LEVEL = 0.035; // volume (RMS de 0 a 1) a partir do qual alguém está falando
 const SPEAK_HOLD_MS = 350; // continua "falando" um pouquinho depois de parar (sem piscar entre palavras)
 const METER_MS = 100;
+const MAX_RESTARTS = 2; // tentativas de achar outro caminho quando a conexão cai (sem TURN, não adianta insistir)
+const STUCK_MS = 10_000; // conexão falhando por mais que isso: a tela avisa (voiceStatus().stuck)
 
 /**
  * @typedef {{
  *   pc: RTCPeerConnection, polite: boolean, makingOffer: boolean, ignoreOffer: boolean,
- *   audio: HTMLAudioElement, meter: Meter | null,
+ *   audio: HTMLAudioElement, meter: Meter | null, restarts: number, failTimer: number,
  * }} Peer
  * @typedef {{ analyser: AnalyserNode, source: MediaStreamAudioSourceNode, data: Uint8Array<ArrayBuffer>, lastLoud: number }} Meter
  */
@@ -40,6 +42,8 @@ let iceServers = [];
 const peers = new Map();
 /** @type {Set<string>} quem eu silenciei só para mim */
 const silenced = new Set();
+/** @type {Set<string>} com quem a conexão está falhando há mais de STUCK_MS */
+const stuck = new Set();
 /** @type {Set<string>} quem está falando agora (o meu id também, com o microfone aberto) */
 let speaking = new Set();
 /** @type {Meter | null} */
@@ -68,6 +72,9 @@ export function voiceStatus() {
     silenced: new Set(silenced),
     // por pessoa: 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed'
     peers: new Map([...peers].map(([id, p]) => [id, p.pc.connectionState])),
+    stuck: new Set(stuck),
+    // o servidor mandou um TURN (sem ele, parte do 4G e das redes de empresa não conecta)
+    hasTurn: iceServers.some((s) => [s.urls].flat().some((u) => /^turns?:/.test(u))),
   };
 }
 
@@ -255,7 +262,16 @@ function createPeer(id, { offer = false } = {}) {
   audio.muted = silenced.has(id);
   audioBox.append(audio);
   /** @type {Peer} */
-  const p = { pc, polite: !!myId && myId < id, makingOffer: false, ignoreOffer: false, audio, meter: null };
+  const p = {
+    pc,
+    polite: !!myId && myId < id,
+    makingOffer: false,
+    ignoreOffer: false,
+    audio,
+    meter: null,
+    restarts: 0,
+    failTimer: 0,
+  };
   peers.set(id, p);
 
   pc.onicecandidate = ({ candidate }) => {
@@ -279,11 +295,35 @@ function createPeer(id, { offer = false } = {}) {
     dropMeter(p.meter);
     p.meter = meter(stream);
   };
-  pc.onconnectionstatechange = () => changed();
+  // Falhando por STUCK_MS seguidos: entra em `stuck` (a tela avisa uma vez). Conectou: zera tudo.
+  pc.onconnectionstatechange = () => {
+    const state = pc.connectionState;
+    if (state === 'connected') {
+      p.restarts = 0;
+      stuck.delete(id);
+    }
+    if (state === 'failed') {
+      p.failTimer ||= window.setTimeout(() => {
+        p.failTimer = 0;
+        if (pc.connectionState === 'failed' && peers.get(id) === p) {
+          stuck.add(id);
+          changed();
+        }
+      }, STUCK_MS);
+    } else {
+      clearTimeout(p.failTimer);
+      p.failTimer = 0;
+    }
+    changed();
+  };
   // A rede trocou (Wi-Fi para 4G) ou o caminho caiu: renegocia o caminho sem fechar a conexão.
-  // Só a ponta não educada começa, para as duas não oferecerem juntas.
+  // Só a ponta não educada começa, para as duas não oferecerem juntas, e só MAX_RESTARTS vezes
+  // seguidas: se a rede não deixa passar, insistir só gasta bateria.
   pc.oniceconnectionstatechange = () => {
-    if (pc.iceConnectionState === 'failed' && !p.polite) pc.restartIce();
+    if (pc.iceConnectionState === 'failed' && !p.polite && p.restarts < MAX_RESTARTS) {
+      p.restarts++;
+      pc.restartIce();
+    }
   };
 
   // Quem chega oferece: o transceptor com o microfone dispara o onnegotiationneeded.
@@ -352,6 +392,8 @@ function closePeer(id) {
   const p = peers.get(id);
   if (!p) return;
   peers.delete(id);
+  stuck.delete(id);
+  clearTimeout(p.failTimer);
   p.pc.onicecandidate = p.pc.onnegotiationneeded = p.pc.ontrack = null;
   p.pc.onconnectionstatechange = p.pc.oniceconnectionstatechange = null;
   p.pc.close();
