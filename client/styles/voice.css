@@ -1,0 +1,215 @@
+/* ---------- chat de voz (voice-ui.js) ---------- */
+
+:root {
+  /* verde de "falando": destaca no feltro sem confundir com o vermelho das ações e da vez */
+  --voice: #4ee08f;
+  --voice-ink: #04210f;
+}
+
+/* botões do topo: o fone (entrar / abrir o menu) e o microfone (liga e desliga) */
+.voice-btn {
+  position: relative;
+  gap: 4px;
+}
+
+.voice-btn.is-on {
+  color: var(--voice);
+}
+
+.voice-btn[aria-busy='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.voice-count {
+  font-family: var(--font-hud);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* microfone desligado: vermelho, para ninguém achar que está falando com a mesa */
+.voice-mic.is-off {
+  background: var(--red-900);
+  color: var(--red-300);
+}
+
+/* selo do voz no avatar: no canto de cima à direita (os outros cantos já têm carteador,
+   desconectado, ausente e a coroa) */
+.badge.voice {
+  top: -4px;
+  bottom: auto;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--black);
+  background: var(--voice);
+  color: var(--voice-ink);
+  pointer-events: auto;
+}
+
+.badge.voice .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.badge.voice.muted,
+.badge.voice.silenced {
+  background: var(--silver-300);
+  color: var(--red-600);
+}
+
+/* falando: anel verde em volta do avatar, por fora do anel de tempo da vez */
+.avatar.speaking {
+  box-shadow:
+    0 0 0 3px var(--voice),
+    0 0 14px 2px rgba(78, 224, 143, 0.55);
+  transition: box-shadow 0.12s ease-out;
+}
+
+/* ---------- menu do voz ---------- */
+
+.voice-menu {
+  position: fixed;
+  z-index: 25;
+  width: min(300px, calc(100vw - 16px));
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-lg);
+  animation: react-menu-in 0.16s ease-out;
+}
+
+.voice-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--voice);
+}
+
+.voice-menu-head h2 {
+  margin: 0;
+  font-family: var(--font-hud);
+  font-size: var(--fs-md);
+  color: var(--ink);
+}
+
+.voice-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: min(320px, 50vh);
+  overflow-y: auto;
+}
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 4px 6px;
+  border-radius: var(--r-md);
+}
+
+.voice-row .avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  font-size: var(--fs-sm);
+}
+
+.voice-row.speaking .avatar {
+  box-shadow: 0 0 0 3px var(--voice);
+}
+
+.voice-who {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.voice-who b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-who span {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* silenciar alguém só para você: área de toque de 44px */
+.voice-silence {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.voice-silence[aria-pressed='true'] {
+  color: var(--red-300);
+}
+
+.voice-leave {
+  justify-content: center;
+  min-height: 44px;
+  gap: 6px;
+}
+
+/* celular: com o microfone e o fone, o topo tem até cinco botões do lado direito. Eles
+   ficam mais estreitos (a área de toque continua com 44px, pelo ::after do .btn-small) e o
+   "Rodada N" não quebra linha. */
+@media (max-width: 430px) {
+  .top-right {
+    gap: 4px;
+  }
+
+  .top-right .btn-small {
+    padding-inline: 8px;
+  }
+
+  .round-label {
+    white-space: nowrap;
+    font-size: var(--fs-md);
+  }
+
+  .game-top {
+    gap: 4px;
+  }
+
+  /* o "Sair" vira só a seta (o texto continua como nome do botão, para leitor de tela) */
+  .leave-btn {
+    padding-inline: 10px;
+  }
+
+  .leave-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-menu {
+    animation: none;
+  }
+
+  .avatar.speaking {
+    transition: none;
+  }
+}
