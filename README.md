@@ -82,6 +82,15 @@ Nas três, defina `NODE_ENV=production` (que liga o `TRUST_PROXY=1`) e, se for u
 
 O áudio vai direto de um aparelho para o outro (WebRTC, uma conexão por par, só áudio), e o servidor do jogo só apresenta as pessoas: quem entra no voz (`voice:join`) recebe a lista de quem já está e os servidores STUN/TURN, e as mensagens de negociação passam pelo `voice:signal`, só entre duas pessoas da mesma sala que estão no voz (`server/voice.js` e os métodos `voice*` de `server/rooms.js`). Cair, sair da sala ou ser removido tira a pessoa do voz e avisa os outros (`voice:peer-left`). Nada do voz vai para o `SNAPSHOT_FILE`.
 
+**Cada pessoa decide.** Não há opção do anfitrião: o voz está disponível em toda sala, e ninguém ouve nem é ouvido sem tocar no botão do fone, no topo da sala de espera ou da mesa. Jogadores, plateia e quem já foi eliminado entram, falam e ouvem do mesmo jeito. Dentro do voz:
+
+- o botão do microfone liga e desliga o próprio microfone (a escolha fica guardada no navegador);
+- o botão do fone mostra quantos estão no voz e abre o menu com cada pessoa: dá para silenciar alguém só para você (vale enquanto você estiver na sala) e sair do voz;
+- sem microfone (permissão negada, nenhum microfone ou página sem https, como `http://192.168...` na rede de casa), a pessoa entra só ouvindo; o botão do microfone fica desligado e tocar nele pede o microfone de novo, sem sair do voz;
+- nos avatares: selo de fone (no voz), de microfone cortado (desligou) ou de alto-falante cortado (você silenciou), e um anel verde em quem está falando. A plateia não tem assento na partida, então quem dela está no voz aparece numa fileira no canto da mesa; um eliminado fica aceso enquanto fala.
+
+A conexão fica em `client/src/voice.js` e a tela em `client/src/voice-ui.js`.
+
 - **STUN** descobre o endereço público de cada aparelho. Basta para a maioria das redes de casa.
 - **TURN** retransmite o áudio quando a conexão direta não passa (operadora de celular, rede de empresa, NAT simétrico): sem ele, o voz falha em parte das conexões. Em produção, o servidor avisa no log quando falta. Pode ser um [coturn](https://github.com/coturn/coturn) próprio numa VPS (com `use-auth-secret` e `static-auth-secret=<o mesmo TURN_SECRET>`) ou um serviço que aceite o mesmo padrão de credencial temporária. O segredo fica só no servidor do jogo; o cliente recebe um usuário e senha que vencem em `TURN_TTL_SECONDS`, e só quem está numa sala e no voz recebe.
 
